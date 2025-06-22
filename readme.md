@@ -48,11 +48,33 @@ README:
       Example: |
         - [ ] Prepare quarterly report (priority:A due:2025-07-15 progress:30%)
 
-    Context and Project Tags:
-      Context: "@Context"
-      Additional Project: "+ProjectName"
-      Example: |
-        - [ ] Finish annual budget +Finance @HomeOffice
+    Context and Project Tags
+
+        Context tags (`@`) and project tags (`+`) enhance clarity and usability by clearly indicating the context or environment needed and categorizing tasks within their relevant projects.
+
+      Context Tags (`@`)**:
+        Describe the ideal environment or tool required to complete a task.
+        
+        Examples:
+          `@Office`: Tasks to complete at work.
+          `@Home`: Tasks best handled at home.
+          `@Phone`: Tasks involving phone calls.
+          `@Online`: Tasks requiring internet access.
+
+      Project Tags (`+`)**:
+        Categorize tasks within specific projects or broader categories.
+  
+        Examples:
+          `+Finance`: Tasks related to financial planning and budgets.
+          `+Documentation`: Tasks involving documentation creation or updates.
+          `+Marketing`: Tasks associated with marketing campaigns.
+          `+Personal`: Tasks related to personal goals and activities.
+
+      Example**:
+        - [ ] Finalize annual budget report +Finance @Office
+        - [ ] Schedule client follow-up call +Sales @Phone
+        - [ ] Prepare content for website +Marketing @Online
+        - [ ] Organize garage @Home
   
   Getting Started:
     Installation: |
