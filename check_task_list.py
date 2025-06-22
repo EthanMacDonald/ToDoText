@@ -3,7 +3,7 @@
 import re
 import datetime
 
-# Syntax checking function with error reporting and note handling
+# Syntax checking function with error reporting, note handling, and spacing check
 def check_syntax(file_path):
     line_number = 0
 
@@ -11,6 +11,8 @@ def check_syntax(file_path):
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
+
+    current_area_indent = None
 
     for idx, line in enumerate(lines):
         line_number += 1
@@ -20,27 +22,45 @@ def check_syntax(file_path):
 
         area_match = re.match(r'^(\S.+):$', stripped)
         task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
-        note_match = re.match(r'^\s+[^-\[].+', line)
+        note_match = re.match(r'^(\s+)[^-\[].+', line)
 
-        if area_match or task_match or note_match:
-            if task_match:
-                indent, completed, content = task_match.groups()
-                meta_matches = re.findall(r'\(([^:]+):([^\s\)]+)\)', content)
+        if area_match:
+            current_area_indent = len(re.match(r'^(\s*)', line).group(1))
 
-                for key, value in meta_matches:
-                    key, value = key.strip(), value.strip()
-                    if key not in valid_keys:
-                        print(f"Line {line_number}: Invalid metadata key '{key}'. Suggestion: use one of {valid_keys}.")
+        elif task_match:
+            indent, completed, content = task_match.groups()
+            current_indent_level = len(indent)
 
-                    if key == 'priority' and not re.match(r'^[A-Z]$', value):
-                        print(f"Line {line_number}: Invalid priority '{value}'. Suggestion: use a single uppercase letter (A-Z).")
-                    if key == 'due':
-                        try:
-                            datetime.datetime.strptime(value, '%Y-%m-%d')
-                        except ValueError:
-                            print(f"Line {line_number}: Invalid due date '{value}'. Suggestion: use format YYYY-MM-DD.")
-                    if key == 'progress' and not re.match(r'^\d{1,3}%$', value):
-                        print(f"Line {line_number}: Invalid progress '{value}'. Suggestion: use a percentage between 0% and 100%.")
+            if current_area_indent is not None and current_indent_level <= current_area_indent:
+                print(f"Line {line_number}: Incorrect indentation. Tasks should be indented under area headings.")
+
+            if current_indent_level % 4 != 0:
+                print(f"Line {line_number}: Incorrect indentation spacing. Suggestion: Use multiples of 4 spaces.")
+
+            meta_matches = re.findall(r'\(([^:]+):([^\s\)]+)\)', content)
+
+            for key, value in meta_matches:
+                key, value = key.strip(), value.strip()
+                if key not in valid_keys:
+                    print(f"Line {line_number}: Invalid metadata key '{key}'. Suggestion: use one of {valid_keys}.")
+
+                if key == 'priority' and not re.match(r'^[A-Z]$', value):
+                    print(f"Line {line_number}: Invalid priority '{value}'. Suggestion: use a single uppercase letter (A-Z).")
+                if key == 'due':
+                    try:
+                        datetime.datetime.strptime(value, '%Y-%m-%d')
+                    except ValueError:
+                        print(f"Line {line_number}: Invalid due date '{value}'. Suggestion: use format YYYY-MM-DD.")
+                if key == 'progress' and not re.match(r'^\d{1,3}%$', value):
+                    print(f"Line {line_number}: Invalid progress '{value}'. Suggestion: use a percentage between 0% and 100%.")
+
+        elif note_match:
+            indent = note_match.group(1)
+            current_indent_level = len(indent)
+
+            if current_indent_level % 4 != 0:
+                print(f"Line {line_number}: Incorrect indentation spacing for note. Suggestion: Use multiples of 4 spaces.")
+
         else:
             print(f"Line {line_number}: Does not match task, note, or area format. Suggestion: Ensure line starts with '-', '[ ]' or '[x]', or is properly indented as a note.")
 
