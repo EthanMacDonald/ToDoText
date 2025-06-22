@@ -38,13 +38,12 @@ def parse_tasks(file_path):
                 }
                 tasks.append(task)
             elif note_match:
-                tasks.append({'type': 'note', 'content': stripped, 'indent': note_match.group(1)})
+                tasks.append({'type': 'note', 'content': stripped, 'indent': note_match.group(1), 'due': None, 'priority': None})
     return tasks
 
 # Sorting tasks
-def sort_tasks(tasks, key):
+def sort_tasks(tasks, key, secondary_key=None):
     if key == 'area':
-        sorted_tasks = []
         areas_dict = {}
         current_area = None
 
@@ -56,50 +55,58 @@ def sort_tasks(tasks, key):
                 areas_dict[current_area].append(task)
 
         ordered_areas = AREA_ORDER_KEY + sorted([area for area in areas_dict if area not in AREA_ORDER_KEY])
+        sorted_tasks = []
 
         for area in ordered_areas:
             if area in areas_dict:
-                sorted_tasks.extend(areas_dict[area])
+                area_tasks = areas_dict[area]
+                header, items = area_tasks[0], area_tasks[1:]
+                if secondary_key == 'due':
+                    items = sorted(items, key=lambda x: (x.get('due') or datetime.date.max))
+                elif secondary_key == 'priority':
+                    priority_order = {'A': 1, 'B': 2, 'C': 3, None: 99}
+                    items = sorted(items, key=lambda x: priority_order.get(x.get('priority'), 99))
+                sorted_tasks.extend([header] + items + [{'type': 'spacer'}])
 
-        return sorted_tasks
+        return sorted_tasks[:-1]  # remove last spacer
 
     elif key == 'due':
         tasks_with_due = [t for t in tasks if t['type'] == 'task' and t['due']]
         tasks_without_due = [t for t in tasks if t['type'] != 'task' or not t['due']]
-        sorted_tasks = sorted(tasks_with_due, key=lambda x: x['due']) + tasks_without_due
-        return sorted_tasks
+        return sorted(tasks_with_due, key=lambda x: x['due']) + tasks_without_due
 
     elif key == 'priority':
         priority_order = {'A': 1, 'B': 2, 'C': 3, None: 99}
         tasks_with_priority = [t for t in tasks if t['type'] == 'task']
-        sorted_tasks = sorted(tasks_with_priority, key=lambda x: priority_order.get(x['priority'], 99))
-        return sorted_tasks
+        return sorted(tasks_with_priority, key=lambda x: priority_order.get(x['priority'], 99))
 
-    else:
-        return tasks
+    return tasks
 
 # Write sorted tasks to files
-def write_sorted_tasks(tasks, key):
+def write_sorted_tasks(tasks, key, secondary_key=None):
     os.makedirs('outputs', exist_ok=True)
-    sorted_tasks = sort_tasks(tasks, key)
-    filename = f'outputs/sorted_by_{key}.txt'
+    sorted_tasks = sort_tasks(tasks, key, secondary_key)
+    filename = f'outputs/sorted_by_{key}' + (f'_then_{secondary_key}' if secondary_key else '') + '.txt'
 
     with open(filename, 'w') as file:
-        current_area = None
         for task in sorted_tasks:
-            if key == 'area' and task['type'] == 'area':
+            if task['type'] == 'area':
                 file.write(f"{task['content']}\n")
-                current_area = task['area']
             elif task['type'] == 'task':
                 status = '[x]' if task['completed'] else '[ ]'
                 area_metadata = f" +{task['area']}" if key != 'area' else ""
                 file.write(f"{task['indent']}- {status} {task['content']}{area_metadata}\n")
             elif task['type'] == 'note':
                 file.write(f"{task['indent']}{task['content']}\n")
+            elif task['type'] == 'spacer':
+                file.write("\n")
 
 if __name__ == '__main__':
     tasks = parse_tasks('tasks.txt')
-    for key in ['area', 'due', 'priority']:
-        write_sorted_tasks(tasks, key)
+    write_sorted_tasks(tasks, 'area')
+    write_sorted_tasks(tasks, 'due')
+    write_sorted_tasks(tasks, 'priority')
+    write_sorted_tasks(tasks, 'area', 'due')
+    write_sorted_tasks(tasks, 'area', 'priority')
 
     print("Tasks sorted and saved successfully.")
