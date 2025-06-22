@@ -20,16 +20,15 @@ def correct_progress(value):
     corrected = input(f"Progress '{value}' invalid. Enter correct progress (0-100%): ")
     return corrected if re.match(r'^\d{1,3}%$', corrected) else value
 
-# Syntax checking function with correction options
+# Syntax checking function with correction options and note handling
 def check_and_correct_syntax(file_path):
-    errors = []
     corrected_lines = []
     line_number = 0
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
-    for line in lines:
+    for idx, line in enumerate(lines):
         line_number += 1
         stripped = line.rstrip()
         if not stripped:
@@ -38,8 +37,9 @@ def check_and_correct_syntax(file_path):
 
         area_match = re.match(r'^(\S.+):$', stripped)
         task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
+        note_match = re.match(r'^\s+[^-\[].+', line)
 
-        if area_match or task_match:
+        if area_match or task_match or note_match:
             if task_match:
                 indent, completed, content = task_match.groups()
                 meta_matches = re.findall(r'\((\w+):(.*?)\)', content)
@@ -63,7 +63,7 @@ def check_and_correct_syntax(file_path):
             else:
                 corrected_lines.append(line)
         else:
-            print(f"Line {line_number} does not match task or area format: {line.strip()}")
+            print(f"Line {line_number} does not match task, note, or area format: {line.strip()}")
             action = input("Type 'delete' to remove this line, 'keep' to keep as-is, or enter corrected line: ")
             if action == 'delete':
                 continue
