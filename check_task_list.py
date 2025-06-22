@@ -6,13 +6,12 @@ import datetime
 # Syntax checking function with error reporting, note handling, and spacing check
 def check_syntax(file_path):
     line_number = 0
-
     valid_keys = ['priority', 'due', 'progress', 'rec', 'done']
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
-    current_area_indent = None
+    indent_stack = []
 
     for idx, line in enumerate(lines):
         line_number += 1
@@ -20,22 +19,33 @@ def check_syntax(file_path):
         if not stripped:
             continue
 
-        area_match = re.match(r'^(\S.+):$', stripped)
+        area_match = re.match(r'^(\s*)(\S.+):$', line)
         task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
         note_match = re.match(r'^(\s+)[^-\[].+', line)
 
         if area_match:
-            current_area_indent = len(re.match(r'^(\s*)', line).group(1))
+            area_indent = len(area_match.group(1))
+            indent_stack = [area_indent]
 
         elif task_match:
             indent, completed, content = task_match.groups()
-            current_indent_level = len(indent)
+            current_indent = len(indent)
 
-            if current_area_indent is not None and current_indent_level <= current_area_indent:
-                print(f"Line {line_number}: Incorrect indentation. Tasks should be indented under area headings.")
+            while len(indent_stack) > 1 and current_indent <= indent_stack[-1]:
+                indent_stack.pop()
 
-            if current_indent_level % 4 != 0:
+            expected_indent = indent_stack[-1] + 4
+
+            if current_indent != expected_indent:
+                if current_indent < expected_indent:
+                    print(f"Line {line_number}: Task under-indented. Should be indented exactly 4 spaces from its parent.")
+                else:
+                    print(f"Line {line_number}: Task over-indented. Should be indented exactly 4 spaces from its parent.")
+
+            if current_indent % 4 != 0:
                 print(f"Line {line_number}: Incorrect indentation spacing. Suggestion: Use multiples of 4 spaces.")
+
+            indent_stack.append(current_indent)
 
             meta_matches = re.findall(r'\(([^:]+):([^\s\)]+)\)', content)
 
@@ -56,9 +66,12 @@ def check_syntax(file_path):
 
         elif note_match:
             indent = note_match.group(1)
-            current_indent_level = len(indent)
+            current_indent = len(indent)
 
-            if current_indent_level % 4 != 0:
+            if not indent_stack or current_indent <= indent_stack[-1]:
+                print(f"Line {line_number}: Note indentation error. Should be indented further than its parent task.")
+
+            if current_indent % 4 != 0:
                 print(f"Line {line_number}: Incorrect indentation spacing for note. Suggestion: Use multiples of 4 spaces.")
 
         else:
