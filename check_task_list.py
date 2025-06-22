@@ -3,30 +3,8 @@
 import re
 import datetime
 
-# Helper functions for corrections
-def correct_priority(value):
-    corrected = input(f"Priority '{value}' invalid. Enter correct priority (A-Z): ")
-    return corrected if re.match(r'^[A-Z]$', corrected) else value
-
-def correct_due_date(value):
-    corrected = input(f"Due date '{value}' invalid. Enter correct date (YYYY-MM-DD): ")
-    try:
-        datetime.datetime.strptime(corrected, '%Y-%m-%d')
-        return corrected
-    except ValueError:
-        return value
-
-def correct_progress(value):
-    corrected = input(f"Progress '{value}' invalid. Enter correct progress (0-100%): ")
-    return corrected if re.match(r'^\d{1,3}%$', corrected) else value
-
-def correct_metadata_key(key):
-    corrected = input(f"Metadata key '{key}' is invalid. Enter correct key (priority, due, progress, rec, done): ")
-    return corrected if corrected in ['priority', 'due', 'progress', 'rec', 'done'] else key
-
-# Syntax checking function with correction options and note handling
-def check_and_correct_syntax(file_path):
-    corrected_lines = []
+# Syntax checking function with error reporting and note handling
+def check_syntax(file_path):
     line_number = 0
 
     valid_keys = ['priority', 'due', 'progress', 'rec', 'done']
@@ -38,7 +16,6 @@ def check_and_correct_syntax(file_path):
         line_number += 1
         stripped = line.rstrip()
         if not stripped:
-            corrected_lines.append(line)
             continue
 
         area_match = re.match(r'^(\S.+):$', stripped)
@@ -53,41 +30,19 @@ def check_and_correct_syntax(file_path):
                 for key, value in meta_matches:
                     key, value = key.strip(), value.strip()
                     if key not in valid_keys:
-                        new_key = correct_metadata_key(key)
-                        content = re.sub(rf'\({re.escape(key)}:{re.escape(value)}\)', f'({new_key}:{value})', content)
-                        key = new_key
+                        print(f"Line {line_number}: Invalid metadata key '{key}'. Suggestion: use one of {valid_keys}.")
 
                     if key == 'priority' and not re.match(r'^[A-Z]$', value):
-                        new_value = correct_priority(value)
-                        content = re.sub(rf'\(priority:{re.escape(value)}\)', f'(priority:{new_value})', content)
+                        print(f"Line {line_number}: Invalid priority '{value}'. Suggestion: use a single uppercase letter (A-Z).")
                     if key == 'due':
                         try:
                             datetime.datetime.strptime(value, '%Y-%m-%d')
                         except ValueError:
-                            new_value = correct_due_date(value)
-                            content = re.sub(rf'\(due:{re.escape(value)}\)', f'(due:{new_value})', content)
+                            print(f"Line {line_number}: Invalid due date '{value}'. Suggestion: use format YYYY-MM-DD.")
                     if key == 'progress' and not re.match(r'^\d{1,3}%$', value):
-                        new_value = correct_progress(value)
-                        content = re.sub(rf'\(progress:{re.escape(value)}\)', f'(progress:{new_value})', content)
-
-                corrected_line = f"{indent}- [{completed}] {content}\n"
-                corrected_lines.append(corrected_line)
-            else:
-                corrected_lines.append(line)
+                        print(f"Line {line_number}: Invalid progress '{value}'. Suggestion: use a percentage between 0% and 100%.")
         else:
-            print(f"Line {line_number} does not match task, note, or area format: {line.strip()}")
-            action = input("Type 'delete' to remove this line, 'keep' to keep as-is, or enter corrected line: ")
-            if action == 'delete':
-                continue
-            elif action == 'keep':
-                corrected_lines.append(line)
-            else:
-                corrected_lines.append(f"{action}\n")
-
-    with open(file_path, 'w') as file:
-        file.writelines(corrected_lines)
-
-    print("Syntax checking and corrections completed.")
+            print(f"Line {line_number}: Does not match task, note, or area format. Suggestion: Ensure line starts with '-', '[ ]' or '[x]', or is properly indented as a note.")
 
 if __name__ == '__main__':
-    check_and_correct_syntax('tasks.txt')
+    check_syntax('tasks.txt')
