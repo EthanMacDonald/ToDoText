@@ -3,50 +3,79 @@
 import re
 import datetime
 
-# Syntax checking function
-def check_syntax(file_path):
+# Helper functions for corrections
+def correct_priority(value):
+    corrected = input(f"Priority '{value}' invalid. Enter correct priority (A-Z): ")
+    return corrected if re.match(r'^[A-Z]$', corrected) else value
+
+def correct_due_date(value):
+    corrected = input(f"Due date '{value}' invalid. Enter correct date (YYYY-MM-DD): ")
+    try:
+        datetime.datetime.strptime(corrected, '%Y-%m-%d')
+        return corrected
+    except ValueError:
+        return value
+
+def correct_progress(value):
+    corrected = input(f"Progress '{value}' invalid. Enter correct progress (0-100%): ")
+    return corrected if re.match(r'^\d{1,3}%$', corrected) else value
+
+# Syntax checking function with correction options
+def check_and_correct_syntax(file_path):
     errors = []
-    current_area = None
+    corrected_lines = []
     line_number = 0
 
     with open(file_path, 'r') as file:
-        for line in file:
-            line_number += 1
-            stripped = line.rstrip()
-            if not stripped:
-                continue
+        lines = file.readlines()
 
-            area_match = re.match(r'^(\S.+):$', stripped)
-            task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
+    for line in lines:
+        line_number += 1
+        stripped = line.rstrip()
+        if not stripped:
+            corrected_lines.append(line)
+            continue
 
-            if area_match:
-                current_area = area_match.group(1)
-                continue
+        area_match = re.match(r'^(\S.+):$', stripped)
+        task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
 
+        if area_match or task_match:
             if task_match:
                 indent, completed, content = task_match.groups()
+                meta_matches = re.findall(r'\((\w+):(.*?)\)', content)
 
-                # Check for malformed metadata
-                for meta in re.findall(r'\((\w+):(.*?)\)', content):
-                    key, value = meta
+                for key, value in meta_matches:
                     if key == 'priority' and not re.match(r'^[A-Z]$', value):
-                        errors.append((line_number, f"Invalid priority format: {value}"))
+                        new_value = correct_priority(value)
+                        content = content.replace(f'(priority:{value})', f'(priority:{new_value})')
                     if key == 'due':
                         try:
                             datetime.datetime.strptime(value, '%Y-%m-%d')
                         except ValueError:
-                            errors.append((line_number, f"Invalid date format for due date: {value}"))
+                            new_value = correct_due_date(value)
+                            content = content.replace(f'(due:{value})', f'(due:{new_value})')
                     if key == 'progress' and not re.match(r'^\d{1,3}%$', value):
-                        errors.append((line_number, f"Invalid progress format: {value}"))
-            else:
-                errors.append((line_number, "Line does not match task or area format"))
+                        new_value = correct_progress(value)
+                        content = content.replace(f'(progress:{value})', f'(progress:{new_value})')
 
-    if errors:
-        print("Syntax errors found:")
-        for line_num, error in errors:
-            print(f"Line {line_num}: {error}")
-    else:
-        print("No syntax errors found.")
+                corrected_line = f"{indent}- [{completed}] {content}\n"
+                corrected_lines.append(corrected_line)
+            else:
+                corrected_lines.append(line)
+        else:
+            print(f"Line {line_number} does not match task or area format: {line.strip()}")
+            action = input("Type 'delete' to remove this line, 'keep' to keep as-is, or enter corrected line: ")
+            if action == 'delete':
+                continue
+            elif action == 'keep':
+                corrected_lines.append(line)
+            else:
+                corrected_lines.append(f"{action}\n")
+
+    with open(file_path, 'w') as file:
+        file.writelines(corrected_lines)
+
+    print("Syntax checking and corrections completed.")
 
 if __name__ == '__main__':
-    check_syntax('tasks.txt')
+    check_and_correct_syntax('tasks.txt')
