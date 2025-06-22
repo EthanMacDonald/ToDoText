@@ -42,21 +42,22 @@ def check_and_correct_syntax(file_path):
         if area_match or task_match or note_match:
             if task_match:
                 indent, completed, content = task_match.groups()
-                meta_matches = re.findall(r'\((\w+):(.*?)\)', content)
+                meta_matches = re.findall(r'\((\w+):([^\s\)]+)\)', content)
 
                 for key, value in meta_matches:
+                    value = value.strip()
                     if key == 'priority' and not re.match(r'^[A-Z]$', value):
                         new_value = correct_priority(value)
-                        content = content.replace(f'(priority:{value})', f'(priority:{new_value})')
+                        content = re.sub(rf'\(priority:{re.escape(value)}\)', f'(priority:{new_value})', content)
                     if key == 'due':
                         try:
                             datetime.datetime.strptime(value, '%Y-%m-%d')
                         except ValueError:
                             new_value = correct_due_date(value)
-                            content = content.replace(f'(due:{value})', f'(due:{new_value})')
+                            content = re.sub(rf'\(due:{re.escape(value)}\)', f'(due:{new_value})', content)
                     if key == 'progress' and not re.match(r'^\d{1,3}%$', value):
                         new_value = correct_progress(value)
-                        content = content.replace(f'(progress:{value})', f'(progress:{new_value})')
+                        content = re.sub(rf'\(progress:{re.escape(value)}\)', f'(progress:{new_value})', content)
 
                 corrected_line = f"{indent}- [{completed}] {content}\n"
                 corrected_lines.append(corrected_line)
