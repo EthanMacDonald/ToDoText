@@ -1,0 +1,63 @@
+Work:
+    - [ ] Finish project Alpha documentation (priority:A due:2025-06-25 progress:60%) +Documentation @Office
+        - [ ] Complete introduction section
+        - [x] Write usage examples (done:2025-06-21)
+        - [ ] Add API reference details (progress:40%)
+    - [ ] Schedule team retrospective meeting (due:2025-06-28) @Meeting
+        - [ ] Confirm availability with team members @Email
+        - [ ] Book conference room @Office
+    - [x] Review quarterly sales figures (done:2025-06-20) +Finance
+        - [x] Update financial dashboard
+        - [x] Email summary to management
+
+Personal:
+    - [ ] Plan annual vacation (due:2025-07-15)
+        - [ ] Book flights (priority:B)
+        - [ ] Research hotels @Online
+        - [ ] Reserve rental car
+        - [ ] Create packing list
+    - [x] Complete marathon registration (done:2025-06-18)
+    - [ ] Read book "Deep Work" (progress:25%) @Reading
+
+Home Maintenance:
+    - [ ] Organize garage (priority:C)
+        Check for storage solutions at local store.
+    - [ ] Paint bedroom walls (due:2025-07-30)
+        - [ ] Select paint colors
+        - [ ] Purchase painting supplies
+        - [ ] Schedule painting weekend
+
+Health:
+    - [ ] Schedule dentist appointment (rec:yearly due:2025-07-01)
+    - [x] Renew gym membership (done:2025-06-19)
+    - [ ] Weekly meal prep (rec:weekly)
+        - [ ] Create grocery list
+        - [ ] Shop ingredients
+        - [ ] Cook meals for the week
+
+Learning:
+    - [ ] Complete Python automation course (due:2025-08-15 progress:45%)
+        - [ ] Finish Module 4 exercises
+        - [ ] Watch Module 5 lectures
+        - [ ] Submit final project proposal
+    - [ ] Enroll in data visualization workshop
+
+Finances:
+    - [ ] Update monthly budget spreadsheet (rec:monthly)
+    - [x] Pay electricity bill (done:2025-06-16)
+    - [ ] Review retirement account investments (due:2025-07-05)
+
+Social:
+    - [ ] Host dinner party (due:2025-07-10)
+        - [ ] Invite friends
+        - [ ] Plan menu
+        - [ ] Purchase groceries
+        - [ ] Decorate dining area
+    - [ ] RSVP to friend's wedding invitation (due:2025-07-01)
+
+Miscellaneous:
+    - [ ] Clean email inbox (priority:B)
+    - [ ] Backup laptop files (rec:monthly)
+    - [ ] Sort through old photos
+    - [x] Donate unused clothes (done:2025-06-17)
+    
