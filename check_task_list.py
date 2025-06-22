@@ -20,10 +20,16 @@ def correct_progress(value):
     corrected = input(f"Progress '{value}' invalid. Enter correct progress (0-100%): ")
     return corrected if re.match(r'^\d{1,3}%$', corrected) else value
 
+def correct_metadata_key(key):
+    corrected = input(f"Metadata key '{key}' is invalid. Enter correct key (priority, due, progress, rec, done): ")
+    return corrected if corrected in ['priority', 'due', 'progress', 'rec', 'done'] else key
+
 # Syntax checking function with correction options and note handling
 def check_and_correct_syntax(file_path):
     corrected_lines = []
     line_number = 0
+
+    valid_keys = ['priority', 'due', 'progress', 'rec', 'done']
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -42,10 +48,15 @@ def check_and_correct_syntax(file_path):
         if area_match or task_match or note_match:
             if task_match:
                 indent, completed, content = task_match.groups()
-                meta_matches = re.findall(r'\((\w+):([^\s\)]+)\)', content)
+                meta_matches = re.findall(r'\(([^:]+):([^\s\)]+)\)', content)
 
                 for key, value in meta_matches:
-                    value = value.strip()
+                    key, value = key.strip(), value.strip()
+                    if key not in valid_keys:
+                        new_key = correct_metadata_key(key)
+                        content = re.sub(rf'\({re.escape(key)}:{re.escape(value)}\)', f'({new_key}:{value})', content)
+                        key = new_key
+
                     if key == 'priority' and not re.match(r'^[A-Z]$', value):
                         new_value = correct_priority(value)
                         content = re.sub(rf'\(priority:{re.escape(value)}\)', f'(priority:{new_value})', content)
