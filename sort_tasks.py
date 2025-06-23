@@ -2,9 +2,6 @@ import re
 import os
 import datetime
 
-# Define custom ordering for areas (priority order)
-AREA_ORDER_KEY = ['Work', 'Personal', 'Health', 'Finances']
-
 # Parsing tasks
 def parse_tasks(file_path):
     tasks = []
@@ -28,6 +25,8 @@ def parse_tasks(file_path):
                 indent, completed, content = task_match.groups()
                 priority_match = re.search(r'\(priority:(\w+)\)', content)
                 due_date_match = re.search(r'\(due:(\d{4}-\d{2}-\d{2})\)', content)
+                project_match = re.search(r'\+(\w+)', content)
+                context_match = re.search(r'@(\w+)', content)
 
                 task = {
                     'type': 'task',
@@ -36,6 +35,8 @@ def parse_tasks(file_path):
                     'content': content,
                     'priority': priority_match.group(1) if priority_match else None,
                     'due': datetime.datetime.strptime(due_date_match.group(1), '%Y-%m-%d').date() if due_date_match else None,
+                    'project': project_match.group(1) if project_match else 'NoProject',
+                    'context': context_match.group(1) if context_match else 'NoContext',
                     'indent': indent,
                     'subtasks': [],
                     'notes': []
@@ -53,58 +54,61 @@ def parse_tasks(file_path):
 
     return tasks
 
-# Sorting tasks by due date, keeping task groups together
-def sort_by_due(tasks):
-    task_groups = []
-    current_group = None
-
+# Helper sorting functions
+def sort_by_key(tasks, primary_key, secondary_key):
+    groups = {}
     for task in tasks:
         if task['type'] == 'task' and len(task['indent']) == 4:
-            current_group = task
-            task_groups.append(current_group)
+            key = task.get(primary_key)
+            groups.setdefault(key, []).append(task)
 
-    for group in task_groups:
-        group['earliest_due'] = group['due'] or datetime.date.max
-        for subtask in group['subtasks']:
-            if subtask['due'] and subtask['due'] < group['earliest_due']:
-                group['earliest_due'] = subtask['due']
-
-        group['subtasks'] = sorted(group['subtasks'], key=lambda x: x['due'] or datetime.date.max)
-
-    task_groups.sort(key=lambda x: x['earliest_due'])
+    priority_order = {'A': 1, 'B': 2, 'C': 3, None: 99}
 
     sorted_tasks = []
-    for group in task_groups:
-        sorted_tasks.append(group)
-        sorted_tasks.extend(group['notes'])
-        sorted_tasks.extend(group['subtasks'])
+    for key, group_tasks in sorted(groups.items()):
+        for task in group_tasks:
+            if secondary_key == 'due':
+                task['subtasks'] = sorted(task['subtasks'], key=lambda x: x.get('due') or datetime.date.max)
+                task['earliest'] = min([task.get('due') or datetime.date.max] + [st.get('due') or datetime.date.max for st in task['subtasks']])
+            elif secondary_key == 'priority':
+                task['subtasks'] = sorted(task['subtasks'], key=lambda x: priority_order.get(x.get('priority')))
+                task['highest_priority'] = min([priority_order.get(task.get('priority'))] + [priority_order.get(st.get('priority')) for st in task['subtasks']])
+
+        if secondary_key == 'due':
+            group_tasks.sort(key=lambda x: x['earliest'])
+        elif secondary_key == 'priority':
+            group_tasks.sort(key=lambda x: x['highest_priority'])
+
+        sorted_tasks.extend(group_tasks)
 
     return sorted_tasks
 
 # Write sorted tasks to files
-def write_sorted_tasks(tasks, key):
+def write_sorted_tasks(tasks, primary_key, secondary_key):
     os.makedirs('outputs', exist_ok=True)
 
-    if key == 'due':
-        sorted_tasks = sort_by_due(tasks)
-    else:
-        sorted_tasks = tasks
+    sorted_tasks = sort_by_key(tasks, primary_key, secondary_key)
 
-    filename = f'outputs/sorted_by_{key}.txt'
+    filename = f'outputs/sorted_by_{primary_key}_then_{secondary_key}.txt'
 
     with open(filename, 'w') as file:
         for task in sorted_tasks:
-            if task['type'] == 'area':
-                file.write(f"{task['content']}\n")
-            elif task['type'] == 'task':
-                status = '[x]' if task['completed'] else '[ ]'
-                area_metadata = f" +{task['area']}"
-                file.write(f"{task['indent']}- {status} {task['content']}{area_metadata}\n")
-            elif task['type'] == 'note':
-                file.write(f"{task['indent']}{task['content']}\n")
+            status = '[x]' if task['completed'] else '[ ]'
+            metadata = f" +{task['project']} @{task['context']}"
+            file.write(f"{task['indent']}- {status} {task['content']}{metadata}\n")
+            for note in task['notes']:
+                file.write(f"{note['indent']}{note['content']}\n")
+            for subtask in task['subtasks']:
+                sub_status = '[x]' if subtask['completed'] else '[ ]'
+                sub_metadata = f" +{subtask['project']} @{subtask['context']}"
+                file.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_metadata}\n")
 
 if __name__ == '__main__':
     tasks = parse_tasks('tasks.txt')
-    write_sorted_tasks(tasks, 'due')
+
+    write_sorted_tasks(tasks, 'project', 'due')
+    write_sorted_tasks(tasks, 'project', 'priority')
+    write_sorted_tasks(tasks, 'context', 'due')
+    write_sorted_tasks(tasks, 'context', 'priority')
 
     print("Tasks sorted and saved successfully.")
