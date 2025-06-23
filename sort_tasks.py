@@ -66,6 +66,9 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
 
     priority_order = {'A': 1, 'B': 2, 'C': 3, None: 99}
 
+    def sorting_fn(t):
+        return priority_order.get(t.get('priority'), 99)
+
     grouped_tasks = {}
     for task in tasks:
         if task['type'] == 'task':
@@ -75,6 +78,22 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
     ordered_keys = AREA_ORDER_KEY + sorted(set(grouped_tasks.keys()) - set(AREA_ORDER_KEY), key=lambda x: str(x))
 
     with open(filename, 'w') as f:
+        if sort_key == 'due':
+            done_tasks = sorted([t for tl in grouped_tasks.values() for t in tl if t['completed']], key=lambda x: x['done_date'] or datetime.date.max)
+            if done_tasks:
+                f.write("Done:\n")
+                for task in done_tasks:
+                    status = '[x]'
+                    metadata = f" +{task['project']} @{task['context']} +{task['area']}"
+                    content = re.sub(r'\[.*?\]\s*', '', task['content'])
+                    f.write(f"{task['indent']}- {status} {content}{metadata}\n")
+                    for note in task.get('notes', []):
+                        f.write(f"{note['indent']}{note['content']}\n")
+                    for subtask in task['subtasks']:
+                        sub_status = '[x]' if subtask['completed'] else '[ ]'
+                        f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}\n")
+                f.write("\n")
+
         for key in ordered_keys:
             if key in grouped_tasks:
                 f.write(f"{key}:\n")
@@ -103,7 +122,8 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                             sub_status = '[x]' if subtask['completed'] else '[ ]'
                             f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}\n")
                 else:
-                    for task in tasks_to_sort:
+                    sorted_area_tasks = sorted(tasks_to_sort, key=sorting_fn)
+                    for task in sorted_area_tasks:
                         status = '[x]' if task['completed'] else '[ ]'
                         metadata = f" +{task['project']} @{task['context']} +{task['area']}" if sort_key != 'area' else f" +{task['project']} @{task['context']}"
                         content = re.sub(r'\[.*?\]\s*', '', task['content'])
