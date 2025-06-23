@@ -58,70 +58,38 @@ def parse_tasks(file_path):
     return tasks
 
 
-def sort_by_due(tasks):
-    task_groups = []
-
-    for task in tasks:
-        if task['type'] == 'task' and len(task['indent']) <= 4:
-            earliest_due = task['due'] or datetime.date.max
-            for subtask in task['subtasks']:
-                sub_due = subtask['due'] or datetime.date.max
-                if sub_due < earliest_due:
-                    earliest_due = sub_due
-            task['earliest_due'] = earliest_due
-            task['subtasks'] = sorted(task['subtasks'], key=lambda x: x['due'] or datetime.date.max)
-            task_groups.append(task)
-
-    return sorted(task_groups, key=lambda x: x['earliest_due'])
-
-
 def sort_and_write(tasks, sort_key, secondary_key=None):
     os.makedirs('outputs', exist_ok=True)
     filename = f'outputs/sorted_by_{sort_key}' + (f'_then_{secondary_key}' if secondary_key else '') + '.txt'
 
     priority_order = {'A': 1, 'B': 2, 'C': 3, None: 99}
 
-    if sort_key == 'due' or secondary_key == 'due':
-        sorted_tasks = sort_by_due(tasks)
-    else:
-        def sorting_fn(t):
-            if secondary_key == 'priority':
-                return priority_order.get(t.get('priority'), 99)
-            return 0
+    def sorting_fn(t):
+        if secondary_key == 'priority':
+            return priority_order.get(t.get('priority'), 99)
+        return 0
 
-        if sort_key in ['area', 'project', 'context']:
-            grouped = {}
-            for t in tasks:
-                if t['type'] == 'task':
-                    key = t.get(sort_key, 'NoKey')
-                    grouped.setdefault(key, []).append(t)
-
-            sorted_tasks = []
-            for group_key in (AREA_ORDER_KEY if sort_key == 'area' else sorted(grouped.keys())):
-                items = grouped.get(group_key, [])
-                items.sort(key=sorting_fn)
-                sorted_tasks.extend(items + [{'type': 'spacer'}])
-
-            sorted_tasks = sorted_tasks[:-1]  # Remove last spacer
-
-        elif sort_key == 'priority':
-            sorted_tasks = sorted([t for t in tasks if t['type'] == 'task'], key=sorting_fn)
+    grouped_tasks = {}
+    for task in tasks:
+        if task['type'] == 'task':
+            key = task.get(sort_key, 'NoKey') or 'NoKey'
+            grouped_tasks.setdefault(key, []).append(task)
 
     with open(filename, 'w') as f:
-        for task in sorted_tasks:
-            if task['type'] == 'area':
-                continue  # Skip writing area headers directly
-            elif task['type'] == 'task':
-                status = '[x]' if task['completed'] else '[ ]'
-                metadata = f" +{task['project']} @{task['context']}"
-                area_metadata = f" +{task['area']}" if sort_key == 'area' else ''
-                f.write(f"{task['indent']}- {status} {task['content']}{metadata}{area_metadata}\n")
-                for note in task.get('notes', []):
-                    f.write(f"{note['indent']}{note['content']}\n")
-                for subtask in task['subtasks']:
-                    sub_status = '[x]' if subtask['completed'] else '[ ]'
-                    f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}\n")
-            elif task['type'] == 'spacer':
+        for area in AREA_ORDER_KEY:
+            if area in grouped_tasks:
+                f.write(f"{area}:\n")
+                sorted_area_tasks = sorted(grouped_tasks[area], key=sorting_fn)
+                for task in sorted_area_tasks:
+                    status = '[x]' if task['completed'] else '[ ]'
+                    metadata = f" +{task['project']} @{task['context']}"
+                    content = re.sub(r'\[.*?\]\s*', '', task['content'])  # Remove area tags from content
+                    f.write(f"{task['indent']}- {status} {content}{metadata}\n")
+                    for note in task.get('notes', []):
+                        f.write(f"{note['indent']}{note['content']}\n")
+                    for subtask in task['subtasks']:
+                        sub_status = '[x]' if subtask['completed'] else '[ ]'
+                        f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}\n")
                 f.write("\n")
 
 
