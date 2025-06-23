@@ -75,8 +75,10 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
             key = task.get(sort_key, 'NoKey') or 'NoKey'
             grouped_tasks.setdefault(key, []).append(task)
 
+    ordered_areas = AREA_ORDER_KEY + sorted(set(grouped_tasks.keys()) - set(AREA_ORDER_KEY), key=lambda x: str(x))
+
     with open(filename, 'w') as f:
-        for area in AREA_ORDER_KEY:
+        for area in ordered_areas:
             if area in grouped_tasks:
                 f.write(f"{area}:\n")
                 sorted_area_tasks = sorted(grouped_tasks[area], key=sorting_fn)
