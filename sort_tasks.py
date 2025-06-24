@@ -106,7 +106,7 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
             meta.append(f"rec:{task['rec']}")
         return f" ({' '.join(meta)})" if meta else ''
 
-    def build_tags_str(task):
+    def build_tags_str(task, primary_task=False):
         tags = []
         # Only unique project and context tags
         if task['project'] != 'NoProject':
@@ -119,7 +119,8 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
         for c in task.get('extra_contexts', []):
             if c != task['context']:
                 tags.append(f"@{c}")
-        if sort_key != 'area' and 'area' in task and task['area']:
+        # Only add area tag for primary tasks (not subtasks) and not when sorting by area
+        if primary_task and sort_key != 'area' and 'area' in task and task['area']:
             tags.append(f"+{task['area']}")
         return ' ' + ' '.join(dict.fromkeys(tags)) if tags else ''
 
@@ -139,7 +140,7 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                 for task in done_tasks:
                     status = '[x]'
                     meta_str = build_metadata_str(task)
-                    tags_str = build_tags_str(task)
+                    tags_str = build_tags_str(task, primary_task=True)
                     content = task['content']
                     # Sort subtasks by completion, due date, then content
                     subtasks_sorted = sorted(task['subtasks'], key=lambda x: (not x['completed'], x.get('due') is None, x.get('due') or datetime.date.max, x['content']))
@@ -149,7 +150,7 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                     for subtask in subtasks_sorted:
                         sub_status = '[x]' if subtask['completed'] else '[ ]'
                         sub_meta_str = build_metadata_str(subtask)
-                        sub_tags_str = build_tags_str(subtask)
+                        sub_tags_str = build_tags_str(subtask, primary_task=False)
                         f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
                 f.write("\n")
 
@@ -173,7 +174,7 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                             f.write(f"  {group_str}:\n")
                         status = '[x]' if task['completed'] else '[ ]'
                         meta_str = build_metadata_str(task)
-                        tags_str = build_tags_str(task)
+                        tags_str = build_tags_str(task, primary_task=True)
                         content = task['content']
                         # Sort subtasks for secondary sort
                         if secondary_key == 'due':
@@ -188,14 +189,14 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                         for subtask in subtasks_sorted:
                             sub_status = '[x]' if subtask['completed'] else '[ ]'
                             sub_meta_str = build_metadata_str(subtask)
-                            sub_tags_str = build_tags_str(subtask)
+                            sub_tags_str = build_tags_str(subtask, primary_task=False)
                             f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
                 else:
                     sorted_area_tasks = sorted(tasks_to_sort, key=sorting_fn)
                     for task in sorted_area_tasks:
                         status = '[x]' if task['completed'] else '[ ]'
                         meta_str = build_metadata_str(task)
-                        tags_str = build_tags_str(task)
+                        tags_str = build_tags_str(task, primary_task=True)
                         content = task['content']
                         # Sort subtasks for area/priority sorts
                         if secondary_key == 'priority':
@@ -208,7 +209,7 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                         for subtask in subtasks_sorted:
                             sub_status = '[x]' if subtask['completed'] else '[ ]'
                             sub_meta_str = build_metadata_str(subtask)
-                            sub_tags_str = build_tags_str(subtask)
+                            sub_tags_str = build_tags_str(subtask, primary_task=False)
                             f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
                 f.write("\n")
 
