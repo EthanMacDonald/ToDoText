@@ -146,6 +146,15 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                         f.write(f"{task['indent']}- {status} {content}{metadata}\n")
                         for note in task.get('notes', []):
                             f.write(f"{note['indent']}{note['content']}\n")
+                        # Sort subtasks using the same sorting function
+                        if secondary_key in ['priority', 'due']:
+                            if secondary_key == 'priority':
+                                subtask_sort = lambda x: (priority_order.get(x.get('priority'), 99), x['content'])
+                            else:
+                                subtask_sort = lambda x: (not x['completed'], x.get('due') is None, x.get('due') or datetime.date.max)
+                            task['subtasks'] = sorted(task['subtasks'], key=subtask_sort)
+                        else:
+                            task['subtasks'] = sorted(task['subtasks'], key=sorting_fn)
                         for subtask in task['subtasks']:
                             sub_status = '[x]' if subtask['completed'] else '[ ]'
                             f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}\n")
