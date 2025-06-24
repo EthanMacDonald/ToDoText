@@ -1,54 +1,57 @@
 import datetime
+import re
 from collections import defaultdict
 
 def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt'):
-    # Read all tasks
+    # Parse tasks using regex, similar to sort_tasks.py
     with open(tasks_file, 'r') as f:
         lines = f.readlines()
 
-    # Parse and group by area, and track parent tasks for completed subtasks
     area = None
-    parent_task = None
     completed_by_area = defaultdict(list)
-    completed_parents = defaultdict(set)
-    incomplete = []
-    for idx, line in enumerate(lines):
-        stripped = line.lstrip()
-        indent = len(line) - len(stripped)
-        # Detect area/project
-        if indent == 0 and stripped.endswith(':' ):
-            area = stripped.strip()
-            parent_task = None
-            incomplete.append(line)
-            continue
-        # Detect parent task (1 indent level)
-        if indent == 4 and stripped.startswith('- ['):
-            parent_task = (area, line)
-        # Completed subtask (2+ indent)
-        if indent > 4 and stripped.startswith('- [x] '):
-            if parent_task:
-                completed_by_area[area].append(parent_task[1])
-                completed_parents[area].add(parent_task[1])
-            completed_by_area[area].append(line)
-        # Completed top-level task
-        elif indent == 4 and stripped.startswith('- [x] '):
-            completed_by_area[area].append(line)
-        # Incomplete or not a task
-        elif not (stripped.startswith('- [x] ')):
-            incomplete.append(line)
+    output_lines = []
+    parent_task = None
+    parent_task_line = None
+    parent_task_indent = None
+    last_area_line = None
 
-    # Remove duplicate parent tasks in archive
-    for area in completed_by_area:
-        seen = set()
-        new_list = []
-        for l in completed_by_area[area]:
-            if l in completed_parents[area]:
-                if l not in seen:
-                    new_list.append(l)
-                    seen.add(l)
+    for idx, line in enumerate(lines):
+        stripped = line.rstrip('\n')
+        area_match = re.match(r'^(\S.+):$', stripped)
+        task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
+        # Area header
+        if area_match:
+            area = area_match.group(1)
+            last_area_line = line
+            output_lines.append(line)
+            parent_task = None
+            parent_task_line = None
+            parent_task_indent = None
+            continue
+        # Task or subtask
+        if task_match:
+            indent, completed, content = task_match.groups()
+            is_completed = completed == 'x'
+            if len(indent) == 4:
+                parent_task = line
+                parent_task_line = line
+                parent_task_indent = indent
+                if is_completed:
+                    completed_by_area[area].append(line)
+                else:
+                    output_lines.append(line)
+            elif len(indent) > 4:
+                if is_completed:
+                    # Add parent if not already present
+                    if parent_task_line and (not completed_by_area[area] or completed_by_area[area][-1] != parent_task_line):
+                        completed_by_area[area].append(parent_task_line)
+                    completed_by_area[area].append(line)
+                else:
+                    output_lines.append(line)
             else:
-                new_list.append(l)
-        completed_by_area[area] = new_list
+                output_lines.append(line)
+        else:
+            output_lines.append(line)
 
     # If nothing to archive
     if not any(completed_by_area.values()):
@@ -59,10 +62,11 @@ def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt'):
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     archive_entry = [f'Archived on {now}\n']
     for area in sorted(completed_by_area.keys()):
-        if area:
-            archive_entry.append(f'{area}\n')
-        archive_entry.extend(completed_by_area[area])
-        archive_entry.append('\n')
+        if area and completed_by_area[area]:
+            archive_entry.append(f'{area}:\n')
+            for task in completed_by_area[area]:
+                archive_entry.append(task if task.endswith('\n') else task + '\n')
+            archive_entry.append('\n')
 
     # Prepend to archive file (write new at top)
     try:
@@ -74,9 +78,9 @@ def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt'):
         f.writelines(archive_entry)
         f.write(old_content)
 
-    # Write back incomplete tasks to tasks.txt
+    # Write back incomplete tasks to tasks.txt (including area headers)
     with open(tasks_file, 'w') as f:
-        f.writelines(incomplete)
+        f.writelines(output_lines)
 
     print('Archived completed tasks by area.')
 
