@@ -2,7 +2,9 @@ import datetime
 import re
 from collections import defaultdict
 
-def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt'):
+area_as_suffix = True  # Set this to True for suffix mode, False for header mode
+
+def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt', area_as_suffix=True):
     # Parse tasks using regex, similar to sort_tasks.py
     with open(tasks_file, 'r') as f:
         lines = f.readlines()
@@ -58,15 +60,28 @@ def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt'):
         print('No completed tasks to archive.')
         return
 
-    # Prepare archive entry with timestamp, sorted by area
+    # Prepare archive entry with timestamp
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     archive_entry = [f'Archived on {now}\n']
-    for area in sorted(completed_by_area.keys()):
-        if area and completed_by_area[area]:
-            archive_entry.append(f'{area}:\n')
-            for task in completed_by_area[area]:
-                archive_entry.append(task if task.endswith('\n') else task + '\n')
-            archive_entry.append('\n')
+    if area_as_suffix:
+        # Flat list: do not group by area, just output each completed task with +Area suffix
+        for area in sorted(completed_by_area.keys()):
+            if area and completed_by_area[area]:
+                for task in completed_by_area[area]:
+                    if task.strip():
+                        # Remove area header and prepend only the task line with +Area
+                        task_line = task.rstrip('\n')
+                        # Remove any trailing colon or area header from the line
+                        if re.match(r'^\s*- \[x\]', task_line):
+                            archive_entry.append(f'{task_line} +{area}\n')
+        # No blank lines or area headers
+    else:
+        for area in sorted(completed_by_area.keys()):
+            if area and completed_by_area[area]:
+                archive_entry.append(f'{area}:\n')
+                for task in completed_by_area[area]:
+                    archive_entry.append(task if task.endswith('\n') else task + '\n')
+                archive_entry.append('\n')
 
     # Prepend to archive file (write new at top)
     try:
@@ -85,4 +100,4 @@ def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt'):
     print('Archived completed tasks by area.')
 
 if __name__ == '__main__':
-    archive_completed_tasks()
+    archive_completed_tasks(area_as_suffix=area_as_suffix)
