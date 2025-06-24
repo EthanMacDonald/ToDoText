@@ -48,6 +48,20 @@ README:
       Example: |
         - [ ] Prepare quarterly report (priority:A due:2025-07-15 progress:30%)
 
+      Multiple metadata tags can be included within a single set of parentheses, separated by spaces. Each tag should be in the format key:value.
+      
+      Examples:
+        - [ ] Prepare quarterly report (priority:A due:2025-07-15 progress:30%)
+        - [x] Submit expense report (done:2025-06-20 priority:B)
+        - [ ] Plan event (priority:C due:2025-08-01 rec:monthly)
+      
+      Notes:
+        - All metadata tags must be inside one set of parentheses, e.g. (priority:A due:2025-07-15).
+        - Tags can appear in any order within the parentheses.
+        - The parser will extract all key:value pairs from the parentheses, so you can include as many as needed.
+        - If you include multiple sets of parentheses, only the first will be parsed for metadata.
+        - Avoid using spaces within values (e.g., use progress:30% not progress:30 %).
+
     Context and Project Tags
 
         Context tags (`@`) and project tags (`+`) enhance clarity and usability by clearly indicating the context or environment needed and categorizing tasks within their relevant projects.
