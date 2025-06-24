@@ -113,7 +113,15 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                             group_str = group.strftime('%Y-%m-%d') if isinstance(group, datetime.date) else group
                             f.write(f"  {group_str}:\n")
                         status = '[x]' if task['completed'] else '[ ]'
-                        metadata = f" +{task['project']} @{task['context']} +{task['area']}" if sort_key != 'area' else f" +{task['project']} @{task['context']}"
+                        # Build metadata string, omitting +NoProject and @NoContext
+                        metadata_parts = []
+                        if task['project'] != 'NoProject':
+                            metadata_parts.append(f"+{task['project']}")
+                        if task['context'] != 'NoContext':
+                            metadata_parts.append(f"@{task['context']}")
+                        if sort_key != 'area' and 'area' in task and task['area']:
+                            metadata_parts.append(f"+{task['area']}")
+                        metadata = ' ' + ' '.join(metadata_parts) if metadata_parts else ''
                         content = re.sub(r'\[.*?\]\s*', '', task['content'])
                         f.write(f"{task['indent']}- {status} {content}{metadata}\n")
                         for note in task.get('notes', []):
@@ -125,7 +133,15 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                     sorted_area_tasks = sorted(tasks_to_sort, key=sorting_fn)
                     for task in sorted_area_tasks:
                         status = '[x]' if task['completed'] else '[ ]'
-                        metadata = f" +{task['project']} @{task['context']} +{task['area']}" if sort_key != 'area' else f" +{task['project']} @{task['context']}"
+                        # Build metadata string, omitting +NoProject and @NoContext
+                        metadata_parts = []
+                        if task['project'] != 'NoProject':
+                            metadata_parts.append(f"+{task['project']}")
+                        if task['context'] != 'NoContext':
+                            metadata_parts.append(f"@{task['context']}")
+                        if sort_key != 'area' and 'area' in task and task['area']:
+                            metadata_parts.append(f"+{task['area']}")
+                        metadata = ' ' + ' '.join(metadata_parts) if metadata_parts else ''
                         content = re.sub(r'\[.*?\]\s*', '', task['content'])
                         f.write(f"{task['indent']}- {status} {content}{metadata}\n")
                         for note in task.get('notes', []):
