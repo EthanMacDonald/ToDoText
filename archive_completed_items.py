@@ -3,6 +3,7 @@ import re
 from collections import defaultdict
 
 area_as_suffix = True  # Set this to True for suffix mode, False for header mode
+AREA_ORDER_KEY = ['Work', 'Personal', 'Health', 'Finances']
 
 def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt', area_as_suffix=area_as_suffix):
     # Parse tasks using regex, similar to sort_tasks.py
@@ -85,15 +86,17 @@ def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt', 
                     archive_entry.append(f'{task_line}\n')
         archive_entry.append('\n')  # Add an empty line at the end
     else:
-        # fallback to area header grouping if needed
+        # Sort areas by AREA_ORDER_KEY, then alphabetically for others
         grouped = defaultdict(list)
         for task, area in completed_tasks:
             grouped[area].append(task)
-        for area in sorted(grouped.keys()):
-            archive_entry.append(f'{area}:\n')
-            for task in grouped[area]:
-                archive_entry.append(task if task.endswith('\n') else task + '\n')
-            archive_entry.append('\n')
+        ordered_areas = AREA_ORDER_KEY + sorted(set(grouped.keys()) - set(AREA_ORDER_KEY), key=lambda x: str(x))
+        for area in ordered_areas:
+            if area in grouped:
+                archive_entry.append(f'{area}:\n')
+                for task in grouped[area]:
+                    archive_entry.append(task if task.endswith('\n') else task + '\n')
+                archive_entry.append('\n')
 
     # Prepend to archive file (write new at top)
     try:
