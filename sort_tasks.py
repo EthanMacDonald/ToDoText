@@ -27,22 +27,45 @@ def parse_tasks(file_path):
                 tasks.append({'type': 'area', 'area': current_area, 'content': stripped})
             elif task_match:
                 indent, completed, content = task_match.groups()
-                priority_match = re.search(r'\(priority:(\w+)\)', content)
-                due_date_match = re.search(r'\(due:(\d{4}-\d{2}-\d{2})\)', content)
-                done_date_match = re.search(r'\(done:(\d{4}-\d{2}-\d{2})\)', content)
-                project_match = re.search(r'\+(\w+)', content)
-                context_match = re.search(r'@(\w+)', content)
+                # Extract metadata from all sets of parentheses
+                all_meta = re.findall(r'\(([^)]*)\)', content)
+                metadata = {}
+                for meta_str in all_meta:
+                    for pair in re.findall(r'(\w+:[^\s)]+)', meta_str):
+                        key, value = pair.split(':', 1)
+                        metadata[key] = value
+                # Remove all metadata parentheses from content for display
+                content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
+                # Parse recognized metadata
+                priority = metadata.get('priority')
+                due = metadata.get('due')
+                due = datetime.datetime.strptime(due, '%Y-%m-%d').date() if due else None
+                done_date = metadata.get('done')
+                done_date = datetime.datetime.strptime(done_date, '%Y-%m-%d').date() if done_date else None
+                progress = metadata.get('progress')
+                rec = metadata.get('rec')
+                # Extract all unique project and context tags from content
+                project_tags = list(dict.fromkeys(re.findall(r'\+(\w+)', content_no_meta)))
+                context_tags = list(dict.fromkeys(re.findall(r'@(\w+)', content_no_meta)))
+                project = project_tags[0] if project_tags else 'NoProject'
+                context = context_tags[0] if context_tags else 'NoContext'
+                extra_projects = project_tags[1:] if len(project_tags) > 1 else []
+                extra_contexts = context_tags[1:] if len(context_tags) > 1 else []
 
                 task = {
                     'type': 'task',
                     'area': current_area,
                     'completed': completed == 'x',
-                    'content': content,
-                    'priority': priority_match.group(1) if priority_match else None,
-                    'due': datetime.datetime.strptime(due_date_match.group(1), '%Y-%m-%d').date() if due_date_match else None,
-                    'done_date': datetime.datetime.strptime(done_date_match.group(1), '%Y-%m-%d').date() if done_date_match else None,
-                    'project': project_match.group(1) if project_match else 'NoProject',
-                    'context': context_match.group(1) if context_match else 'NoContext',
+                    'content': re.sub(r'([+@]\w+)', '', content_no_meta).strip(),
+                    'priority': priority,
+                    'due': due,
+                    'done_date': done_date,
+                    'progress': progress,
+                    'rec': rec,
+                    'project': project,
+                    'context': context,
+                    'extra_projects': extra_projects,
+                    'extra_contexts': extra_contexts,
                     'indent': indent,
                     'subtasks': [],
                     'notes': []
@@ -69,6 +92,37 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
     def sorting_fn(t):
         return priority_order.get(t.get('priority'), 99)
 
+    def build_metadata_str(task):
+        meta = []
+        if task.get('priority'):
+            meta.append(f"priority:{task['priority']}")
+        if task.get('due'):
+            meta.append(f"due:{task['due']}")
+        if task.get('done_date'):
+            meta.append(f"done:{task['done_date']}")
+        if task.get('progress'):
+            meta.append(f"progress:{task['progress']}")
+        if task.get('rec'):
+            meta.append(f"rec:{task['rec']}")
+        return f" ({' '.join(meta)})" if meta else ''
+
+    def build_tags_str(task):
+        tags = []
+        # Only unique project and context tags
+        if task['project'] != 'NoProject':
+            tags.append(f"+{task['project']}")
+        for p in task.get('extra_projects', []):
+            if p != task['project']:
+                tags.append(f"+{p}")
+        if task['context'] != 'NoContext':
+            tags.append(f"@{task['context']}")
+        for c in task.get('extra_contexts', []):
+            if c != task['context']:
+                tags.append(f"@{c}")
+        if sort_key != 'area' and 'area' in task and task['area']:
+            tags.append(f"+{task['area']}")
+        return ' ' + ' '.join(dict.fromkeys(tags)) if tags else ''
+
     grouped_tasks = {}
     for task in tasks:
         if task['type'] == 'task':
@@ -84,14 +138,19 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                 f.write("Done:\n")
                 for task in done_tasks:
                     status = '[x]'
-                    metadata = f" +{task['project']} @{task['context']} +{task['area']}"
-                    content = re.sub(r'\[.*?\]\s*', '', task['content'])
-                    f.write(f"{task['indent']}- {status} {content}{metadata}\n")
+                    meta_str = build_metadata_str(task)
+                    tags_str = build_tags_str(task)
+                    content = task['content']
+                    # Sort subtasks by completion, due date, then content
+                    subtasks_sorted = sorted(task['subtasks'], key=lambda x: (not x['completed'], x.get('due') is None, x.get('due') or datetime.date.max, x['content']))
+                    f.write(f"{task['indent']}- {status} {content}{meta_str}{tags_str}\n")
                     for note in task.get('notes', []):
                         f.write(f"{note['indent']}{note['content']}\n")
-                    for subtask in task['subtasks']:
+                    for subtask in subtasks_sorted:
                         sub_status = '[x]' if subtask['completed'] else '[ ]'
-                        f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}\n")
+                        sub_meta_str = build_metadata_str(subtask)
+                        sub_tags_str = build_tags_str(subtask)
+                        f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
                 f.write("\n")
 
         for key in ordered_keys:
@@ -113,51 +172,44 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                             group_str = group.strftime('%Y-%m-%d') if isinstance(group, datetime.date) else group
                             f.write(f"  {group_str}:\n")
                         status = '[x]' if task['completed'] else '[ ]'
-                        # Build metadata string, omitting +NoProject and @NoContext
-                        metadata_parts = []
-                        if task['project'] != 'NoProject':
-                            metadata_parts.append(f"+{task['project']}")
-                        if task['context'] != 'NoContext':
-                            metadata_parts.append(f"@{task['context']}")
-                        if sort_key != 'area' and 'area' in task and task['area']:
-                            metadata_parts.append(f"+{task['area']}")
-                        metadata = ' ' + ' '.join(metadata_parts) if metadata_parts else ''
-                        content = re.sub(r'\[.*?\]\s*', '', task['content'])
-                        f.write(f"{task['indent']}- {status} {content}{metadata}\n")
+                        meta_str = build_metadata_str(task)
+                        tags_str = build_tags_str(task)
+                        content = task['content']
+                        # Sort subtasks for secondary sort
+                        if secondary_key == 'due':
+                            subtasks_sorted = sorted(task['subtasks'], key=lambda x: (not x['completed'], x.get('due') is None, x.get('due') or datetime.date.max, x['content']))
+                        elif secondary_key == 'priority':
+                            subtasks_sorted = sorted(task['subtasks'], key=lambda x: (priority_order.get(x.get('priority'), 99), x['content']))
+                        else:
+                            subtasks_sorted = task['subtasks']
+                        f.write(f"{task['indent']}- {status} {content}{meta_str}{tags_str}\n")
                         for note in task.get('notes', []):
                             f.write(f"{note['indent']}{note['content']}\n")
-                        for subtask in task['subtasks']:
+                        for subtask in subtasks_sorted:
                             sub_status = '[x]' if subtask['completed'] else '[ ]'
-                            f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}\n")
+                            sub_meta_str = build_metadata_str(subtask)
+                            sub_tags_str = build_tags_str(subtask)
+                            f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
                 else:
                     sorted_area_tasks = sorted(tasks_to_sort, key=sorting_fn)
                     for task in sorted_area_tasks:
                         status = '[x]' if task['completed'] else '[ ]'
-                        # Build metadata string, omitting +NoProject and @NoContext
-                        metadata_parts = []
-                        if task['project'] != 'NoProject':
-                            metadata_parts.append(f"+{task['project']}")
-                        if task['context'] != 'NoContext':
-                            metadata_parts.append(f"@{task['context']}")
-                        if sort_key != 'area' and 'area' in task and task['area']:
-                            metadata_parts.append(f"+{task['area']}")
-                        metadata = ' ' + ' '.join(metadata_parts) if metadata_parts else ''
-                        content = re.sub(r'\[.*?\]\s*', '', task['content'])
-                        f.write(f"{task['indent']}- {status} {content}{metadata}\n")
+                        meta_str = build_metadata_str(task)
+                        tags_str = build_tags_str(task)
+                        content = task['content']
+                        # Sort subtasks for area/priority sorts
+                        if secondary_key == 'priority':
+                            subtasks_sorted = sorted(task['subtasks'], key=lambda x: (priority_order.get(x.get('priority'), 99), x['content']))
+                        else:
+                            subtasks_sorted = sorted(task['subtasks'], key=sorting_fn)
+                        f.write(f"{task['indent']}- {status} {content}{meta_str}{tags_str}\n")
                         for note in task.get('notes', []):
                             f.write(f"{note['indent']}{note['content']}\n")
-                        # Sort subtasks using the same sorting function
-                        if secondary_key in ['priority', 'due']:
-                            if secondary_key == 'priority':
-                                subtask_sort = lambda x: (priority_order.get(x.get('priority'), 99), x['content'])
-                            else:
-                                subtask_sort = lambda x: (not x['completed'], x.get('due') is None, x.get('due') or datetime.date.max)
-                            task['subtasks'] = sorted(task['subtasks'], key=subtask_sort)
-                        else:
-                            task['subtasks'] = sorted(task['subtasks'], key=sorting_fn)
-                        for subtask in task['subtasks']:
+                        for subtask in subtasks_sorted:
                             sub_status = '[x]' if subtask['completed'] else '[ ]'
-                            f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}\n")
+                            sub_meta_str = build_metadata_str(subtask)
+                            sub_tags_str = build_tags_str(subtask)
+                            f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
                 f.write("\n")
 
 
