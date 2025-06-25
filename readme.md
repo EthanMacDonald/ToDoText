@@ -41,26 +41,48 @@ README:
     
     Metadata Tags:
       Priority: "(priority:A|B|C...)"
-      Due Date: "(due:YYYY-MM-DD)"
-      Completion Date: "(done:YYYY-MM-DD)"
-      Progress: "(progress:X%)"
-      Recurrence: "(rec:daily|weekly|monthly)"
+      Frequency: "(freq:daily|weekly:Mon,Wed|monthly:15|monthly:3rd Tue|yearly:06-24|custom:14d)"
+      Last Done: "(lastdone:YYYY-MM-DD) (optional, for recurring tasks)"
       Example: |
-        - [ ] Prepare quarterly report (priority:A due:2025-07-15 progress:30%)
+        - [ ] Prepare quarterly report (priority:A)
+        - [ ] Pay rent (freq:monthly:1 lastdone:2025-06-01)
+        - [ ] Take medication (freq:daily lastdone:2025-06-24)
+        - [ ] Team meeting (freq:weekly:Mon,Thu lastdone:2025-06-23)
+        - [ ] Review goals (freq:custom:90d lastdone:2025-04-01)
+        - [ ] Team lunch (freq:monthly:3rd Tue lastdone:2025-06-17)
+        - [ ] Celebrate anniversary (freq:yearly:06-24 lastdone:2024-06-24)
 
       Multiple metadata tags can be included within a single set of parentheses, separated by spaces. Each tag should be in the format key:value.
       
+      Recurring Tasks:
+        - Use the `freq:` tag to specify recurrence:
+            - `daily` (every day)
+            - `weekly:Mon,Wed` (specific days of the week)
+            - `monthly:15` (specific day of the month)
+            - `monthly:3rd Tue` (nth weekday of the month)
+            - `yearly:06-24` (specific date each year)
+            - `custom:14d` (every 14 days)
+        - Optionally, use `lastdone:` to track the last completion date.
+        - When a recurring task is completed, update the `lastdone:` date to the completion date.
+        - Example:
+            - [ ] Backup files (freq:weekly:Fri lastdone:2025-06-20)
+            - [ ] Pay credit card bill (freq:monthly:5 lastdone:2025-06-05)
+            - [ ] Team lunch (freq:monthly:3rd Thu lastdone:2025-06-19)
+
       Examples:
-        - [ ] Prepare quarterly report (priority:A due:2025-07-15 progress:30%)
+        - [ ] Prepare quarterly report (priority:A)
         - [x] Submit expense report (done:2025-06-20 priority:B)
-        - [ ] Plan event (priority:C due:2025-08-01 rec:monthly)
-      
+        - [ ] Plan event (priority:C freq:monthly:1)
+        - [ ] Water plants (freq:daily lastdone:2025-06-24)
+        - [ ] Test smoke alarms (freq:yearly:06-24 lastdone:2024-06-24)
+        - [ ] Review goals (freq:custom:90d lastdone:2025-04-01)
+
       Notes:
-        - All metadata tags must be inside one set of parentheses, e.g. (priority:A due:2025-07-15).
+        - All metadata tags must be inside one set of parentheses, e.g. (priority:A freq:monthly:1).
         - Tags can appear in any order within the parentheses.
         - The parser will extract all key:value pairs from the parentheses, so you can include as many as needed.
         - If you include multiple sets of parentheses, only the first will be parsed for metadata.
-        - Avoid using spaces within values (e.g., use progress:30% not progress:30 %).
+        - Avoid using spaces within values (e.g., use freq:monthly:3rd Tue not freq:monthly:3rd  Tue).
 
     Context and Project Tags
 

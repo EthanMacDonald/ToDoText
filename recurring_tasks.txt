@@ -1,0 +1,31 @@
+# Recurring Tasks
+# This file contains only recurring tasks, using the same syntax as tasks.txt
+# Syntax:
+# freq:daily
+# freq:weekly:Mon,Wed,Fri
+# freq:monthly:15
+# freq:monthly:3rd Tue
+# freq:yearly:06-24
+# freq:custom:14d
+# Optionally add lastdone:YYYY-MM-DD to track last completion
+
+Work:
+    - [ ] Submit status report (freq:weekly:Fri)
+    - [ ] Backup project files (freq:monthly:1 lastdone:2025-06-01)
+    - [ ] Review annual compliance checklist (freq:yearly:12-31 lastdone:2024-12-31)
+    - [ ] Check server health (freq:daily lastdone:2025-06-24)
+    - [ ] Team lunch (freq:monthly:3rd Thu lastdone:2025-06-19)
+
+Personal:
+    - [ ] Take vitamins (freq:daily lastdone:2025-06-24)
+    - [ ] Call parents (freq:weekly:Sun lastdone:2025-06-22)
+    - [ ] Pay credit card bill (freq:monthly:5 lastdone:2025-06-05)
+    - [ ] Renew passport (freq:yearly:06-24 lastdone:2024-06-24)
+    - [ ] Review goals (freq:custom:90d lastdone:2025-04-01)
+
+Home Maintenance:
+    - [ ] Water plants (freq:daily lastdone:2025-06-24)
+    - [ ] Clean fridge (freq:weekly:Sat lastdone:2025-06-21)
+    - [ ] Change air filter (freq:monthly:24 lastdone:2025-05-24)
+    - [ ] Test smoke alarms (freq:yearly:06-24 lastdone:2024-06-24)
+    - [ ] Deep clean kitchen (freq:custom:60d lastdone:2025-04-01)
