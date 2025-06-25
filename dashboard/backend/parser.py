@@ -17,6 +17,8 @@ def parse_tasks() -> List[Dict[str, Any]]:
                 area = area_match.group(1)
             elif task_match:
                 indent, completed, content = task_match.groups()
+                # Debug: print parsed task info
+                print(f"Parsed task: area={area}, indent={len(indent)}, completed={completed}, content={content}")
                 task = {
                     'id': str(uuid.uuid4()),
                     'description': content,
@@ -28,6 +30,7 @@ def parse_tasks() -> List[Dict[str, Any]]:
                     'priority': extract_priority(content)
                 }
                 tasks.append(task)
+    print(f"Total tasks parsed: {len(tasks)}")
     return tasks
 
 def parse_recurring_tasks() -> List[Dict[str, Any]]:
@@ -74,7 +77,7 @@ def extract_due(content: str) -> str:
     return match.group(1) if match else ''
 
 def extract_priority(content: str) -> str:
-    match = re.search(r'\(A|B|C\)', content)
+    match = re.search(r'\((A|B|C)\)', content)
     return match.group(1) if match else ''
 
 def extract_recurring(content: str) -> str:
