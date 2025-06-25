@@ -78,12 +78,15 @@ def display_statistics(stats, use_table=False):
             table = [[k, fmt(v)] for k, v in stats.items()]
             print(tabulate(table, headers=["Statistic", "Value"], tablefmt="github"))
         except ImportError:
-            print("Tabulate not installed. Falling back to CSV format.")
+            print("Tabulate not installed. Falling back to formatted text.")
             use_table = False
     if not use_table:
-        print("Statistic,Value")
+        # Find max width for left column
+        max_key_len = max(len(str(k)) for k in stats.keys())
+        print("\nTask Statistics\n" + "-" * (max_key_len + 18))
         for k, v in stats.items():
-            print(f"{k},{fmt(v)}")
+            print(f"{k.ljust(max_key_len)} : {str(fmt(v)).rjust(10)}")
+        print("-" * (max_key_len + 18))
 
 
 def save_statistics_csv(stats, filename):
