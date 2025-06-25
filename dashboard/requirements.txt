@@ -1,29 +1,61 @@
-# Dashboard App Design Requirements
+# Dashboard App for tasks.txt & recurring_tasks.txt
 
-# 1. Purpose
+# ---
+# 1. Project Structure
+#
+# todo_auto/
+# ├── dashboard/
+# │   ├── backend/
+# │   │   ├── app.py
+# │   │   ├── parser.py
+# │   │   └── requirements.txt
+# │   └── frontend/
+# │       ├── public/
+# │       │   └── index.html
+# │       └── src/
+# │           ├── components/
+# │           │   ├── TaskList.tsx
+# │           │   ├── TaskItem.tsx
+# │           │   ├── Filters.tsx
+# │           │   ├── RecurringTasks.tsx
+# │           │   ├── UpcomingTasks.tsx
+# │           │   └── ImportantTasks.tsx
+# │           ├── App.tsx
+# │           ├── index.tsx
+# │           └── types/
+# │               └── task.d.ts
+# ├── tasks.txt
+# ├── recurring_tasks.txt
+# ├── archive.txt
+# └── archive_completed_items.py
+
+# ---
+# 2. Design Requirements
+#
+# Purpose:
 # - Provide a simple, clean dashboard to view, filter, and check off tasks.
 # - Directly read from and write to your existing `tasks.txt` and `recurring_tasks.txt` files.
-
-# 2. Core Features
-# a. Task Display
+#
+# Core Features:
+# - Task Display:
 #   - Show today’s recurring tasks (from `recurring_tasks.txt`).
 #   - Show upcoming tasks (from `tasks.txt`), sorted by due date.
 #   - Show most important upcoming tasks (e.g., flagged or with a priority marker).
 #   - Show all tasks, grouped by area, context, and project.
-# b. Task Interaction
+# - Task Interaction:
 #   - Check off tasks: Mark tasks as completed in `tasks.txt` (and optionally archive them).
 #   - Check off recurring tasks: Mark as done for today, but keep them recurring.
 #   - Edit tasks: (Optional, but recommended for MVP).
-# c. Filtering
+# - Filtering:
 #   - Filter by area (e.g., Work, Personal, Health, Finances).
 #   - Filter by context (e.g., @home, @work, @computer).
 #   - Filter by project (if project tags exist).
-# d. Sync with Files
+# - Sync with Files:
 #   - All changes (checking off, editing) must update `tasks.txt` and `recurring_tasks.txt` directly.
 #   - No separate database; the files are the source of truth.
-
-# 3. File Format Assumptions
-# a. `tasks.txt`
+#
+# File Format Assumptions:
+# - tasks.txt:
 #   - Markdown-style checkboxes:
 #     Work:
 #         - [ ] Task description @context +project due:2025-06-25
@@ -32,10 +64,10 @@
 #   - Contexts as `@context`.
 #   - Projects as `+project`.
 #   - Due dates as `due:YYYY-MM-DD`.
-# b. `recurring_tasks.txt`
+# - recurring_tasks.txt:
 #   - Similar format, but with recurrence info (e.g., `every:Monday`).
-
-# 4. UI/UX Requirements
+#
+# UI/UX Requirements:
 # - Minimalist, clean interface.
 # - Sections for:
 #   - Today’s Recurring Tasks
@@ -44,8 +76,8 @@
 # - Checkboxes for marking tasks complete.
 # - Dropdowns or chips for filtering by area/context/project.
 # - Responsive: Works on desktop and mobile browsers.
-
-# 5. Technical Requirements
+#
+# Technical Requirements:
 # - Frontend: React (TypeScript preferred), or another modern JS framework.
 # - Backend: Python (Flask or FastAPI) to read/write the text files.
 # - File I/O: All task state is read from and written to `tasks.txt` and `recurring_tasks.txt`.
@@ -56,19 +88,86 @@
 #   - POST /tasks/check — mark a task as complete.
 #   - POST /recurring/check — mark a recurring task as done for today.
 #   - (Optional) POST /tasks/edit — edit a task.
-
-# 6. Parsing & Data Model
+#
+# Parsing & Data Model:
 # - Parse tasks into objects with:
 #   - id, description, completed, area, context, project, due_date, priority, recurring (if applicable).
 # - Preserve file formatting when writing back.
-
-# 7. Security & Access
+#
+# Security & Access:
 # - Local use only (no authentication needed).
 # - No internet access required.
-
-# 8. Extensibility
+#
+# Extensibility:
 # - Easy to add new filters (e.g., tags).
 # - Easy to add new task attributes (e.g., estimated time).
 
-fastapi
-uvicorn
+# ---
+# 3. Step-by-Step Development Guide
+#
+# Step 1: Set Up the Project Structure
+# - Create a `dashboard` directory with `backend` and `frontend` subdirectories.
+# - Place `tasks.txt` and `recurring_tasks.txt` in the project root or configure backend to point to their location.
+#
+# Step 2: Backend Development
+# 1. Set up Python environment in `dashboard/backend`.
+# 2. Install dependencies:
+#    pip install fastapi uvicorn
+# 3. Create `parser.py`:
+#    - Write functions to parse `tasks.txt` and `recurring_tasks.txt` into Python objects.
+#    - Functions to update/check off tasks and write back to files.
+# 4. Create `app.py`:
+#    - Set up FastAPI app.
+#    - API endpoints:
+#      - `GET /tasks` — return all tasks.
+#      - `GET /recurring` — return today’s recurring tasks.
+#      - `POST /tasks/check` — mark a task as complete.
+#      - `POST /recurring/check` — mark a recurring task as done for today.
+#      - (Optional) `POST /tasks/edit` — edit a task.
+#    - Ensure all file I/O is safe and preserves formatting.
+#
+# Step 3: Frontend Development
+# 1. Set up React app in `dashboard/frontend` (TypeScript template recommended):
+#    npx create-react-app frontend --template typescript
+# 2. Create types for tasks (matching backend).
+# 3. Build components:
+#    - `TaskList`: Displays a list of tasks.
+#    - `TaskItem`: Single task with checkbox.
+#    - `Filters`: UI for area/context/project filters.
+#    - `RecurringTasks`, `UpcomingTasks`, `ImportantTasks`: Specialized lists.
+# 4. Fetch data from backend API.
+# 5. Implement check-off functionality: When a task is checked, send a POST to backend and refresh list.
+# 6. Implement filtering: Allow user to filter by area, context, project.
+# 7. Style UI: Minimal, clean, responsive.
+#
+# Step 4: Integration & Testing
+# - Test backend endpoints with sample data.
+# - Connect frontend to backend, verify all features.
+# - Ensure tasks are updated in `tasks.txt` and `recurring_tasks.txt` as expected.
+# - Test on desktop and mobile browsers.
+#
+# Step 5: Documentation
+# - Write a README with setup instructions for both backend and frontend.
+# - Document API endpoints and file format assumptions.
+
+# ---
+# 4. Example API Contract
+#
+# - `GET /tasks`
+#   Returns:
+#   [
+#     {
+#       "id": "unique-id",
+#       "description": "Task description",
+#       "completed": false,
+#       "area": "Work",
+#       "context": "@home",
+#       "project": "+project",
+#       "due_date": "2025-06-25",
+#       "priority": "A"
+#     }
+#   ]
+# - `POST /tasks/check`
+#   Body: { "id": "unique-id" }
+#   Marks task as complete.
+
