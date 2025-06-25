@@ -51,18 +51,27 @@ function App() {
     <div style={{ maxWidth: 700, margin: 'auto', padding: 24 }}>
       <h1>Task Dashboard</h1>
       <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-        <select value={filters.area} onChange={e => setFilters({ ...filters, area: e.target.value })}>
-          <option value=''>All Areas</option>
-          {areas.map(a => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <select value={filters.context} onChange={e => setFilters({ ...filters, context: e.target.value })}>
-          <option value=''>All Contexts</option>
-          {contexts.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <select value={filters.project} onChange={e => setFilters({ ...filters, project: e.target.value })}>
-          <option value=''>All Projects</option>
-          {projects.map(p => <option key={p} value={p}>{p}</option>)}
-        </select>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px' }}>Filter by Area:</label>
+          <select value={filters.area} onChange={e => setFilters({ ...filters, area: e.target.value })}>
+            <option value=''>All Areas</option>
+            {areas.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px' }}>Filter by Context:</label>
+          <select value={filters.context} onChange={e => setFilters({ ...filters, context: e.target.value })}>
+            <option value=''>All Contexts</option>
+            {contexts.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px' }}>Filter by Project:</label>
+          <select value={filters.project} onChange={e => setFilters({ ...filters, project: e.target.value })}>
+            <option value=''>All Projects</option>
+            {projects.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
       </div>
       <h2>Today's Recurring Tasks</h2>
       <ul style={{ listStyle: 'none', padding: 0 }}>
