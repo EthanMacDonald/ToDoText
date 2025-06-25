@@ -1,40 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import TaskList from './components/TaskList';
-import Filters from './components/Filters';
-
-const API_URL = 'http://localhost:8000';
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from '/vite.svg'
+import './App.css'
 
 function App() {
-  const [tasks, setTasks] = useState([]);
-  const [recurring, setRecurring] = useState([]);
-  const [filters, setFilters] = useState({ area: '', context: '', project: '' });
-
-  useEffect(() => {
-    fetch(`${API_URL}/tasks`).then(r => r.json()).then(setTasks);
-    fetch(`${API_URL}/recurring`).then(r => r.json()).then(setRecurring);
-  }, []);
-
-  const handleCheck = async (id: string, recurringTask: boolean) => {
-    await fetch(`${API_URL}/${recurringTask ? 'recurring' : 'tasks'}/check`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task_id: id })
-    });
-    // Refresh
-    fetch(`${API_URL}/tasks`).then(r => r.json()).then(setTasks);
-    fetch(`${API_URL}/recurring`).then(r => r.json()).then(setRecurring);
-  };
+  const [count, setCount] = useState(0)
 
   return (
-    <div style={{ maxWidth: 700, margin: 'auto', padding: 24 }}>
-      <h1>Task Dashboard</h1>
-      <Filters filters={filters} setFilters={setFilters} />
-      <h2>Today's Recurring Tasks</h2>
-      <TaskList tasks={recurring} onCheck={id => handleCheck(id, true)} filters={filters} />
-      <h2>Upcoming Tasks</h2>
-      <TaskList tasks={tasks} onCheck={id => handleCheck(id, false)} filters={filters} />
-    </div>
-  );
+    <>
+      <div>
+        <a href="https://vite.dev" target="_blank">
+          <img src={viteLogo} className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
+      </div>
+      <h1>Vite + React</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
+        </button>
+        <p>
+          Edit <code>src/App.tsx</code> and save to test HMR
+        </p>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+    </>
+  )
 }
 
-export default App;
+export default App

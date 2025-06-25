@@ -5,4 +5,32 @@ outputsBak/**
 credentials.json
 token.json
 
+dashboard/backend/__pycache__/**
+dashboard/backend/venv/**
+
+# Logs
+dashboard/blogs
+dashboard/b*.log
+dashboard/bnpm-debug.log*
+dashboard/byarn-debug.log*
+dashboard/byarn-error.log*
+dashboard/bpnpm-debug.log*
+dashboard/blerna-debug.log*
+
+dashboard/bnode_modules
+dashboard/bdist
+dashboard/bdist-ssr
+dashboard/b*.local
+
+# Editor directories and files
+dashboard/b.vscode/*
+dashboard/b!.vscode/extensions.json
+dashboard/b.idea
+dashboard/b.DS_Store
+dashboard/b*.suo
+dashboard/b*.ntvs*
+dashboard/b*.njsproj
+dashboard/b*.sln
+dashboard/b*.sw?
+
 
