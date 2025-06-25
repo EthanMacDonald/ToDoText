@@ -13,7 +13,7 @@ if os.path.exists('outputs'):
 def parse_tasks(file_path):
     tasks, current_area, current_task_group = [], None, {}
     with open(file_path, 'r') as file:
-        for line in file:
+        for line_number, line in enumerate(file, 1):
             stripped = line.rstrip()
             if not stripped:
                 continue
@@ -39,9 +39,17 @@ def parse_tasks(file_path):
                 # Parse recognized metadata
                 priority = metadata.get('priority')
                 due = metadata.get('due')
-                due = datetime.datetime.strptime(due, '%Y-%m-%d').date() if due else None
+                try:
+                    due = datetime.datetime.strptime(due, '%Y-%m-%d').date() if due else None
+                except Exception as e:
+                    print(f"Error parsing due date on line {line_number}: {line.strip()}")
+                    raise
                 done_date = metadata.get('done')
-                done_date = datetime.datetime.strptime(done_date, '%Y-%m-%d').date() if done_date else None
+                try:
+                    done_date = datetime.datetime.strptime(done_date, '%Y-%m-%d').date() if done_date else None
+                except Exception as e:
+                    print(f"Error parsing done date on line {line_number}: {line.strip()}")
+                    raise
                 progress = metadata.get('progress')
                 rec = metadata.get('rec')
                 # Extract all unique project and context tags from content
