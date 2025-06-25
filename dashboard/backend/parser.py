@@ -324,3 +324,100 @@ def extract_recurring(content: str) -> str:
     """Legacy function for backward compatibility"""
     match = re.search(r'every:(\w+)', content)
     return match.group(1) if match else ''
+
+def parse_tasks_by_priority() -> List[Dict[str, Any]]:
+    """Parse tasks and build structure sorted by priority"""
+    raw_tasks = parse_tasks_raw()
+    return build_priority_sorted_structure(raw_tasks)
+
+def parse_tasks_no_sort() -> List[Dict[str, Any]]:
+    """Parse tasks and build structure with no sorting (grouped by area)"""
+    raw_tasks = parse_tasks_raw()
+    return build_area_sorted_structure(raw_tasks)
+
+def build_priority_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Build a structure grouped by priority"""
+    # Extract all tasks from the parsed structure
+    def extract_tasks(items):
+        tasks = []
+        for item in items:
+            if item['type'] == 'area':
+                tasks.extend(extract_tasks(item['tasks']))
+            elif item['type'] == 'task':
+                tasks.append(item)
+        return tasks
+    
+    all_tasks = extract_tasks(parsed_data)
+    
+    # Group by completion and priority
+    completed_tasks = [t for t in all_tasks if t['completed']]
+    incomplete_tasks = [t for t in all_tasks if not t['completed']]
+    
+    # Sort completed tasks by priority
+    priority_order = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6}
+    completed_tasks.sort(key=lambda x: (
+        priority_order.get(x.get('priority', ''), 99),
+        x['description']
+    ))
+    
+    # Group incomplete tasks by priority
+    priority_groups = {}
+    no_priority_tasks = []
+    
+    for task in incomplete_tasks:
+        priority = task.get('priority', '')
+        if priority:
+            if priority not in priority_groups:
+                priority_groups[priority] = []
+            priority_groups[priority].append(task)
+        else:
+            no_priority_tasks.append(task)
+    
+    # Sort priority groups
+    sorted_priorities = sorted(priority_groups.keys(), key=lambda x: priority_order.get(x, 99))
+    
+    # Build final structure
+    result = []
+    
+    # Add completed tasks group
+    if completed_tasks:
+        result.append({
+            'type': 'group',
+            'title': 'Done',
+            'tasks': add_hierarchy_to_tasks(completed_tasks)
+        })
+    
+    # Add priority groups
+    for priority in sorted_priorities:
+        result.append({
+            'type': 'group', 
+            'title': f'Priority {priority}',
+            'tasks': add_hierarchy_to_tasks(priority_groups[priority])
+        })
+    
+    # Add no priority group
+    if no_priority_tasks:
+        result.append({
+            'type': 'group',
+            'title': 'No Priority',
+            'tasks': add_hierarchy_to_tasks(no_priority_tasks)
+        })
+    
+    return result
+
+def build_area_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Build a structure grouped by area (no additional sorting)"""
+    result = []
+    
+    for item in parsed_data:
+        if item['type'] == 'area' and item['tasks']:
+            # Sort tasks within area by priority for consistency
+            sorted_tasks = add_hierarchy_to_tasks(item['tasks'])
+            
+            result.append({
+                'type': 'group',
+                'title': item['area'],
+                'tasks': sorted_tasks
+            })
+    
+    return result

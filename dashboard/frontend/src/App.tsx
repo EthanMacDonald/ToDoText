@@ -8,11 +8,27 @@ function App() {
   const [tasks, setTasks] = useState<TaskGroup[]>([]);
   const [recurring, setRecurring] = useState<Task[]>([]);
   const [filters, setFilters] = useState({ area: '', context: '', project: '' });
+  const [sortBy, setSortBy] = useState('due'); // 'none', 'due', 'priority'
 
   useEffect(() => {
-    fetch(`${API_URL}/tasks`).then(r => r.json()).then(setTasks);
-    fetch(`${API_URL}/recurring`).then(r => r.json()).then(setRecurring);
-  }, []);
+    const fetchTasks = async () => {
+      const tasksUrl = sortBy === 'none' ? '/tasks?sort=none' : 
+                      sortBy === 'priority' ? '/tasks?sort=priority' : '/tasks';
+      
+      const [tasksRes, recurringRes] = await Promise.all([
+        fetch(`${API_URL}${tasksUrl}`),
+        fetch(`${API_URL}/recurring`)
+      ]);
+      
+      const tasksData = await tasksRes.json();
+      const recurringData = await recurringRes.json();
+      
+      setTasks(tasksData);
+      setRecurring(recurringData);
+    };
+    
+    fetchTasks();
+  }, [sortBy]);
 
   const handleCheck = async (id: string, recurringTask: boolean = false) => {
     await fetch(`${API_URL}/${recurringTask ? 'recurring' : 'tasks'}/check`, {
@@ -60,7 +76,7 @@ function App() {
       
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
         gap: 16, 
         marginBottom: 24,
         padding: 16,
@@ -68,7 +84,9 @@ function App() {
         borderRadius: 8
       }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px' }}>Filter by Area:</label>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+            Filter by Area:
+          </label>
           <select 
             value={filters.area} 
             onChange={e => setFilters({ ...filters, area: e.target.value })}
@@ -80,7 +98,9 @@ function App() {
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px' }}>Filter by Context:</label>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+            Filter by Context:
+          </label>
           <select 
             value={filters.context} 
             onChange={e => setFilters({ ...filters, context: e.target.value })}
@@ -92,7 +112,9 @@ function App() {
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px' }}>Filter by Project:</label>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+            Filter by Project:
+          </label>
           <select 
             value={filters.project} 
             onChange={e => setFilters({ ...filters, project: e.target.value })}
@@ -100,6 +122,21 @@ function App() {
           >
             <option value=''>All Projects</option>
             {projects.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+            Sort by:
+          </label>
+          <select 
+            value={sortBy} 
+            onChange={e => setSortBy(e.target.value)}
+            style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd' }}
+          >
+            <option value='due'>Due Date</option>
+            <option value='priority'>Priority</option>
+            <option value='none'>No Sorting</option>
           </select>
         </div>
       </div>
@@ -119,7 +156,9 @@ function App() {
 
       <div>
         <h2 style={{ color: '#059669', borderBottom: '2px solid #059669', paddingBottom: 8 }}>
-          Tasks (Sorted by Due Date)
+          Tasks {sortBy === 'due' ? '(Sorted by Due Date)' : 
+                 sortBy === 'priority' ? '(Sorted by Priority)' : 
+                 '(No Sorting)'}
         </h2>
         <TaskList 
           data={tasks} 
