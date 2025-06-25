@@ -1,19 +1,8 @@
 import React from 'react';
-
-type Task = {
-  id: string;
-  description: string;
-  completed: boolean;
-  area?: string;
-  context?: string;
-  project?: string;
-  due_date?: string;
-  priority?: string;
-  indent_level?: number;
-};
+import type { Task, TaskGroup } from '../types/task';
 
 type Props = {
-  tasks: Task[];
+  data: TaskGroup[] | Task[];
   onCheck: (id: string) => void;
   filters: { area: string; context: string; project: string };
 };
@@ -25,35 +14,134 @@ function filterTask(task: Task, filters: Props['filters']) {
   return true;
 }
 
-const TaskList: React.FC<Props> = ({ tasks, onCheck, filters }) => (
-  <ul style={{ listStyle: 'none', padding: 0 }}>
-    {tasks.filter(t => filterTask(t, filters)).map(task => (
+const TaskItem: React.FC<{
+  task: Task;
+  onCheck: (id: string) => void;
+  depth?: number;
+}> = ({ task, onCheck, depth = 0 }) => {
+  return (
+    <>
       <li 
-        key={task.id} 
         style={{ 
-          margin: '8px 0', 
+          margin: '4px 0', 
           opacity: task.completed ? 0.5 : 1,
-          marginLeft: `${(task.indent_level || 0) * 20}px` // 20px indentation per level
+          marginLeft: `${depth * 20}px`,
+          fontSize: depth > 0 ? '14px' : '16px'
         }}
       >
-        <label>
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
           <input
             type="checkbox"
             checked={task.completed}
             onChange={() => onCheck(task.id)}
             disabled={task.completed}
+            style={{ marginTop: '2px' }}
           />
-          {' '}
-          {task.description}
-          {task.due_date && (
-            <span style={{ color: '#888', marginLeft: 8 }}>
-              (Due: {task.due_date})
-            </span>
-          )}
+          <span>
+            {task.description}
+            {task.due_date && (
+              <span style={{ color: '#888', marginLeft: 8, fontSize: '12px' }}>
+                (Due: {task.due_date})
+              </span>
+            )}
+            {task.priority && (
+              <span style={{ color: '#666', marginLeft: 8, fontSize: '12px' }}>
+                [Priority: {task.priority}]
+              </span>
+            )}
+            {task.recurring && (
+              <span style={{ color: '#888', marginLeft: 8, fontSize: '12px' }}>
+                (every: {task.recurring})
+              </span>
+            )}
+          </span>
         </label>
       </li>
-    ))}
-  </ul>
-);
+      
+      {/* Render notes */}
+      {task.notes?.map((note, index) => (
+        <li 
+          key={`note-${task.id}-${index}`}
+          style={{ 
+            margin: '2px 0', 
+            marginLeft: `${(depth + 1) * 20}px`,
+            fontSize: '13px',
+            color: '#666',
+            fontStyle: 'italic'
+          }}
+        >
+          {note.content}
+        </li>
+      ))}
+      
+      {/* Render subtasks */}
+      {task.subtasks?.map(subtask => (
+        <TaskItem
+          key={subtask.id}
+          task={subtask}
+          onCheck={onCheck}
+          depth={depth + 1}
+        />
+      ))}
+    </>
+  );
+};
+
+const TaskList: React.FC<Props> = ({ data, onCheck, filters }) => {
+  // Handle both grouped and flat data structures
+  const isGroupedData = (data: TaskGroup[] | Task[]): data is TaskGroup[] => {
+    return data.length > 0 && 'type' in data[0] && data[0].type === 'group';
+  };
+
+  if (isGroupedData(data)) {
+    // Render grouped data
+    return (
+      <div>
+        {data.map(group => (
+          <div key={group.title}>
+            <h3 style={{ 
+              marginTop: 20, 
+              marginBottom: 10, 
+              color: '#666', 
+              fontSize: '16px',
+              borderBottom: '1px solid #eee',
+              paddingBottom: '4px'
+            }}>
+              {group.title}:
+            </h3>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {group.tasks
+                .filter(task => filterTask(task, filters))
+                .map(task => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onCheck={onCheck}
+                  />
+                ))
+              }
+            </ul>
+          </div>
+        ))}
+      </div>
+    );
+  } else {
+    // Render flat data (legacy support)
+    return (
+      <ul style={{ listStyle: 'none', padding: 0 }}>
+        {(data as Task[])
+          .filter(task => filterTask(task, filters))
+          .map(task => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              onCheck={onCheck}
+            />
+          ))
+        }
+      </ul>
+    );
+  }
+};
 
 export default TaskList;
