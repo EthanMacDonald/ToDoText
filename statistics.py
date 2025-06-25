@@ -68,10 +68,14 @@ def compute_statistics(tasks):
 
 
 def display_statistics(stats, use_table=False):
+    def fmt(v):
+        if isinstance(v, float):
+            return f"{v:.2f}"
+        return v
     if use_table:
         try:
             from tabulate import tabulate
-            table = [[k, v] for k, v in stats.items()]
+            table = [[k, fmt(v)] for k, v in stats.items()]
             print(tabulate(table, headers=["Statistic", "Value"], tablefmt="github"))
         except ImportError:
             print("Tabulate not installed. Falling back to CSV format.")
@@ -79,15 +83,48 @@ def display_statistics(stats, use_table=False):
     if not use_table:
         print("Statistic,Value")
         for k, v in stats.items():
-            print(f"{k},{v}")
+            print(f"{k},{fmt(v)}")
 
 
 def save_statistics_csv(stats, filename):
-    with open(filename, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["Statistic", "Value"])
-        for k, v in stats.items():
-            writer.writerow([k, v])
+    import os
+    from datetime import datetime
+    def fmt(v):
+        if isinstance(v, float):
+            return f"{v:.2f}"
+        return v
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    stats_keys = list(stats.keys())
+    row = [timestamp] + [fmt(stats[k]) for k in stats_keys]
+    file_exists = os.path.exists(filename)
+    # Check if file exists and is non-empty
+    is_empty = True
+    if file_exists:
+        try:
+            with open(filename, 'r', newline='') as csvfile:
+                reader = csv.reader(csvfile)
+                header = next(reader)
+                is_empty = False
+        except StopIteration:
+            is_empty = True
+    if not file_exists or is_empty:
+        with open(filename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['timestamp'] + stats_keys)
+            writer.writerow(row)
+    else:
+        # Read header to ensure column order
+        with open(filename, 'r', newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            header = next(reader)
+        # If header doesn't match, rewrite file with new header
+        if header[1:] != stats_keys:
+            with open(filename, 'a', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['timestamp'] + stats_keys)
+        with open(filename, 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(row)
 
 
 def main():
