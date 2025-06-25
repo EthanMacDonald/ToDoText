@@ -8,4 +8,5 @@ export type Task = {
   due_date?: string;
   priority?: string;
   recurring?: string;
+  indent_level?: number;
 };

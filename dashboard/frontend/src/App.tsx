@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type Task = {
   id: string;
@@ -10,6 +10,7 @@ type Task = {
   due_date?: string;
   priority?: string;
   recurring?: string;
+  indent_level?: number;
 };
 
 const API_URL = 'http://localhost:8000';
@@ -66,7 +67,14 @@ function App() {
       <h2>Today's Recurring Tasks</h2>
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {recurring.filter(filterTask).map(task => (
-          <li key={task.id} style={{ margin: '8px 0', opacity: task.completed ? 0.5 : 1 }}>
+          <li 
+            key={task.id} 
+            style={{ 
+              margin: '8px 0', 
+              opacity: task.completed ? 0.5 : 1,
+              marginLeft: `${(task.indent_level || 0) * 20}px` // 20px indentation per level
+            }}
+          >
             <label>
               <input
                 type="checkbox"
@@ -83,7 +91,14 @@ function App() {
       <h2>Upcoming Tasks</h2>
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {tasks.filter(filterTask).map(task => (
-          <li key={task.id} style={{ margin: '8px 0', opacity: task.completed ? 0.5 : 1 }}>
+          <li 
+            key={task.id} 
+            style={{ 
+              margin: '8px 0', 
+              opacity: task.completed ? 0.5 : 1,
+              marginLeft: `${(task.indent_level || 0) * 20}px` // 20px indentation per level
+            }}
+          >
             <label>
               <input
                 type="checkbox"

@@ -9,6 +9,7 @@ type Task = {
   project?: string;
   due_date?: string;
   priority?: string;
+  indent_level?: number;
 };
 
 type Props = {
@@ -27,7 +28,14 @@ function filterTask(task: Task, filters: Props['filters']) {
 const TaskList: React.FC<Props> = ({ tasks, onCheck, filters }) => (
   <ul style={{ listStyle: 'none', padding: 0 }}>
     {tasks.filter(t => filterTask(t, filters)).map(task => (
-      <li key={task.id} style={{ margin: '8px 0', opacity: task.completed ? 0.5 : 1 }}>
+      <li 
+        key={task.id} 
+        style={{ 
+          margin: '8px 0', 
+          opacity: task.completed ? 0.5 : 1,
+          marginLeft: `${(task.indent_level || 0) * 20}px` // 20px indentation per level
+        }}
+      >
         <label>
           <input
             type="checkbox"

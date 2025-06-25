@@ -27,7 +27,8 @@ def parse_tasks() -> List[Dict[str, Any]]:
                     'context': extract_context(content),
                     'project': extract_project(content),
                     'due_date': extract_due(content),
-                    'priority': extract_priority(content)
+                    'priority': extract_priority(content),
+                    'indent_level': len(indent) // 4  # Convert spaces to indent level (assuming 4 spaces per level)
                 }
                 tasks.append(task)
     print(f"Total tasks parsed: {len(tasks)}")
@@ -51,7 +52,8 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
                     'area': area,
                     'context': extract_context(content),
                     'project': extract_project(content),
-                    'recurring': extract_recurring(content)
+                    'recurring': extract_recurring(content),
+                    'indent_level': len(indent) // 4  # Convert spaces to indent level (assuming 4 spaces per level)
                 }
                 tasks.append(task)
     return tasks
