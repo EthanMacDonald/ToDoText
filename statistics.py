@@ -25,7 +25,8 @@ def parse_tasks(filename):
             if not line or line.startswith('#'):
                 continue
             task = {'raw': line}
-            task['completed'] = bool(done_pattern.search(line))
+            # Updated: check for '- [x]' or '- [X]' at the start for completed tasks
+            task['completed'] = line.lower().startswith('- [x]')
             due_match = due_pattern.search(line)
             task['due'] = (
                 datetime.strptime(due_match.group(1), DATE_FORMAT).date()
