@@ -19,6 +19,7 @@ function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [recurring, setRecurring] = useState<Task[]>([]);
   const [filters, setFilters] = useState({ area: '', context: '', project: '' });
+  const [sortBy, setSortBy] = useState('none'); // 'none', 'due', 'priority'
 
   useEffect(() => {
     fetch(`${API_URL}/tasks`).then(r => r.json()).then(setTasks);
@@ -40,6 +41,43 @@ function App() {
     if (filters.context && task.context !== filters.context) return false;
     if (filters.project && task.project !== filters.project) return false;
     return true;
+  };
+
+  const sortTasks = (taskList: Task[]) => {
+    if (sortBy === 'none') return taskList;
+    
+    const priorityOrder: { [key: string]: number } = { 'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6 };
+    
+    return [...taskList].sort((a, b) => {
+      if (sortBy === 'priority') {
+        const aPriority = priorityOrder[a.priority || ''] || 99;
+        const bPriority = priorityOrder[b.priority || ''] || 99;
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority;
+        }
+        // Secondary sort by description
+        return a.description.localeCompare(b.description);
+      } else if (sortBy === 'due') {
+        // Sort by completion status first (incomplete tasks first)
+        if (a.completed !== b.completed) {
+          return a.completed ? 1 : -1;
+        }
+        // Then by due date (tasks with due dates first, null dates last)
+        const aDate = a.due_date ? new Date(a.due_date) : null;
+        const bDate = b.due_date ? new Date(b.due_date) : null;
+        
+        if (aDate && bDate) {
+          return aDate.getTime() - bDate.getTime();
+        } else if (aDate && !bDate) {
+          return -1; // a has due date, b doesn't - a comes first
+        } else if (!aDate && bDate) {
+          return 1; // b has due date, a doesn't - b comes first
+        }
+        // Both have no due date, sort by description
+        return a.description.localeCompare(b.description);
+      }
+      return 0;
+    });
   };
 
   const unique = (arr: (string|undefined)[]) => Array.from(new Set(arr.filter(Boolean)));
@@ -72,10 +110,18 @@ function App() {
             {projects.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px' }}>Sort by:</label>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+            <option value='none'>No Sorting</option>
+            <option value='due'>Due Date</option>
+            <option value='priority'>Priority</option>
+          </select>
+        </div>
       </div>
       <h2>Today's Recurring Tasks</h2>
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {recurring.filter(filterTask).map(task => (
+        {sortTasks(recurring.filter(filterTask)).map(task => (
           <li 
             key={task.id} 
             style={{ 
@@ -99,7 +145,7 @@ function App() {
       </ul>
       <h2>Upcoming Tasks</h2>
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {tasks.filter(filterTask).map(task => (
+        {sortTasks(tasks.filter(filterTask)).map(task => (
           <li 
             key={task.id} 
             style={{ 

@@ -79,7 +79,7 @@ def extract_due(content: str) -> str:
     return match.group(1) if match else ''
 
 def extract_priority(content: str) -> str:
-    match = re.search(r'\((A|B|C)\)', content)
+    match = re.search(r'priority:([A-F])', content)
     return match.group(1) if match else ''
 
 def extract_recurring(content: str) -> str:
