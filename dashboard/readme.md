@@ -1,0 +1,99 @@
+# Task Dashboard App
+
+A simple dashboard for viewing, filtering, and checking off tasks from your `tasks.txt` and `recurring_tasks.txt` files.
+
+---
+
+## Features
+- View today's recurring tasks and upcoming tasks
+- Filter tasks by area, context, and project
+- Check off tasks and recurring tasks (updates your text files)
+- Minimal, clean, and responsive UI
+
+---
+
+## Project Structure
+```
+dashboard/
+├── backend/
+│   ├── app.py
+│   ├── parser.py
+│   └── requirements.txt
+└── frontend/
+    ├── public/
+    │   └── index.html
+    └── src/
+        ├── components/
+        ├── App.tsx
+        ├── index.tsx
+        └── types/
+```
+
+---
+
+## Getting Started
+
+### 1. Backend Setup
+
+1. Open a terminal and navigate to the backend directory:
+   ```bash
+   cd dashboard/backend
+   ```
+2. (Optional) Create and activate a virtual environment:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Start the FastAPI server:
+   ```bash
+   uvicorn app:app --reload
+   ```
+   - The API will be available at http://127.0.0.1:8000
+   - Interactive docs: http://127.0.0.1:8000/docs
+
+### 2. Frontend Setup
+
+1. Open a new terminal and navigate to the frontend directory:
+   ```bash
+   cd dashboard/frontend
+   ```
+2. If not already initialized, create a React app (TypeScript):
+   ```bash
+   npm create vite@latest . -- --template react-ts
+   npm install
+   ```
+3. Start the frontend dev server:
+   ```bash
+   npm run dev
+   ```
+   - The app will be available at http://localhost:5173 (or similar)
+
+---
+
+## Usage
+- The dashboard will display your tasks and allow you to filter and check them off.
+- All changes are saved directly to `tasks.txt` and `recurring_tasks.txt`.
+
+---
+
+## Notes
+- Make sure your `tasks.txt` and `recurring_tasks.txt` files are in the correct location (project root or as configured in backend).
+- The backend must be running for the frontend to fetch and update tasks.
+- For production, further configuration and security may be needed.
+
+---
+
+## API Endpoints
+- `GET /tasks` — List all tasks
+- `GET /recurring` — List recurring tasks
+- `POST /tasks/check` — Mark a task as complete
+- `POST /recurring/check` — Mark a recurring task as done for today
+
+---
+
+## License
+MIT
