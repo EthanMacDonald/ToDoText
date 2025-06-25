@@ -95,5 +95,24 @@ dashboard/
 
 ---
 
+## First-Time Setup: Required Files
+
+Make sure these files exist in your project root before running the dashboard:
+
+- `tasks.txt` — Your main task list (see format in requirements)
+- `recurring_tasks.txt` — Your recurring tasks (see format in requirements)
+- `archive.txt` — (Optional) Archive for completed tasks
+- `archive_completed_items.py` — (Optional) Script for archiving completed tasks
+
+If these files do not exist, create empty files with these names in the project root:
+
+```bash
+touch tasks.txt recurring_tasks.txt archive.txt archive_completed_items.py
+```
+
+Refer to the requirements section above for the expected file formats.
+
+---
+
 ## License
 MIT
