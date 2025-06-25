@@ -80,6 +80,52 @@ function App() {
     });
   };
 
+  const groupTasksByArea = (taskList: Task[]) => {
+    const grouped: { [key: string]: Task[] } = {};
+    taskList.forEach(task => {
+      const area = task.area || 'No Area';
+      if (!grouped[area]) {
+        grouped[area] = [];
+      }
+      grouped[area].push(task);
+    });
+    return grouped;
+  };
+
+  const groupTasksByHeader = (taskList: Task[]) => {
+    if (sortBy === 'none') {
+      return groupTasksByArea(taskList);
+    } else if (sortBy === 'priority') {
+      const grouped: { [key: string]: Task[] } = {};
+      taskList.forEach(task => {
+        const priority = task.priority || 'No Priority';
+        if (!grouped[priority]) {
+          grouped[priority] = [];
+        }
+        grouped[priority].push(task);
+      });
+      return grouped;
+    } else if (sortBy === 'due') {
+      const grouped: { [key: string]: Task[] } = {};
+      taskList.forEach(task => {
+        let header: string;
+        if (task.completed) {
+          header = 'Completed';
+        } else if (task.due_date) {
+          header = `Due: ${task.due_date}`;
+        } else {
+          header = 'No Due Date';
+        }
+        if (!grouped[header]) {
+          grouped[header] = [];
+        }
+        grouped[header].push(task);
+      });
+      return grouped;
+    }
+    return groupTasksByArea(taskList);
+  };
+
   const unique = (arr: (string|undefined)[]) => Array.from(new Set(arr.filter(Boolean)));
   const areas = unique([...tasks, ...recurring].map(t => t.area));
   const contexts = unique([...tasks, ...recurring].map(t => t.context));
@@ -120,53 +166,63 @@ function App() {
         </div>
       </div>
       <h2>Today's Recurring Tasks</h2>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {sortTasks(recurring.filter(filterTask)).map(task => (
-          <li 
-            key={task.id} 
-            style={{ 
-              margin: '8px 0', 
-              opacity: task.completed ? 0.5 : 1,
-              marginLeft: `${(task.indent_level || 0) * 20}px` // 20px indentation per level
-            }}
-          >
-            <label>
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => handleCheck(task.id, true)}
-                disabled={task.completed}
-              />{' '}
-              {task.description}
-              {task.recurring && <span style={{ color: '#888', marginLeft: 8 }}>(every: {task.recurring})</span>}
-            </label>
-          </li>
-        ))}
-      </ul>
+      {Object.entries(groupTasksByHeader(sortTasks(recurring.filter(filterTask)))).map(([header, headerTasks]) => (
+        <div key={header}>
+          <h3 style={{ marginTop: 20, marginBottom: 10, color: '#666', fontSize: '16px' }}>{header}:</h3>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {headerTasks.map(task => (
+              <li 
+                key={task.id} 
+                style={{ 
+                  margin: '8px 0', 
+                  opacity: task.completed ? 0.5 : 1,
+                  marginLeft: `${(task.indent_level || 0) * 20}px` // 20px indentation per level
+                }}
+              >
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={task.completed}
+                    onChange={() => handleCheck(task.id, true)}
+                    disabled={task.completed}
+                  />{' '}
+                  {task.description}
+                  {task.recurring && <span style={{ color: '#888', marginLeft: 8 }}>(every: {task.recurring})</span>}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
       <h2>Upcoming Tasks</h2>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {sortTasks(tasks.filter(filterTask)).map(task => (
-          <li 
-            key={task.id} 
-            style={{ 
-              margin: '8px 0', 
-              opacity: task.completed ? 0.5 : 1,
-              marginLeft: `${(task.indent_level || 0) * 20}px` // 20px indentation per level
-            }}
-          >
-            <label>
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => handleCheck(task.id, false)}
-                disabled={task.completed}
-              />{' '}
-              {task.description}
-              {task.due_date && <span style={{ color: '#888', marginLeft: 8 }}>(Due: {task.due_date})</span>}
-            </label>
-          </li>
-        ))}
-      </ul>
+      {Object.entries(groupTasksByHeader(sortTasks(tasks.filter(filterTask)))).map(([header, headerTasks]) => (
+        <div key={header}>
+          <h3 style={{ marginTop: 20, marginBottom: 10, color: '#666', fontSize: '16px' }}>{header}:</h3>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {headerTasks.map(task => (
+              <li 
+                key={task.id} 
+                style={{ 
+                  margin: '8px 0', 
+                  opacity: task.completed ? 0.5 : 1,
+                  marginLeft: `${(task.indent_level || 0) * 20}px` // 20px indentation per level
+                }}
+              >
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={task.completed}
+                    onChange={() => handleCheck(task.id, false)}
+                    disabled={task.completed}
+                  />{' '}
+                  {task.description}
+                  {task.due_date && <span style={{ color: '#888', marginLeft: 8 }}>(Due: {task.due_date})</span>}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }
