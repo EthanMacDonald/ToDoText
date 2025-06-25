@@ -33,4 +33,16 @@ dashboard/b*.njsproj
 dashboard/b*.sln
 dashboard/b*.sw?
 
-
+dashboard/frontend/*.js
+dashboard/frontend/*.json
+dashboard/frontend/*.ts
+dashboard/frontend/*.tsbuildinfo
+dashboard/frontend/node_modules
+dashboard/frontend/dist
+dashboard/frontend/coverage
+dashboard/frontend/.cache
+dashboard/frontend/.svg
+dashboard/frontend/.DS_Store
+dashboard/frontend/public/*.svg
+dashboard/frontend/*.css
+dashboard/frontend/src/*
