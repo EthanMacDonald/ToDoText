@@ -6,8 +6,10 @@ A simple dashboard for viewing, filtering, and checking off tasks from your `tas
 
 ## Features
 - View today's recurring tasks and upcoming tasks
-- Filter tasks by area, context, and project
+- Filter tasks by area, context, and project with labeled dropdown menus
+- Sort tasks by priority, due date, or no sorting with a dedicated sort dropdown
 - Check off tasks and recurring tasks (updates your text files)
+- Area headers properly group both regular tasks and recurring tasks
 - Minimal, clean, and responsive UI
 
 ---
@@ -75,8 +77,10 @@ dashboard/
 ---
 
 ## Usage
-- The dashboard will display your tasks and allow you to filter and check them off.
-- All changes are saved directly to `tasks.txt` and `recurring_tasks.txt`.
+- The dashboard will display your tasks with proper area headers and allow you to filter and sort them
+- Use the labeled dropdown menus to filter by area, context, or project  
+- Use the sort dropdown to sort by priority, due date, or no sorting
+- All changes are saved directly to `tasks.txt` and `recurring_tasks.txt`
 
 ---
 
@@ -88,8 +92,8 @@ dashboard/
 ---
 
 ## API Endpoints
-- `GET /tasks` — List all tasks
-- `GET /recurring` — List recurring tasks
+- `GET /tasks` — List all tasks (supports ?sort=priority, ?sort=due, ?sort=none parameters)
+- `GET /recurring` — List recurring tasks grouped by area headers
 - `POST /tasks/check` — Mark a task as complete
 - `POST /recurring/check` — Mark a recurring task as done for today
 

@@ -90,39 +90,45 @@ const TaskItem: React.FC<{
 const TaskList: React.FC<Props> = ({ data, onCheck, filters }) => {
   // Handle both grouped and flat data structures
   const isGroupedData = (data: TaskGroup[] | Task[]): data is TaskGroup[] => {
-    return data.length > 0 && 'type' in data[0] && data[0].type === 'group';
+    return data.length > 0 && 'type' in data[0] && (data[0].type === 'group' || data[0].type === 'area');
   };
 
   if (isGroupedData(data)) {
     // Render grouped data
     return (
       <div>
-        {data.map(group => (
-          <div key={group.title}>
-            <h3 style={{ 
-              marginTop: 20, 
-              marginBottom: 10, 
-              color: '#666', 
-              fontSize: '16px',
-              borderBottom: '1px solid #eee',
-              paddingBottom: '4px'
-            }}>
-              {group.title}:
-            </h3>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              {group.tasks
-                .filter(task => filterTask(task, filters))
-                .map(task => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    onCheck={onCheck}
-                  />
-                ))
-              }
-            </ul>
-          </div>
-        ))}
+        {data.map(group => {
+          // Handle both regular tasks (with title) and recurring tasks (with area)
+          const groupTitle = group.title || group.area || 'Unknown';
+          const groupKey = group.title || group.area || 'unknown';
+          
+          return (
+            <div key={groupKey}>
+              <h3 style={{ 
+                marginTop: 20, 
+                marginBottom: 10, 
+                color: '#666', 
+                fontSize: '16px',
+                borderBottom: '1px solid #eee',
+                paddingBottom: '4px'
+              }}>
+                {groupTitle}:
+              </h3>
+              <ul style={{ listStyle: 'none', padding: 0 }}>
+                {group.tasks
+                  .filter(task => filterTask(task, filters))
+                  .map(task => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      onCheck={onCheck}
+                    />
+                  ))
+                }
+              </ul>
+            </div>
+          );
+        })}
       </div>
     );
   } else {

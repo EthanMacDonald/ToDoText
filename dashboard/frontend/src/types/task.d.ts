@@ -21,8 +21,10 @@ export type Note = {
 };
 
 export type TaskGroup = {
-  type: 'group';
-  title: string;
+  type: 'group' | 'area';
+  title?: string;  // For regular tasks (type: 'group')
+  area?: string;   // For recurring tasks (type: 'area')
+  content?: string; // For recurring tasks
   tasks: Task[];
 };
 

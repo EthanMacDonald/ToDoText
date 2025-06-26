@@ -232,7 +232,14 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
             
             if area_match:
                 area = area_match.group(1)
-                task_stack = []
+                # Add area header to structure
+                tasks.append({
+                    'type': 'area',
+                    'area': area,
+                    'content': stripped,
+                    'tasks': []
+                })
+                task_stack = []  # Reset task stack for new area
                 
             elif task_match:
                 try:
@@ -280,7 +287,11 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
                     if indent_level > 0 and task_stack:
                         task_stack[-1]['subtasks'].append(task)
                     else:
-                        tasks.append(task)
+                        # Top-level task, add to current area or main tasks
+                        if tasks and tasks[-1]['type'] == 'area':
+                            tasks[-1]['tasks'].append(task)
+                        else:
+                            tasks.append(task)
                     
                     task_stack.append(task)
                     

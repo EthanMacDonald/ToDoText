@@ -6,7 +6,7 @@ const API_URL = 'http://localhost:8000';
 
 function App() {
   const [tasks, setTasks] = useState<TaskGroup[]>([]);
-  const [recurring, setRecurring] = useState<Task[]>([]);
+  const [recurring, setRecurring] = useState<TaskGroup[]>([]);
   const [filters, setFilters] = useState({ area: '', context: '', project: '' });
   const [sortBy, setSortBy] = useState('due'); // 'none', 'due', 'priority'
 
@@ -46,20 +46,22 @@ function App() {
     const allTasks: Task[] = [];
     
     // Extract tasks from grouped structure
-    tasks.forEach(group => {
-      const extractTasksRecursively = (taskList: Task[]) => {
-        taskList.forEach(task => {
-          allTasks.push(task);
-          if (task.subtasks) {
-            extractTasksRecursively(task.subtasks);
-          }
-        });
-      };
-      extractTasksRecursively(group.tasks);
-    });
+    const extractFromGroups = (groups: TaskGroup[]) => {
+      groups.forEach(group => {
+        const extractTasksRecursively = (taskList: Task[]) => {
+          taskList.forEach(task => {
+            allTasks.push(task);
+            if (task.subtasks) {
+              extractTasksRecursively(task.subtasks);
+            }
+          });
+        };
+        extractTasksRecursively(group.tasks);
+      });
+    };
     
-    // Add recurring tasks
-    allTasks.push(...recurring);
+    extractFromGroups(tasks);
+    extractFromGroups(recurring);
     
     return allTasks;
   };
@@ -75,13 +77,13 @@ function App() {
       <h1>Task Dashboard</h1>
       
       <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+        display: 'flex', 
         gap: 16, 
         marginBottom: 24,
         padding: 16,
         backgroundColor: '#f8f9fa',
-        borderRadius: 8
+        borderRadius: 8,
+        flexWrap: 'wrap'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>

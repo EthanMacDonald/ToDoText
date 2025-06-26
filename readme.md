@@ -129,10 +129,40 @@ README:
          - Update progress.
          - Save updates directly to your task file.
     
+    Web Dashboard: |
+      The project includes a modern web dashboard for task management:
+      
+      Features:
+      - View tasks organized by area headers
+      - Filter by area, context, and project with labeled dropdown menus
+      - Sort by priority, due date, or no sorting
+      - Check off tasks and recurring tasks
+      - Responsive, clean UI
+      
+      Setup:
+      1. Backend (FastAPI):
+         ```shell
+         cd dashboard/backend
+         pip install -r requirements.txt
+         uvicorn app:app --reload
+         ```
+      2. Frontend (React + TypeScript):
+         ```shell
+         cd dashboard/frontend
+         npm install
+         npm run dev
+         ```
+      
+      Access at: http://localhost:5173
+    
     Recommended_Project_Structure: |
       hybrid-task-manager/
       ├── tasks.txt
+      ├── recurring_tasks.txt
       ├── task_manager.py
+      ├── dashboard/
+      │   ├── backend/ (FastAPI)
+      │   └── frontend/ (React + TypeScript)
       ├── outputs/ (automatically created)
       └── README.md
     
