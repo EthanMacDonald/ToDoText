@@ -178,3 +178,55 @@ README:
 
   Conclusion: |
     Enjoy your productivity journey with clarity, simplicity, and effectiveness!
+
+  CSV Export Tool: |
+    Export your tasks to CSV format for analysis, reporting, or integration with other tools.
+    
+    Script: `make_csv.py`
+    
+    Features:
+      - Parses tasks.txt and extracts all metadata and tags
+      - Exports to CSV with separate columns for each field
+      - Handles projects (+Project), contexts (@Context), priorities, due dates, etc.
+      - Maintains area information and task hierarchy (indent levels)
+      - Leaves fields blank when no data is present
+    
+    Usage:
+      Basic export:
+        ```shell
+        python3 make_csv.py
+        ```
+      
+      Custom input/output files:
+        ```shell
+        python3 make_csv.py --input tasks.txt --output my_tasks.csv
+        ```
+      
+      Verbose output (shows parsing details):
+        ```shell
+        python3 make_csv.py --verbose
+        ```
+      
+      Help:
+        ```shell
+        python3 make_csv.py --help
+        ```
+    
+    CSV Columns:
+      - line_number: Original line number in tasks.txt
+      - completed: True/False completion status
+      - completion_date: Date when task was marked complete
+      - priority: Task priority (A, B, C, etc.)
+      - description: Task text without tags
+      - area: Section/area the task belongs to
+      - project: Primary +Project tag
+      - extra_projects: Additional +Project tags
+      - context: Primary @Context tag
+      - extra_contexts: Additional @Context tags
+      - due_date, created_date, done_date: Date metadata
+      - recurring: Recurrence pattern
+      - progress: Progress percentage
+      - indent_level: Indentation depth for subtasks
+      - Additional metadata fields as discovered
+    
+    Output: Creates `tasks_export.csv` by default, ready for import into spreadsheets or databases.
