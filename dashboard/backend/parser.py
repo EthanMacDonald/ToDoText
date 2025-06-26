@@ -744,3 +744,75 @@ def build_area_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[
             })
     
     return result
+
+def create_task(task_request) -> bool:
+    """Create a new task and add it to the tasks.txt file"""
+    try:
+        # Build the task line
+        task_line = f"    - [ ] {task_request.description}"
+        
+        # Build metadata string
+        metadata_parts = []
+        if task_request.priority:
+            metadata_parts.append(f"priority:{task_request.priority}")
+        if task_request.due_date:
+            metadata_parts.append(f"due:{task_request.due_date}")
+        if task_request.recurring:
+            metadata_parts.append(f"every:{task_request.recurring}")
+        
+        if metadata_parts:
+            task_line += f" ({' '.join(metadata_parts)})"
+        
+        # Add context and project tags
+        if task_request.project:
+            task_line += f" +{task_request.project}"
+        if task_request.context:
+            task_line += f" @{task_request.context}"
+        
+        task_line += "\n"
+        
+        # Read the current file
+        with open(tasks_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Find the correct area and insert the task
+        area_found = False
+        insert_index = -1
+        
+        for i, line in enumerate(lines):
+            stripped = line.rstrip()
+            # Check if this line is the target area
+            if stripped == f"{task_request.area}:":
+                area_found = True
+                # Find the end of this area (next area or end of file)
+                for j in range(i + 1, len(lines)):
+                    next_stripped = lines[j].rstrip()
+                    # If we hit another area (line ending with ':' and not indented)
+                    if next_stripped and not next_stripped.startswith(' ') and next_stripped.endswith(':'):
+                        insert_index = j
+                        break
+                else:
+                    # No next area found, insert at end
+                    insert_index = len(lines)
+                break
+        
+        if not area_found:
+            # Area doesn't exist, create it at the end
+            if lines and not lines[-1].endswith('\n'):
+                lines.append('\n')
+            lines.append(f"\n{task_request.area}:\n")
+            lines.append(task_line)
+        else:
+            # Insert the task in the found area
+            lines.insert(insert_index, task_line)
+        
+        # Write back to file
+        with open(tasks_file, 'w') as f:
+            f.writelines(lines)
+        
+        print(f"Successfully created task: {task_request.description} in area: {task_request.area}")
+        return True
+        
+    except Exception as e:
+        print(f"Error creating task: {e}")
+        return False

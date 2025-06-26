@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import TaskList from './components/TaskList';
+import CreateTaskForm from './components/CreateTaskForm';
 import type { Task, TaskGroup } from './types/task';
 
 const API_URL = 'http://localhost:8000';
@@ -38,8 +39,28 @@ function App() {
       body: JSON.stringify({ task_id: id })
     });
     // Refresh data
-    fetch(`${API_URL}/tasks`).then(r => r.json()).then(setTasks);
-    fetch(`${API_URL}/recurring`).then(r => r.json()).then(setRecurring);
+    refreshTasks();
+  };
+
+  const refreshTasks = async () => {
+    const tasksUrl = sortBy === 'none' ? '/tasks?sort=none' : 
+                    sortBy === 'priority' ? '/tasks?sort=priority' : '/tasks';
+    
+    const [tasksRes, recurringRes] = await Promise.all([
+      fetch(`${API_URL}${tasksUrl}`),
+      fetch(`${API_URL}/recurring`)
+    ]);
+    
+    const tasksData = await tasksRes.json();
+    const recurringData = await recurringRes.json();
+    
+    setTasks(tasksData);
+    setRecurring(recurringData);
+  };
+
+  const handleTaskCreated = () => {
+    // Refresh tasks after creating a new one
+    refreshTasks();
   };
 
   // Extract unique values for filters from both task groups and recurring tasks
@@ -68,7 +89,7 @@ function App() {
   };
 
   const allTasks = getAllTasks();
-  const unique = (arr: (string | undefined)[]) => Array.from(new Set(arr.filter(Boolean)));
+  const unique = (arr: (string | undefined)[]) => Array.from(new Set(arr.filter((item): item is string => Boolean(item))));
   const areas = unique(allTasks.map(t => t.area));
   const contexts = unique(allTasks.map(t => t.context));
   const projects = unique(allTasks.map(t => t.project));
@@ -76,6 +97,14 @@ function App() {
   return (
     <div style={{ maxWidth: 800, margin: 'auto', padding: 24 }}>
       <h1>Task Dashboard</h1>
+      
+      {/* Create Task Form */}
+      <CreateTaskForm 
+        onTaskCreated={handleTaskCreated}
+        areas={areas}
+        contexts={contexts}
+        projects={projects}
+      />
       
       <div style={{ 
         display: 'flex', 
