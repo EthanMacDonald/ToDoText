@@ -6,6 +6,12 @@ from typing import List, Dict, Any, Optional
 tasks_file = '../../tasks.txt'
 recurring_file = '../../recurring_tasks.txt'
 
+def generate_stable_task_id(area, description, indent_level, line_number):
+    """Generate a stable task ID based on task content and position"""
+    import hashlib
+    content = f"{area}:{description}:{indent_level}:{line_number}"
+    return hashlib.md5(content.encode()).hexdigest()[:16]
+
 def parse_tasks_raw() -> List[Dict[str, Any]]:
     """Parse tasks into raw nested structure"""
     tasks = []
@@ -77,7 +83,7 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                     clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
                     
                     task = {
-                        'id': str(uuid.uuid4()),
+                        'id': generate_stable_task_id(area, clean_content, indent_level, line_number),
                         'type': 'task',
                         'description': clean_content,
                         'completed': completed == 'x',
@@ -91,7 +97,7 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                         'subtasks': [],
                         'notes': [],
                         'due_date_obj': due_date,  # Keep for sorting
-                        'done_date_obj': done_date.strftime('%Y-%m-%d') if done_date else '',
+                        'done_date_obj': done_date,
                         'extra_projects': project_tags[1:] if len(project_tags) > 1 else [],
                         'extra_contexts': context_tags[1:] if len(context_tags) > 1 else [],
                         'metadata': metadata
@@ -346,7 +352,7 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
                     clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
                     
                     task = {
-                        'id': str(uuid.uuid4()),
+                        'id': generate_stable_task_id(area, clean_content, indent_level, line_number),
                         'type': 'recurring_task',
                         'description': clean_content,
                         'completed': completed == 'x',
@@ -388,14 +394,158 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
     return tasks
 
 def check_off_task(task_id: str) -> bool:
-    """Check off a task - implementation needed for actual file modification"""
-    # TODO: Implement actual task checking in file
-    return True
+    """Check off a task - toggle its completion status in the file"""
+    try:
+        # First, parse all tasks to find the one with the matching ID
+        raw_tasks = parse_tasks_raw()
+        task_to_toggle = find_task_by_id(raw_tasks, task_id)
+        
+        if not task_to_toggle:
+            print(f"Task with ID {task_id} not found")
+            return False
+            
+        # Read the current file content
+        with open(tasks_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Find and toggle the task
+        success = toggle_task_in_lines(lines, task_to_toggle)
+        
+        if success:
+            # Write the modified content back to the file
+            with open(tasks_file, 'w') as f:
+                f.writelines(lines)
+            print(f"Successfully toggled task: {task_to_toggle['description']}")
+            return True
+        else:
+            print(f"Failed to find task in file: {task_to_toggle['description']}")
+            return False
+            
+    except Exception as e:
+        print(f"Error toggling task {task_id}: {e}")
+        return False
 
 def check_off_recurring_task(task_id: str) -> bool:
-    """Check off a recurring task - implementation needed for actual file modification"""
-    # TODO: Implement actual recurring task checking in file
-    return True
+    """Check off a recurring task - toggle its completion status in the file"""
+    try:
+        # First, parse all recurring tasks to find the one with the matching ID
+        raw_tasks = parse_recurring_tasks()
+        task_to_toggle = find_task_by_id(raw_tasks, task_id)
+        
+        if not task_to_toggle:
+            print(f"Recurring task with ID {task_id} not found")
+            return False
+            
+        # Read the current file content
+        with open(recurring_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Find and toggle the task
+        success = toggle_task_in_lines(lines, task_to_toggle)
+        
+        if success:
+            # Write the modified content back to the file
+            with open(recurring_file, 'w') as f:
+                f.writelines(lines)
+            print(f"Successfully toggled recurring task: {task_to_toggle['description']}")
+            return True
+        else:
+            print(f"Failed to find recurring task in file: {task_to_toggle['description']}")
+            return False
+            
+    except Exception as e:
+        print(f"Error toggling recurring task {task_id}: {e}")
+        return False
+
+def find_task_by_id(tasks_structure, target_id):
+    """Recursively find a task by its ID in the parsed structure"""
+    def search_in_items(items):
+        for item in items:
+            if item.get('type') == 'task' and item.get('id') == target_id:
+                return item
+            elif item.get('type') == 'area' and item.get('tasks'):
+                result = search_in_items(item['tasks'])
+                if result:
+                    return result
+            elif item.get('subtasks'):
+                result = search_in_items(item['subtasks'])
+                if result:
+                    return result
+        return None
+    
+    return search_in_items(tasks_structure)
+
+def toggle_task_in_lines(lines, task_info):
+    """Find and toggle a task's completion status in the file lines"""
+    # We need to find the task by matching its content and context
+    area = task_info.get('area')
+    description = task_info.get('description', '').strip()
+    indent_level = task_info.get('indent_level', 0)
+    
+    # Calculate the expected indentation
+    expected_indent = '    ' * indent_level  # 4 spaces per level
+    
+    # Look for the area first if this is a top-level task
+    current_area = None
+    in_correct_area = False
+    
+    for i, line in enumerate(lines):
+        stripped = line.rstrip()
+        
+        # Track current area
+        area_match = re.match(r'^(\S.+):$', stripped)
+        if area_match:
+            current_area = area_match.group(1)
+            in_correct_area = (area is None or current_area == area)
+            continue
+            
+        # Look for task lines
+        task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
+        if task_match and in_correct_area:
+            indent, completed, content = task_match.groups()
+            
+            # Check if this is the right indentation level
+            if len(indent) != len(expected_indent):
+                continue
+                
+            # Remove metadata and tags from content for comparison
+            content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
+            clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
+            
+            # Compare with the task description
+            if clean_content == description:
+                # Found the task! Toggle its completion status
+                new_status = ' ' if completed == 'x' else 'x'
+                new_line = line.replace(f'[{completed}]', f'[{new_status}]', 1)
+                
+                # If marking as complete, add done date metadata
+                if new_status == 'x' and 'done:' not in new_line:
+                    # Find a good place to insert the done date
+                    # Look for existing metadata parentheses
+                    if re.search(r'\([^)]*\)', new_line):
+                        # Add to existing metadata
+                        new_line = re.sub(r'\(([^)]*)\)', rf'(\1 done:{date.today().strftime("%Y-%m-%d")})', new_line, 1)
+                    else:
+                        # Add new metadata at the end before any tags
+                        content_part = new_line.split('] ', 1)[1] if '] ' in new_line else new_line
+                        # Insert before the first tag or at the end
+                        tag_match = re.search(r'([+@]\w+)', content_part)
+                        if tag_match:
+                            insert_pos = tag_match.start()
+                            content_before = content_part[:insert_pos].rstrip()
+                            content_after = content_part[insert_pos:]
+                            new_content = f"{content_before} (done:{date.today().strftime('%Y-%m-%d')}) {content_after}"
+                        else:
+                            new_content = f"{content_part.rstrip()} (done:{date.today().strftime('%Y-%m-%d')})"
+                        
+                        new_line = new_line.split('] ', 1)[0] + '] ' + new_content
+                        if not new_line.endswith('\n'):
+                            new_line += '\n'
+                
+                lines[i] = new_line
+                return True
+    
+    return False
 
 def extract_context(content: str) -> str:
     """Legacy function for backward compatibility"""

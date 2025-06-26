@@ -1,7 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
+from pydantic import BaseModel
 from parser import parse_tasks, parse_recurring_tasks, check_off_task, check_off_recurring_task, parse_tasks_by_priority, parse_tasks_no_sort
+
+class CheckTaskRequest(BaseModel):
+    task_id: str
 
 app = FastAPI()
 
@@ -33,15 +37,15 @@ def get_recurring():
     return parse_recurring_tasks()
 
 @app.post("/tasks/check")
-def post_check_task(task_id: str):
-    success = check_off_task(task_id)
+def post_check_task(request: CheckTaskRequest):
+    success = check_off_task(request.task_id)
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
     return {"success": True}
 
 @app.post("/recurring/check")
-def post_check_recurring(task_id: str):
-    success = check_off_recurring_task(task_id)
+def post_check_recurring(request: CheckTaskRequest):
+    success = check_off_recurring_task(request.task_id)
     if not success:
         raise HTTPException(status_code=404, detail="Recurring task not found")
     return {"success": True}
