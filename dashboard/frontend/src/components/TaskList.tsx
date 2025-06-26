@@ -19,6 +19,79 @@ const TaskItem: React.FC<{
   onCheck: (id: string) => void;
   depth?: number;
 }> = ({ task, onCheck, depth = 0 }) => {
+  // Build metadata string in the format: (priority:A due:2025-06-24 progress:50%)
+  const buildMetadataString = (task: Task) => {
+    const meta: string[] = [];
+    
+    if (task.priority) {
+      meta.push(`priority:${task.priority}`);
+    }
+    if (task.due_date) {
+      meta.push(`due:${task.due_date}`);
+    }
+    if (task.done_date_obj) {
+      meta.push(`done:${task.done_date_obj}`);
+    }
+    if (task.recurring) {
+      meta.push(`every:${task.recurring}`);
+    }
+    
+    // Add any additional metadata from the metadata object
+    if (task.metadata) {
+      Object.entries(task.metadata).forEach(([key, value]) => {
+        // Skip keys we've already handled
+        if (!['priority', 'due', 'done', 'every'].includes(key) && value) {
+          meta.push(`${key}:${value}`);
+        }
+      });
+    }
+    
+    return meta.length > 0 ? ` (${meta.join(' ')})` : '';
+  };
+
+  // Build tags string in the format: +Project @Context
+  const buildTagsString = (task: Task, isPrimaryTask: boolean = false) => {
+    const tags: string[] = [];
+    
+    // Add primary project tag
+    if (task.project && task.project !== 'NoProject') {
+      tags.push(`+${task.project}`);
+    }
+    
+    // Add extra project tags
+    if (task.extra_projects && task.extra_projects.length > 0) {
+      task.extra_projects.forEach(project => {
+        if (project !== task.project) {
+          tags.push(`+${project}`);
+        }
+      });
+    }
+    
+    // Add primary context tag
+    if (task.context && task.context !== 'NoContext') {
+      tags.push(`@${task.context}`);
+    }
+    
+    // Add extra context tags
+    if (task.extra_contexts && task.extra_contexts.length > 0) {
+      task.extra_contexts.forEach(context => {
+        if (context !== task.context) {
+          tags.push(`@${context}`);
+        }
+      });
+    }
+    
+    // Add area tag for primary tasks (not subtasks)
+    if (isPrimaryTask && task.area && depth === 0) {
+      tags.push(`+${task.area}`);
+    }
+    
+    return tags.length > 0 ? ` ${tags.join(' ')}` : '';
+  };
+
+  const metadataString = buildMetadataString(task);
+  const tagsString = buildTagsString(task, depth === 0);
+
   return (
     <>
       <li 
@@ -39,19 +112,14 @@ const TaskItem: React.FC<{
           />
           <span>
             {task.description}
-            {task.due_date && (
-              <span style={{ color: '#888', marginLeft: 8, fontSize: '12px' }}>
-                (Due: {task.due_date})
+            {metadataString && (
+              <span style={{ color: '#666', marginLeft: 4, fontSize: '12px' }}>
+                {metadataString}
               </span>
             )}
-            {task.priority && (
-              <span style={{ color: '#666', marginLeft: 8, fontSize: '12px' }}>
-                [Priority: {task.priority}]
-              </span>
-            )}
-            {task.recurring && (
-              <span style={{ color: '#888', marginLeft: 8, fontSize: '12px' }}>
-                (every: {task.recurring})
+            {tagsString && (
+              <span style={{ color: '#0066cc', marginLeft: 4, fontSize: '12px', fontWeight: 500 }}>
+                {tagsString}
               </span>
             )}
           </span>

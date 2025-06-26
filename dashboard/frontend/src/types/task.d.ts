@@ -12,6 +12,11 @@ export type Task = {
   subtasks?: Task[];
   notes?: Note[];
   type?: string;
+  // Additional metadata fields
+  done_date_obj?: string;
+  extra_projects?: string[];
+  extra_contexts?: string[];
+  metadata?: Record<string, string>;
 };
 
 export type Note = {

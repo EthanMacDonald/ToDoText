@@ -86,11 +86,12 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                         'project': project_tags[0] if project_tags else '',
                         'due_date': due_date.strftime('%Y-%m-%d') if due_date else '',
                         'priority': metadata.get('priority', ''),
+                        'recurring': metadata.get('every', ''),
                         'indent_level': indent_level,
                         'subtasks': [],
                         'notes': [],
                         'due_date_obj': due_date,  # Keep for sorting
-                        'done_date_obj': done_date,
+                        'done_date_obj': done_date.strftime('%Y-%m-%d') if done_date else '',
                         'extra_projects': project_tags[1:] if len(project_tags) > 1 else [],
                         'extra_contexts': context_tags[1:] if len(context_tags) > 1 else [],
                         'metadata': metadata
@@ -352,9 +353,16 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
                         'area': area,
                         'context': context_tags[0] if context_tags else '',
                         'project': project_tags[0] if project_tags else '',
+                        'due_date': '',  # Recurring tasks typically don't have due dates
+                        'priority': metadata.get('priority', ''),
                         'recurring': metadata.get('every', ''),
                         'indent_level': indent_level,
                         'subtasks': [],
+                        'notes': [],
+                        'due_date_obj': None,
+                        'done_date_obj': '',
+                        'extra_projects': project_tags[1:] if len(project_tags) > 1 else [],
+                        'extra_contexts': context_tags[1:] if len(context_tags) > 1 else [],
                         'metadata': metadata
                     }
                     
