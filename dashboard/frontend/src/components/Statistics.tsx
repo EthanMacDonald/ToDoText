@@ -14,13 +14,16 @@ type StatisticsData = {
 
 type Props = {
   refreshTrigger?: number; // Optional prop to trigger refresh
+  onTasksChanged?: () => void; // Callback when tasks are modified (e.g., archived)
 };
 
-const Statistics: React.FC<Props> = ({ refreshTrigger }) => {
+const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [statistics, setStatistics] = useState<StatisticsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [archiveMessage, setArchiveMessage] = useState<string | null>(null);
 
   const fetchStatistics = async () => {
     setIsLoading(true);
@@ -42,6 +45,41 @@ const Statistics: React.FC<Props> = ({ refreshTrigger }) => {
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const archiveCompletedTasks = async () => {
+    setIsArchiving(true);
+    setError(null);
+    setArchiveMessage(null);
+    
+    try {
+      const response = await fetch('http://localhost:8000/tasks/archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to archive tasks: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      setArchiveMessage(result.message);
+      
+      // Refresh statistics after archiving
+      await fetchStatistics();
+      
+      // Notify parent component that tasks have changed
+      if (onTasksChanged) {
+        onTasksChanged();
+      }
+      
+    } catch (error) {
+      console.error('Error archiving tasks:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to archive tasks';
+      setError(errorMessage);
+    } finally {
+      setIsArchiving(false);
     }
   };
 
@@ -281,6 +319,19 @@ const Statistics: React.FC<Props> = ({ refreshTrigger }) => {
             </div>
           )}
           
+          {archiveMessage && (
+            <div style={{
+              backgroundColor: '#c6f6d5',
+              color: '#22543d',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
+              {archiveMessage}
+            </div>
+          )}
+          
           {isLoading && (
             <div style={{
               color: 'white',
@@ -300,21 +351,43 @@ const Statistics: React.FC<Props> = ({ refreshTrigger }) => {
               paddingTop: '16px', 
               borderTop: '1px solid #4a5568',
               display: 'flex',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              gap: '12px',
+              flexWrap: 'wrap'
             }}>
               <button
                 onClick={fetchStatistics}
+                disabled={isLoading}
                 style={{
                   padding: '8px 16px',
                   backgroundColor: '#3182ce',
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: isLoading ? 0.6 : 1
                 }}
               >
                 🔄 Refresh Statistics
+              </button>
+              
+              <button
+                onClick={archiveCompletedTasks}
+                disabled={isArchiving || !statistics?.completed}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: !statistics?.completed ? '#6c757d' : '#e53e3e',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: isArchiving || !statistics?.completed ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: isArchiving || !statistics?.completed ? 0.6 : 1
+                }}
+                title={!statistics?.completed ? 'No completed tasks to archive' : 'Archive all completed tasks'}
+              >
+                {isArchiving ? '📦 Archiving...' : '📦 Archive Completed'}
               </button>
             </div>
           )}

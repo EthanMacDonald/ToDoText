@@ -109,7 +109,10 @@ function App() {
       />
       
       {/* Statistics Panel */}
-      <Statistics refreshTrigger={refreshTrigger} />
+      <Statistics 
+        refreshTrigger={refreshTrigger} 
+        onTasksChanged={refreshTasks}
+      />
       
       <div style={{ 
         display: 'flex', 
