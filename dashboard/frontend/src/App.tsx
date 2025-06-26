@@ -13,6 +13,7 @@ function App() {
   const [filters, setFilters] = useState({ area: '', context: '', project: '' });
   const [sortBy, setSortBy] = useState('due'); // 'none', 'due', 'priority'
   const [taskTypeFilter, setTaskTypeFilter] = useState('all'); // 'all', 'regular', 'recurring'
+  const [recurringFilter, setRecurringFilter] = useState('today'); // 'today', 'next7days', 'all'
   const [refreshTrigger, setRefreshTrigger] = useState(0); // For triggering statistics refresh
   const [editingTask, setEditingTask] = useState<Task | null>(null); // For editing tasks
 
@@ -23,7 +24,7 @@ function App() {
       
       const [tasksRes, recurringRes] = await Promise.all([
         fetch(`${API_URL}${tasksUrl}`),
-        fetch(`${API_URL}/recurring`)
+        fetch(`${API_URL}/recurring?filter=${recurringFilter}`)
       ]);
       
       const tasksData = await tasksRes.json();
@@ -34,7 +35,7 @@ function App() {
     };
     
     fetchTasks();
-  }, [sortBy]);
+  }, [sortBy, recurringFilter]);
 
   const handleCheck = async (id: string, recurringTask: boolean = false) => {
     await fetch(`${API_URL}/${recurringTask ? 'recurring' : 'tasks'}/check`, {
@@ -53,7 +54,7 @@ function App() {
     
     const [tasksRes, recurringRes] = await Promise.all([
       fetch(`${API_URL}${tasksUrl}`),
-      fetch(`${API_URL}/recurring`)
+      fetch(`${API_URL}/recurring?filter=${recurringFilter}`)
     ]);
     
     const tasksData = await tasksRes.json();
@@ -61,6 +62,21 @@ function App() {
     
     setTasks(tasksData);
     setRecurring(recurringData);
+  };
+
+  const handleRecurringStatus = async (id: string, status: 'completed' | 'missed' | 'deferred') => {
+    try {
+      await fetch(`${API_URL}/recurring/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_id: id, status })
+      });
+      // Refresh recurring tasks after status update
+      refreshTasks();
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Error updating recurring task status:', error);
+    }
   };
 
   const handleTaskCreated = () => {
@@ -221,14 +237,32 @@ function App() {
 
       {(taskTypeFilter === 'all' || taskTypeFilter === 'recurring') && recurring.length > 0 && (
         <div style={{ marginBottom: 32 }}>
-          <h2 style={{ color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: 8 }}>
-            Today's Recurring Tasks
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: 8, margin: 0 }}>
+              Recurring Tasks
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+                Show Recurring:
+              </label>
+              <select 
+                value={recurringFilter} 
+                onChange={e => setRecurringFilter(e.target.value)}
+                style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd', minWidth: 120 }}
+              >
+                <option value='today'>Today</option>
+                <option value='next7days'>Next 7 Days</option>
+                <option value='all'>All</option>
+              </select>
+            </div>
+          </div>
           <TaskList 
             data={recurring} 
             onCheck={(id) => handleCheck(id, true)} 
             onEdit={handleEditTask}
+            onRecurringStatus={handleRecurringStatus}
             filters={filters} 
+            isRecurring={true}
           />
         </div>
       )}

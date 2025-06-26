@@ -5,7 +5,9 @@ type Props = {
   data: TaskGroup[] | Task[];
   onCheck: (id: string) => void;
   onEdit?: (task: Task) => void;
+  onRecurringStatus?: (id: string, status: 'completed' | 'missed' | 'deferred') => void;
   filters: { area: string; context: string; project: string };
+  isRecurring?: boolean;
 };
 
 function filterTask(task: Task, filters: Props['filters']) {
@@ -19,8 +21,10 @@ const TaskItem: React.FC<{
   task: Task;
   onCheck: (id: string) => void;
   onEdit?: (task: Task) => void;
+  onRecurringStatus?: (id: string, status: 'completed' | 'missed' | 'deferred') => void;
   depth?: number;
-}> = ({ task, onCheck, onEdit, depth = 0 }) => {
+  isRecurring?: boolean;
+}> = ({ task, onCheck, onEdit, onRecurringStatus, depth = 0, isRecurring = false }) => {
   // Build metadata string in the format: (priority:A due:2025-06-24 progress:50%)
   const buildMetadataString = (task: Task) => {
     const meta: string[] = [];
@@ -124,6 +128,67 @@ const TaskItem: React.FC<{
               </span>
             )}
           </span>
+          
+          {/* Status buttons for recurring tasks */}
+          {isRecurring && onRecurringStatus && (
+            <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onRecurringStatus(task.id, 'completed');
+                }}
+                style={{
+                  background: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10px',
+                  cursor: 'pointer'
+                }}
+                title="Mark as completed"
+              >
+                ✓
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onRecurringStatus(task.id, 'missed');
+                }}
+                style={{
+                  background: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10px',
+                  cursor: 'pointer'
+                }}
+                title="Mark as missed"
+              >
+                ✗
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onRecurringStatus(task.id, 'deferred');
+                }}
+                style={{
+                  background: '#f59e0b',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10px',
+                  cursor: 'pointer'
+                }}
+                title="Mark as deferred"
+              >
+                ↻
+              </button>
+            </div>
+          )}
+          
           {onEdit && (
             <button
               onClick={(e) => {
@@ -170,6 +235,8 @@ const TaskItem: React.FC<{
           task={subtask}
           onCheck={onCheck}
           onEdit={onEdit}
+          onRecurringStatus={onRecurringStatus}
+          isRecurring={isRecurring}
           depth={depth + 1}
         />
       ))}
@@ -177,7 +244,7 @@ const TaskItem: React.FC<{
   );
 };
 
-const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, filters }) => {
+const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onRecurringStatus, filters, isRecurring = false }) => {
   // Handle both grouped and flat data structures
   const isGroupedData = (data: TaskGroup[] | Task[]): data is TaskGroup[] => {
     return data.length > 0 && 'type' in data[0] && (data[0].type === 'group' || data[0].type === 'area');
@@ -213,6 +280,8 @@ const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, filters }) => {
                       task={task}
                       onCheck={onCheck}
                       onEdit={onEdit}
+                      onRecurringStatus={onRecurringStatus}
+                      isRecurring={isRecurring}
                     />
                   ))
                 }
@@ -234,6 +303,8 @@ const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, filters }) => {
               task={task}
               onCheck={onCheck}
               onEdit={onEdit}
+              onRecurringStatus={onRecurringStatus}
+              isRecurring={isRecurring}
             />
           ))
         }

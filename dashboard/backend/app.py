@@ -5,12 +5,16 @@ from pydantic import BaseModel
 from parser import parse_tasks, parse_recurring_tasks, check_off_task, check_off_recurring_task, parse_tasks_by_priority, parse_tasks_no_sort, create_task, edit_task
 import re
 import datetime
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from collections import Counter, defaultdict
 import os
 
 class CheckTaskRequest(BaseModel):
     task_id: str
+
+class RecurringTaskStatusRequest(BaseModel):
+    task_id: str
+    status: str  # "completed", "missed", "deferred"
 
 class EditTaskRequest(BaseModel):
     area: str
@@ -30,6 +34,45 @@ class CreateTaskRequest(BaseModel):
     context: Optional[str] = None
     project: Optional[str] = None
     recurring: Optional[str] = None  # e.g., "daily", "weekly:Mon"
+
+def log_recurring_task_status(task_id: str, status: str, task_description: str) -> bool:
+    """Log recurring task status to tracking file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        log_file = os.path.join(current_dir, '../../recurring_status_log.txt')
+        
+        # Create log entry with timestamp
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log_entry = f"{timestamp} | {status.upper()} | {task_id} | {task_description}\n"
+        
+        # Append to log file
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(log_entry)
+        
+        return True
+    except Exception as e:
+        print(f"Error logging recurring task status: {e}")
+        return False
+
+def get_recurring_tasks_by_filter(filter_type: str = "today"):
+    """Get recurring tasks filtered by time period"""
+    try:
+        all_recurring = parse_recurring_tasks()
+        
+        if filter_type == "all":
+            return all_recurring
+        
+        # For today and next7days, we'll return all tasks for now
+        # In a real implementation, you'd want to parse the 'every' field
+        # and determine which tasks are due based on the current date
+        
+        # For now, just return all recurring tasks regardless of filter
+        # This can be enhanced later with proper recurring logic
+        return all_recurring
+        
+    except Exception as e:
+        print(f"Error filtering recurring tasks: {e}")
+        return []
 
 def archive_completed_tasks():
     """Archive completed tasks using the same logic as archive_completed_items.py"""
@@ -245,8 +288,9 @@ def get_tasks(sort: str = "due"):
         return parse_tasks()  # Default due date sorting
 
 @app.get("/recurring")
-def get_recurring():
-    return parse_recurring_tasks()
+def get_recurring(filter: str = "today"):
+    """Get recurring tasks with optional filtering"""
+    return get_recurring_tasks_by_filter(filter)
 
 @app.get("/statistics")
 def get_statistics():
@@ -319,3 +363,41 @@ def put_edit_task(task_id: str, request: EditTaskRequest):
     if not success:
         raise HTTPException(status_code=404, detail="Task not found or failed to edit")
     return {"success": True}
+
+@app.post("/recurring/status")
+def post_recurring_status(request: RecurringTaskStatusRequest):
+    """Set status for a recurring task and log it"""
+    try:
+        # First get the task details to log the description
+        recurring_tasks = parse_recurring_tasks()
+        task_description = None
+        
+        # Find the task description
+        def find_task_in_groups(groups, target_id):
+            for group in groups:
+                if group.get('type') == 'area':
+                    for task in group.get('tasks', []):
+                        if task.get('id') == target_id:
+                            return task.get('description', 'Unknown task')
+                        # Check subtasks
+                        if task.get('subtasks'):
+                            for subtask in task['subtasks']:
+                                if subtask.get('id') == target_id:
+                                    return subtask.get('description', 'Unknown subtask')
+            return None
+        
+        task_description = find_task_in_groups(recurring_tasks, request.task_id)
+        if not task_description:
+            raise HTTPException(status_code=404, detail="Recurring task not found")
+        
+        # Log the status
+        success = log_recurring_task_status(request.task_id, request.status, task_description)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to log task status")
+        
+        return {"success": True, "message": f"Task marked as {request.status}"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing status update: {str(e)}")
