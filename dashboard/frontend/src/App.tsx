@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import TaskList from './components/TaskList';
 import CreateTaskForm from './components/CreateTaskForm';
+import Statistics from './components/Statistics';
 import type { Task, TaskGroup } from './types/task';
 
 const API_URL = 'http://localhost:8000';
@@ -11,6 +12,7 @@ function App() {
   const [filters, setFilters] = useState({ area: '', context: '', project: '' });
   const [sortBy, setSortBy] = useState('due'); // 'none', 'due', 'priority'
   const [taskTypeFilter, setTaskTypeFilter] = useState('all'); // 'all', 'regular', 'recurring'
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // For triggering statistics refresh
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -38,8 +40,9 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ task_id: id })
     });
-    // Refresh data
+    // Refresh data and trigger statistics refresh
     refreshTasks();
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const refreshTasks = async () => {
@@ -59,8 +62,9 @@ function App() {
   };
 
   const handleTaskCreated = () => {
-    // Refresh tasks after creating a new one
+    // Refresh tasks after creating a new one and trigger statistics refresh
     refreshTasks();
+    setRefreshTrigger(prev => prev + 1);
   };
 
   // Extract unique values for filters from both task groups and recurring tasks
@@ -103,6 +107,9 @@ function App() {
         onTaskCreated={handleTaskCreated}
         areas={areas}
       />
+      
+      {/* Statistics Panel */}
+      <Statistics refreshTrigger={refreshTrigger} />
       
       <div style={{ 
         display: 'flex', 
