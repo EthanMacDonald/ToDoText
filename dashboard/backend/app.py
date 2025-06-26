@@ -61,13 +61,6 @@ def post_check_recurring(request: CheckTaskRequest):
 
 @app.post("/tasks/create")
 def post_create_task(request: CreateTaskRequest):
-    success = create_task(request)
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to create task")
-    return {"success": True}
-
-@app.post("/tasks")
-def create_task(request: CreateTaskRequest):
     """Create a new task and add it to the tasks.txt file
     
     Args:
@@ -76,6 +69,7 @@ def create_task(request: CreateTaskRequest):
     Returns:
         A success message
     """
-    # Here you would add the logic to append the task to the tasks.txt file
-    # For now, we'll just return the received data as a placeholder
-    return {"success": True, "task": request}
+    success = create_task(request)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to create task")
+    return {"success": True}

@@ -17,6 +17,7 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
     recurring: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +28,7 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
     }
 
     setIsSubmitting(true);
+    setError(null);
     
     try {
       const payload = {
@@ -39,15 +41,25 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
         ...(formData.recurring && { recurring: formData.recurring })
       };
 
+      console.log('Sending payload:', payload);
+
       const response = await fetch('http://localhost:8000/tasks/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
-        throw new Error('Failed to create task');
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to create task: ${response.status} ${errorText}`);
       }
+
+      const result = await response.json();
+      console.log('Success response:', result);
 
       // Reset form
       setFormData({
@@ -65,7 +77,9 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
       
     } catch (error) {
       console.error('Error creating task:', error);
-      alert('Failed to create task. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create task. Please try again.';
+      setError(errorMessage);
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -108,6 +122,19 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
       
       {isExpanded && (
         <form onSubmit={handleSubmit} style={{ padding: '16px' }}>
+          {error && (
+            <div style={{
+              backgroundColor: '#fed7d7',
+              color: '#c53030',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
+          
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 

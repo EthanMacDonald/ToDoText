@@ -3,7 +3,11 @@ import uuid
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 
-tasks_file = '../../tasks.txt'
+import os
+
+# Get the absolute path to the tasks.txt file
+current_dir = os.path.dirname(os.path.abspath(__file__))
+tasks_file = os.path.join(current_dir, '../../tasks.txt')
 recurring_file = '../../recurring_tasks.txt'
 
 def generate_stable_task_id(area, description, indent_level, line_number):
