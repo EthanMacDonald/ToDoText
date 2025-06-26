@@ -9,6 +9,7 @@ function App() {
   const [recurring, setRecurring] = useState<TaskGroup[]>([]);
   const [filters, setFilters] = useState({ area: '', context: '', project: '' });
   const [sortBy, setSortBy] = useState('due'); // 'none', 'due', 'priority'
+  const [taskTypeFilter, setTaskTypeFilter] = useState('all'); // 'all', 'regular', 'recurring'
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -80,11 +81,22 @@ function App() {
         display: 'flex', 
         gap: 16, 
         marginBottom: 24,
-        padding: 16,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 8,
         flexWrap: 'wrap'
       }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+            Show:
+          </label>
+          <select 
+            value={taskTypeFilter} 
+            onChange={e => setTaskTypeFilter(e.target.value)}
+            style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd' }}
+          >
+            <option value='all'>All Tasks</option>
+            <option value='regular'>Regular Tasks Only</option>
+            <option value='recurring'>Recurring Tasks Only</option>
+          </select>
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
             Filter by Area:
@@ -143,7 +155,7 @@ function App() {
         </div>
       </div>
 
-      {recurring.length > 0 && (
+      {(taskTypeFilter === 'all' || taskTypeFilter === 'recurring') && recurring.length > 0 && (
         <div style={{ marginBottom: 32 }}>
           <h2 style={{ color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: 8 }}>
             Today's Recurring Tasks
@@ -156,18 +168,20 @@ function App() {
         </div>
       )}
 
-      <div>
-        <h2 style={{ color: '#059669', borderBottom: '2px solid #059669', paddingBottom: 8 }}>
-          Tasks {sortBy === 'due' ? '(Sorted by Due Date)' : 
-                 sortBy === 'priority' ? '(Sorted by Priority)' : 
-                 '(No Sorting)'}
-        </h2>
-        <TaskList 
-          data={tasks} 
-          onCheck={(id) => handleCheck(id, false)} 
-          filters={filters} 
-        />
-      </div>
+      {(taskTypeFilter === 'all' || taskTypeFilter === 'regular') && (
+        <div>
+          <h2 style={{ color: '#059669', borderBottom: '2px solid #059669', paddingBottom: 8 }}>
+            Tasks {sortBy === 'due' ? '(Sorted by Due Date)' : 
+                   sortBy === 'priority' ? '(Sorted by Priority)' : 
+                   '(No Sorting)'}
+          </h2>
+          <TaskList 
+            data={tasks} 
+            onCheck={(id) => handleCheck(id, false)} 
+            filters={filters} 
+          />
+        </div>
+      )}
     </div>
   );
 }
