@@ -175,15 +175,7 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
     # Build final structure
     result = []
     
-    # Add completed tasks group
-    if completed_tasks:
-        result.append({
-            'type': 'group',
-            'title': 'Done',
-            'tasks': add_hierarchy_to_tasks(completed_tasks)
-        })
-    
-    # Add due date groups
+    # Add due date groups first
     for due_date in sorted_due_dates:
         result.append({
             'type': 'group', 
@@ -197,6 +189,14 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
             'type': 'group',
             'title': 'No Due Date',
             'tasks': add_hierarchy_to_tasks(no_due_tasks)
+        })
+    
+    # Add completed tasks group at the bottom
+    if completed_tasks:
+        result.append({
+            'type': 'group',
+            'title': 'Done',
+            'tasks': add_hierarchy_to_tasks(completed_tasks)
         })
     
     return result
@@ -390,15 +390,7 @@ def build_priority_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[D
     # Build final structure
     result = []
     
-    # Add completed tasks group
-    if completed_tasks:
-        result.append({
-            'type': 'group',
-            'title': 'Done',
-            'tasks': add_hierarchy_to_tasks(completed_tasks)
-        })
-    
-    # Add priority groups
+    # Add priority groups first
     for priority in sorted_priorities:
         result.append({
             'type': 'group', 
@@ -412,6 +404,14 @@ def build_priority_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[D
             'type': 'group',
             'title': 'No Priority',
             'tasks': add_hierarchy_to_tasks(no_priority_tasks)
+        })
+    
+    # Add completed tasks group at the bottom
+    if completed_tasks:
+        result.append({
+            'type': 'group',
+            'title': 'Done',
+            'tasks': add_hierarchy_to_tasks(completed_tasks)
         })
     
     return result
