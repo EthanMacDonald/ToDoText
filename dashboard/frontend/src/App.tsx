@@ -84,7 +84,7 @@ function App() {
         flexWrap: 'wrap'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: 'white' }}>
             Show:
           </label>
           <select 
@@ -98,7 +98,7 @@ function App() {
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: 'white' }}>
             Filter by Area:
           </label>
           <select 
@@ -112,7 +112,7 @@ function App() {
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: 'white' }}>
             Filter by Context:
           </label>
           <select 
@@ -126,7 +126,7 @@ function App() {
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: 'white' }}>
             Filter by Project:
           </label>
           <select 
@@ -140,7 +140,7 @@ function App() {
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: 'white' }}>
             Sort by:
           </label>
           <select 
