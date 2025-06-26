@@ -242,7 +242,7 @@ function App() {
               Recurring Tasks
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+              <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#666' }}>
                 Show Recurring:
               </label>
               <select 

@@ -108,30 +108,10 @@ const TaskItem: React.FC<{
           fontSize: depth > 0 ? '14px' : '16px'
         }}
       >
-        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-          <input
-            type="checkbox"
-            checked={task.completed}
-            onChange={() => onCheck(task.id)}
-            style={{ marginTop: '2px' }}
-          />
-          <span style={{ flex: 1 }}>
-            {task.description}
-            {metadataString && (
-              <span style={{ color: '#666', marginLeft: 4, fontSize: '12px' }}>
-                {metadataString}
-              </span>
-            )}
-            {tagsString && (
-              <span style={{ color: '#0066cc', marginLeft: 4, fontSize: '12px', fontWeight: 500 }}>
-                {tagsString}
-              </span>
-            )}
-          </span>
-          
-          {/* Status buttons for recurring tasks */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+          {/* Status buttons for recurring tasks - moved to left */}
           {isRecurring && onRecurringStatus && (
-            <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+            <div style={{ display: 'flex', gap: '4px' }}>
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -189,6 +169,30 @@ const TaskItem: React.FC<{
             </div>
           )}
           
+          {/* For non-recurring tasks, show checkbox */}
+          {!isRecurring && (
+            <input
+              type="checkbox"
+              checked={task.completed}
+              onChange={() => onCheck(task.id)}
+              style={{ marginTop: '2px' }}
+            />
+          )}
+          
+          <span style={{ flex: 1 }}>
+            {task.description}
+            {metadataString && (
+              <span style={{ color: '#666', marginLeft: 4, fontSize: '12px' }}>
+                {metadataString}
+              </span>
+            )}
+            {tagsString && (
+              <span style={{ color: '#0066cc', marginLeft: 4, fontSize: '12px', fontWeight: 500 }}>
+                {tagsString}
+              </span>
+            )}
+          </span>
+          
           {onEdit && (
             <button
               onClick={(e) => {
@@ -209,7 +213,7 @@ const TaskItem: React.FC<{
               ✏️
             </button>
           )}
-        </label>
+        </div>
       </li>
       
       {/* Render notes */}
