@@ -3,11 +3,9 @@ import React, { useState } from 'react';
 type Props = {
   onTaskCreated: () => void;
   areas: string[];
-  contexts: string[];
-  projects: string[];
 };
 
-const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, contexts, projects }) => {
+const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [formData, setFormData] = useState({
     area: '',
@@ -19,22 +17,6 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, contexts, proje
     recurring: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const priorityOptions = ['', 'A', 'B', 'C', 'D', 'E', 'F'];
-  const recurringOptions = [
-    { value: '', label: 'None' },
-    { value: 'daily', label: 'Daily' },
-    { value: 'weekly:Mon', label: 'Weekly (Monday)' },
-    { value: 'weekly:Tue', label: 'Weekly (Tuesday)' },
-    { value: 'weekly:Wed', label: 'Weekly (Wednesday)' },
-    { value: 'weekly:Thu', label: 'Weekly (Thursday)' },
-    { value: 'weekly:Fri', label: 'Weekly (Friday)' },
-    { value: 'weekly:Sat', label: 'Weekly (Saturday)' },
-    { value: 'weekly:Sun', label: 'Weekly (Sunday)' },
-    { value: 'monthly:1', label: 'Monthly (1st)' },
-    { value: 'monthly:15', label: 'Monthly (15th)' },
-    { value: 'yearly:06-24', label: 'Yearly (Example: June 24)' }
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,8 +77,8 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, contexts, proje
 
   return (
     <div style={{ 
-      backgroundColor: '#f8f9fa', 
-      border: '1px solid #dee2e6', 
+      backgroundColor: '#2d3748', 
+      border: '1px solid #4a5568', 
       borderRadius: '8px', 
       marginBottom: '24px',
       overflow: 'hidden'
@@ -106,12 +88,13 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, contexts, proje
         style={{
           width: '100%',
           padding: '12px 16px',
-          backgroundColor: '#e9ecef',
+          backgroundColor: '#1a202c',
           border: 'none',
-          borderBottom: isExpanded ? '1px solid #dee2e6' : 'none',
+          borderBottom: isExpanded ? '1px solid #4a5568' : 'none',
           cursor: 'pointer',
           fontSize: '16px',
           fontWeight: 'bold',
+          color: 'white',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
@@ -127,14 +110,14 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, contexts, proje
         <form onSubmit={handleSubmit} style={{ padding: '16px' }}>
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: '16px', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+            gap: '12px', 
             marginBottom: '16px' 
           }}>
             
             {/* Area - Required */}
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: '#dc3545' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
                 Area *
               </label>
               <select
@@ -145,8 +128,10 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, contexts, proje
                   width: '100%', 
                   padding: '8px', 
                   borderRadius: '4px', 
-                  border: '1px solid #ced4da',
-                  backgroundColor: 'white'
+                  border: '1px solid #4a5568',
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  boxSizing: 'border-box'
                 }}
               >
                 <option value="">Select Area</option>
@@ -158,31 +143,29 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, contexts, proje
 
             {/* Priority */}
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
                 Priority
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.priority}
                 onChange={(e) => handleInputChange('priority', e.target.value)}
+                placeholder="A, B, C, D, E, F"
                 style={{ 
                   width: '100%', 
                   padding: '8px', 
                   borderRadius: '4px', 
-                  border: '1px solid #ced4da',
-                  backgroundColor: 'white'
+                  border: '1px solid #4a5568',
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  boxSizing: 'border-box'
                 }}
-              >
-                {priorityOptions.map(priority => (
-                  <option key={priority} value={priority}>
-                    {priority || 'None'}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Due Date */}
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
                 Due Date
               </label>
               <input
@@ -193,86 +176,84 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, contexts, proje
                   width: '100%', 
                   padding: '8px', 
                   borderRadius: '4px', 
-                  border: '1px solid #ced4da',
-                  backgroundColor: 'white'
+                  border: '1px solid #4a5568',
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
 
             {/* Context */}
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
                 Context
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.context}
                 onChange={(e) => handleInputChange('context', e.target.value)}
+                placeholder="e.g., Office, Home, Phone"
                 style={{ 
                   width: '100%', 
                   padding: '8px', 
                   borderRadius: '4px', 
-                  border: '1px solid #ced4da',
-                  backgroundColor: 'white'
+                  border: '1px solid #4a5568',
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  boxSizing: 'border-box'
                 }}
-              >
-                <option value="">None</option>
-                {contexts.map(context => (
-                  <option key={context} value={context}>{context}</option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Project */}
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
                 Project
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.project}
                 onChange={(e) => handleInputChange('project', e.target.value)}
+                placeholder="e.g., SecondBrain, Dashboard"
                 style={{ 
                   width: '100%', 
                   padding: '8px', 
                   borderRadius: '4px', 
-                  border: '1px solid #ced4da',
-                  backgroundColor: 'white'
+                  border: '1px solid #4a5568',
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  boxSizing: 'border-box'
                 }}
-              >
-                <option value="">None</option>
-                {projects.map(project => (
-                  <option key={project} value={project}>{project}</option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Recurring */}
             <div>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
                 Recurring
               </label>
-              <select
+              <input
+                type="text"
                 value={formData.recurring}
                 onChange={(e) => handleInputChange('recurring', e.target.value)}
+                placeholder="e.g., daily, weekly:Mon, monthly:15"
                 style={{ 
                   width: '100%', 
                   padding: '8px', 
                   borderRadius: '4px', 
-                  border: '1px solid #ced4da',
-                  backgroundColor: 'white'
+                  border: '1px solid #4a5568',
+                  backgroundColor: '#1a202c',
+                  color: 'white',
+                  boxSizing: 'border-box'
                 }}
-              >
-                {recurringOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 
           {/* Description - Full width */}
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: '#dc3545' }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
               Task Description *
             </label>
             <input
@@ -285,9 +266,11 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, contexts, proje
                 width: '100%', 
                 padding: '8px', 
                 borderRadius: '4px', 
-                border: '1px solid #ced4da',
-                backgroundColor: 'white',
-                fontSize: '16px'
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: 'white',
+                fontSize: '16px',
+                boxSizing: 'border-box'
               }}
             />
           </div>

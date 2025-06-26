@@ -102,8 +102,6 @@ function App() {
       <CreateTaskForm 
         onTaskCreated={handleTaskCreated}
         areas={areas}
-        contexts={contexts}
-        projects={projects}
       />
       
       <div style={{ 
