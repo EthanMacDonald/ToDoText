@@ -137,21 +137,74 @@ def parse_tasks() -> List[Dict[str, Any]]:
 
 def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Build a sorted structure that groups tasks by due date and maintains hierarchy"""
-    # Extract all tasks from the parsed structure
-    def extract_tasks(items):
+    # Extract all tasks from the parsed structure, including subtasks
+    def extract_all_tasks(items):
         tasks = []
         for item in items:
             if item['type'] == 'area':
-                tasks.extend(extract_tasks(item['tasks']))
+                tasks.extend(extract_all_tasks(item['tasks']))
             elif item['type'] == 'task':
                 tasks.append(item)
+                # Also extract subtasks
+                if item.get('subtasks'):
+                    tasks.extend(extract_all_tasks(item['subtasks']))
         return tasks
     
-    all_tasks = extract_tasks(parsed_data)
+    all_tasks = extract_all_tasks(parsed_data)
     
-    # Group by completion and due date
+    # Separate completed tasks and incomplete tasks
     completed_tasks = [t for t in all_tasks if t['completed']]
     incomplete_tasks = [t for t in all_tasks if not t['completed']]
+    
+    # Also include parent tasks that have completed subtasks in the Done group
+    def find_completed_subtask_hierarchies(items):
+        """Find all parent tasks that have completed subtasks and create copies with only completed subtasks"""
+        hierarchies = []
+        
+        def has_completed_subtasks_recursively(task):
+            """Check if task has any completed subtasks at any depth"""
+            if task.get('subtasks'):
+                for subtask in task['subtasks']:
+                    if subtask['completed'] or has_completed_subtasks_recursively(subtask):
+                        return True
+            return False
+        
+        def create_completed_only_copy(task):
+            """Create a copy of task containing only completed subtasks (recursively)"""
+            import copy
+            task_copy = copy.deepcopy(task)
+            
+            if task_copy.get('subtasks'):
+                completed_subtasks = []
+                for subtask in task_copy['subtasks']:
+                    if subtask['completed']:
+                        # Include the completed subtask
+                        completed_subtasks.append(subtask)
+                    elif has_completed_subtasks_recursively(subtask):
+                        # Include incomplete subtask but filter its children
+                        filtered_subtask = create_completed_only_copy(subtask)
+                        if filtered_subtask['subtasks']:  # Only add if it has completed children
+                            completed_subtasks.append(filtered_subtask)
+                
+                task_copy['subtasks'] = completed_subtasks
+            
+            return task_copy
+        
+        for item in items:
+            if item['type'] == 'area':
+                for task in item['tasks']:
+                    if not task['completed'] and has_completed_subtasks_recursively(task):
+                        filtered_task = create_completed_only_copy(task)
+                        if filtered_task['subtasks']:  # Only add if it actually has completed subtasks
+                            hierarchies.append(filtered_task)
+            elif item['type'] == 'task' and not item['completed'] and has_completed_subtasks_recursively(item):
+                filtered_task = create_completed_only_copy(item)
+                if filtered_task['subtasks']:
+                    hierarchies.append(filtered_task)
+        
+        return hierarchies
+    
+    parent_tasks_with_completed_subtasks = find_completed_subtask_hierarchies(parsed_data)
     
     # Sort completed tasks by done date
     completed_tasks.sort(key=lambda x: x.get('done_date_obj') or date.max)
@@ -180,7 +233,7 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
         result.append({
             'type': 'group', 
             'title': due_date,
-            'tasks': add_hierarchy_to_tasks(due_groups[due_date])
+            'tasks': add_hierarchy_to_tasks(due_groups[due_date], include_completed_subtasks=False)
         })
     
     # Add no due date group
@@ -188,32 +241,57 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
         result.append({
             'type': 'group',
             'title': 'No Due Date',
-            'tasks': add_hierarchy_to_tasks(no_due_tasks)
+            'tasks': add_hierarchy_to_tasks(no_due_tasks, include_completed_subtasks=False)
         })
     
     # Add completed tasks group at the bottom
-    if completed_tasks:
+    if completed_tasks or parent_tasks_with_completed_subtasks:
+        # Combine completed tasks and parent tasks with completed subtasks
+        done_group_tasks = completed_tasks + parent_tasks_with_completed_subtasks
         result.append({
             'type': 'group',
             'title': 'Done',
-            'tasks': add_hierarchy_to_tasks(completed_tasks)
+            'tasks': add_hierarchy_to_tasks(done_group_tasks, include_completed_subtasks=True)
         })
     
     return result
 
-def add_hierarchy_to_tasks(task_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def add_hierarchy_to_tasks(task_list: List[Dict[str, Any]], include_completed_subtasks: bool = False) -> List[Dict[str, Any]]:
     """Add subtasks back to their parent tasks and return only top-level tasks"""
     # Find all top-level tasks (indent_level 0 or 1, since our top-level tasks are at level 1)
     top_level_tasks = [t for t in task_list if t['indent_level'] <= 1]
     
+    # Create a deep copy of tasks to avoid modifying the original data
+    import copy
+    result_tasks = []
+    
+    def filter_subtasks_recursively(subtasks, include_completed):
+        """Recursively filter subtasks based on completion status"""
+        filtered = []
+        for subtask in subtasks:
+            if include_completed or not subtask['completed']:
+                subtask_copy = copy.deepcopy(subtask)
+                if subtask_copy.get('subtasks'):
+                    subtask_copy['subtasks'] = filter_subtasks_recursively(subtask_copy['subtasks'], include_completed)
+                filtered.append(subtask_copy)
+        return filtered
+    
+    for task in top_level_tasks:
+        task_copy = copy.deepcopy(task)
+        
+        if task_copy.get('subtasks'):
+            task_copy['subtasks'] = filter_subtasks_recursively(task_copy['subtasks'], include_completed_subtasks)
+        
+        result_tasks.append(task_copy)
+    
     # Sort by priority and content for consistent ordering
     priority_order = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, '': 99}
-    top_level_tasks.sort(key=lambda x: (
+    result_tasks.sort(key=lambda x: (
         priority_order.get(x.get('priority', ''), 99),
         x['description']
     ))
     
-    return top_level_tasks
+    return result_tasks
 
 def parse_recurring_tasks() -> List[Dict[str, Any]]:
     """Parse recurring tasks with similar structure"""
@@ -348,21 +426,74 @@ def parse_tasks_no_sort() -> List[Dict[str, Any]]:
 
 def build_priority_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Build a structure grouped by priority"""
-    # Extract all tasks from the parsed structure
-    def extract_tasks(items):
+    # Extract all tasks from the parsed structure, including subtasks
+    def extract_all_tasks(items):
         tasks = []
         for item in items:
             if item['type'] == 'area':
-                tasks.extend(extract_tasks(item['tasks']))
+                tasks.extend(extract_all_tasks(item['tasks']))
             elif item['type'] == 'task':
                 tasks.append(item)
+                # Also extract subtasks
+                if item.get('subtasks'):
+                    tasks.extend(extract_all_tasks(item['subtasks']))
         return tasks
     
-    all_tasks = extract_tasks(parsed_data)
+    all_tasks = extract_all_tasks(parsed_data)
     
-    # Group by completion and priority
+    # Separate completed tasks and incomplete tasks
     completed_tasks = [t for t in all_tasks if t['completed']]
     incomplete_tasks = [t for t in all_tasks if not t['completed']]
+    
+    # Also include parent tasks that have completed subtasks in the Done group
+    def find_completed_subtask_hierarchies_priority(items):
+        """Find all parent tasks that have completed subtasks and create copies with only completed subtasks"""
+        hierarchies = []
+        
+        def has_completed_subtasks_recursively(task):
+            """Check if task has any completed subtasks at any depth"""
+            if task.get('subtasks'):
+                for subtask in task['subtasks']:
+                    if subtask['completed'] or has_completed_subtasks_recursively(subtask):
+                        return True
+            return False
+        
+        def create_completed_only_copy(task):
+            """Create a copy of task containing only completed subtasks (recursively)"""
+            import copy
+            task_copy = copy.deepcopy(task)
+            
+            if task_copy.get('subtasks'):
+                completed_subtasks = []
+                for subtask in task_copy['subtasks']:
+                    if subtask['completed']:
+                        # Include the completed subtask
+                        completed_subtasks.append(subtask)
+                    elif has_completed_subtasks_recursively(subtask):
+                        # Include incomplete subtask but filter its children
+                        filtered_subtask = create_completed_only_copy(subtask)
+                        if filtered_subtask['subtasks']:  # Only add if it has completed children
+                            completed_subtasks.append(filtered_subtask)
+                
+                task_copy['subtasks'] = completed_subtasks
+            
+            return task_copy
+        
+        for item in items:
+            if item['type'] == 'area':
+                for task in item['tasks']:
+                    if not task['completed'] and has_completed_subtasks_recursively(task):
+                        filtered_task = create_completed_only_copy(task)
+                        if filtered_task['subtasks']:  # Only add if it actually has completed subtasks
+                            hierarchies.append(filtered_task)
+            elif item['type'] == 'task' and not item['completed'] and has_completed_subtasks_recursively(item):
+                filtered_task = create_completed_only_copy(item)
+                if filtered_task['subtasks']:
+                    hierarchies.append(filtered_task)
+        
+        return hierarchies
+    
+    parent_tasks_with_completed_subtasks = find_completed_subtask_hierarchies_priority(parsed_data)
     
     # Sort completed tasks by priority
     priority_order = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6}
@@ -395,7 +526,7 @@ def build_priority_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[D
         result.append({
             'type': 'group', 
             'title': f'Priority {priority}',
-            'tasks': add_hierarchy_to_tasks(priority_groups[priority])
+            'tasks': add_hierarchy_to_tasks(priority_groups[priority], include_completed_subtasks=False)
         })
     
     # Add no priority group
@@ -403,15 +534,17 @@ def build_priority_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[D
         result.append({
             'type': 'group',
             'title': 'No Priority',
-            'tasks': add_hierarchy_to_tasks(no_priority_tasks)
+            'tasks': add_hierarchy_to_tasks(no_priority_tasks, include_completed_subtasks=False)
         })
     
     # Add completed tasks group at the bottom
-    if completed_tasks:
+    if completed_tasks or parent_tasks_with_completed_subtasks:
+        # Combine completed tasks and parent tasks with completed subtasks
+        done_group_tasks = completed_tasks + parent_tasks_with_completed_subtasks
         result.append({
             'type': 'group',
             'title': 'Done',
-            'tasks': add_hierarchy_to_tasks(completed_tasks)
+            'tasks': add_hierarchy_to_tasks(done_group_tasks, include_completed_subtasks=True)
         })
     
     return result
