@@ -81,7 +81,11 @@
 
 ## Implementation Notes
 
-- The filtering logic currently returns all tasks regardless of filter type. This can be enhanced later with proper date parsing of the 'every' field to determine which tasks are actually due today or in the next 7 days.
+- The filtering logic now properly parses the 'every:' field and filters tasks based on the current date:
+  - **Today**: Shows only daily tasks and tasks specifically due today (e.g., weekly:Wed on Wednesday)
+  - **Next 7 Days**: Shows daily tasks plus any weekly/monthly/yearly tasks due within the next week
+  - **All**: Shows all recurring tasks regardless of schedule
+- Custom interval tasks (like semester/bi-annual tasks with `custom:183d`) only appear in the "All" view since they have long intervals
 - Status buttons only appear for recurring tasks, not regular tasks.
 - The log file grows over time and provides a complete audit trail of recurring task compliance.
 - Status updates do not remove tasks from the display - they just log the status for tracking purposes.

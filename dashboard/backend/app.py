@@ -62,13 +62,89 @@ def get_recurring_tasks_by_filter(filter_type: str = "today"):
         if filter_type == "all":
             return all_recurring
         
-        # For today and next7days, we'll return all tasks for now
-        # In a real implementation, you'd want to parse the 'every' field
-        # and determine which tasks are due based on the current date
+        today = date.today()
         
-        # For now, just return all recurring tasks regardless of filter
-        # This can be enhanced later with proper recurring logic
-        return all_recurring
+        def should_show_task(task, filter_type):
+            """Determine if a task should be shown based on its recurrence pattern"""
+            recurring = task.get('recurring', '')
+            if not recurring:
+                return False
+            
+            # Parse the recurrence pattern
+            if recurring == 'daily':
+                return True  # Daily tasks always show
+            
+            elif recurring.startswith('weekly:'):
+                day_part = recurring.split(':')[1] if ':' in recurring else ''
+                if day_part:
+                    # Map day names to weekday numbers (Monday=0, Sunday=6)
+                    day_map = {'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6}
+                    target_weekday = day_map.get(day_part)
+                    if target_weekday is not None:
+                        if filter_type == "today":
+                            return today.weekday() == target_weekday
+                        elif filter_type == "next7days":
+                            # Check if the target weekday occurs in the next 7 days
+                            for i in range(7):
+                                check_date = today + timedelta(days=i)
+                                if check_date.weekday() == target_weekday:
+                                    return True
+                            return False
+                return False
+            
+            elif recurring.startswith('monthly:'):
+                day_part = recurring.split(':')[1] if ':' in recurring else ''
+                if day_part.isdigit():
+                    target_day = int(day_part)
+                    if filter_type == "today":
+                        return today.day == target_day
+                    elif filter_type == "next7days":
+                        # Check if the target day occurs in the next 7 days
+                        for i in range(7):
+                            check_date = today + timedelta(days=i)
+                            if check_date.day == target_day:
+                                return True
+                        return False
+                return False
+            
+            elif recurring.startswith('yearly:'):
+                date_part = recurring.split(':')[1] if ':' in recurring else ''
+                if '-' in date_part:
+                    try:
+                        month, day = map(int, date_part.split('-'))
+                        target_date = date(today.year, month, day)
+                        if filter_type == "today":
+                            return today == target_date
+                        elif filter_type == "next7days":
+                            days_until = (target_date - today).days
+                            return 0 <= days_until <= 6
+                    except ValueError:
+                        pass
+                return False
+            
+            elif recurring.startswith('custom:'):
+                # Custom intervals like "183d" - these are typically longer periods
+                # For simplicity, only show them in "all" view
+                return False
+            
+            return False
+        
+        # Filter tasks within each area
+        filtered_areas = []
+        for area_group in all_recurring:
+            if area_group.get('type') == 'area':
+                filtered_tasks = []
+                for task in area_group.get('tasks', []):
+                    if should_show_task(task, filter_type):
+                        filtered_tasks.append(task)
+                
+                # Only include area if it has tasks to show
+                if filtered_tasks:
+                    filtered_area = area_group.copy()
+                    filtered_area['tasks'] = filtered_tasks
+                    filtered_areas.append(filtered_area)
+        
+        return filtered_areas
         
     except Exception as e:
         print(f"Error filtering recurring tasks: {e}")
