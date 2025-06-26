@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Frontend Task Creation</title>
+</head>
+<body>
+    <h1>Test Task Creation</h1>
+    <form id="testForm">
+        <div>
+            <label>Area:</label>
+            <select id="area" required>
+                <option value="">Select Area</option>
+                <option value="Mind">Mind</option>
+                <option value="Health">Health</option>
+                <option value="Wealth">Wealth</option>
+            </select>
+        </div>
+        <div>
+            <label>Description:</label>
+            <input type="text" id="description" required />
+        </div>
+        <div>
+            <label>Priority:</label>
+            <input type="text" id="priority" />
+        </div>
+        <button type="submit">Create Task</button>
+    </form>
+    
+    <div id="output"></div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const area = document.getElementById('area').value;
+            const description = document.getElementById('description').value;
+            const priority = document.getElementById('priority').value;
+            
+            const payload = {
+                area: area,
+                description: description,
+                ...(priority && { priority: priority })
+            };
+            
+            console.log('Sending payload:', payload);
+            document.getElementById('output').innerHTML = '<p>Sending: ' + JSON.stringify(payload) + '</p>';
+            
+            try {
+                const response = await fetch('http://localhost:8000/tasks/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`Failed to create task: ${response.status} ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log('Success response:', result);
+                document.getElementById('output').innerHTML += '<p style="color: green;">Success: ' + JSON.stringify(result) + '</p>';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('output').innerHTML += '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>
