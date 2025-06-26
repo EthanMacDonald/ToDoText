@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import TaskList from './components/TaskList';
 import CreateTaskForm from './components/CreateTaskForm';
+import EditTaskForm from './components/EditTaskForm';
 import Statistics from './components/Statistics';
 import type { Task, TaskGroup } from './types/task';
 
@@ -13,6 +14,7 @@ function App() {
   const [sortBy, setSortBy] = useState('due'); // 'none', 'due', 'priority'
   const [taskTypeFilter, setTaskTypeFilter] = useState('all'); // 'all', 'regular', 'recurring'
   const [refreshTrigger, setRefreshTrigger] = useState(0); // For triggering statistics refresh
+  const [editingTask, setEditingTask] = useState<Task | null>(null); // For editing tasks
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -67,6 +69,21 @@ function App() {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  const handleTaskEdited = () => {
+    // Refresh tasks after editing and trigger statistics refresh
+    refreshTasks();
+    setRefreshTrigger(prev => prev + 1);
+    setEditingTask(null); // Close edit form
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTask(null);
+  };
+
   // Extract unique values for filters from both task groups and recurring tasks
   const getAllTasks = (): Task[] => {
     const allTasks: Task[] = [];
@@ -113,6 +130,16 @@ function App() {
         refreshTrigger={refreshTrigger} 
         onTasksChanged={refreshTasks}
       />
+      
+      {/* Edit Task Form */}
+      {editingTask && (
+        <EditTaskForm
+          task={editingTask}
+          areas={areas}
+          onTaskEdited={handleTaskEdited}
+          onCancel={handleCancelEdit}
+        />
+      )}
       
       <div style={{ 
         display: 'flex', 
@@ -200,6 +227,7 @@ function App() {
           <TaskList 
             data={recurring} 
             onCheck={(id) => handleCheck(id, true)} 
+            onEdit={handleEditTask}
             filters={filters} 
           />
         </div>
@@ -215,6 +243,7 @@ function App() {
           <TaskList 
             data={tasks} 
             onCheck={(id) => handleCheck(id, false)} 
+            onEdit={handleEditTask}
             filters={filters} 
           />
         </div>

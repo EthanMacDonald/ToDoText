@@ -4,6 +4,7 @@ import type { Task, TaskGroup } from '../types/task';
 type Props = {
   data: TaskGroup[] | Task[];
   onCheck: (id: string) => void;
+  onEdit?: (task: Task) => void;
   filters: { area: string; context: string; project: string };
 };
 
@@ -17,8 +18,9 @@ function filterTask(task: Task, filters: Props['filters']) {
 const TaskItem: React.FC<{
   task: Task;
   onCheck: (id: string) => void;
+  onEdit?: (task: Task) => void;
   depth?: number;
-}> = ({ task, onCheck, depth = 0 }) => {
+}> = ({ task, onCheck, onEdit, depth = 0 }) => {
   // Build metadata string in the format: (priority:A due:2025-06-24 progress:50%)
   const buildMetadataString = (task: Task) => {
     const meta: string[] = [];
@@ -109,7 +111,7 @@ const TaskItem: React.FC<{
             onChange={() => onCheck(task.id)}
             style={{ marginTop: '2px' }}
           />
-          <span>
+          <span style={{ flex: 1 }}>
             {task.description}
             {metadataString && (
               <span style={{ color: '#666', marginLeft: 4, fontSize: '12px' }}>
@@ -122,6 +124,26 @@ const TaskItem: React.FC<{
               </span>
             )}
           </span>
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onEdit(task);
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#3182ce',
+                cursor: 'pointer',
+                fontSize: '12px',
+                padding: '2px 4px',
+                borderRadius: '2px'
+              }}
+              title="Edit task"
+            >
+              ✏️
+            </button>
+          )}
         </label>
       </li>
       
@@ -147,6 +169,7 @@ const TaskItem: React.FC<{
           key={subtask.id}
           task={subtask}
           onCheck={onCheck}
+          onEdit={onEdit}
           depth={depth + 1}
         />
       ))}
@@ -154,7 +177,7 @@ const TaskItem: React.FC<{
   );
 };
 
-const TaskList: React.FC<Props> = ({ data, onCheck, filters }) => {
+const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, filters }) => {
   // Handle both grouped and flat data structures
   const isGroupedData = (data: TaskGroup[] | Task[]): data is TaskGroup[] => {
     return data.length > 0 && 'type' in data[0] && (data[0].type === 'group' || data[0].type === 'area');
@@ -189,6 +212,7 @@ const TaskList: React.FC<Props> = ({ data, onCheck, filters }) => {
                       key={task.id}
                       task={task}
                       onCheck={onCheck}
+                      onEdit={onEdit}
                     />
                   ))
                 }
@@ -209,6 +233,7 @@ const TaskList: React.FC<Props> = ({ data, onCheck, filters }) => {
               key={task.id}
               task={task}
               onCheck={onCheck}
+              onEdit={onEdit}
             />
           ))
         }

@@ -820,3 +820,122 @@ def create_task(task_request) -> bool:
     except Exception as e:
         print(f"Error creating task: {e}")
         return False
+
+def edit_task(task_request) -> bool:
+    """Edit an existing task in the tasks.txt file"""
+    try:
+        # Read the current file
+        with open(tasks_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Find the task by ID
+        task_found = False
+        current_area = None
+        
+        for i, line in enumerate(lines):
+            stripped = line.rstrip()
+            
+            # Track current area
+            area_match = re.match(r'^(\S.+):$', stripped)
+            if area_match:
+                current_area = area_match.group(1)
+                continue
+            
+            # Check if this is a task line
+            task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
+            if task_match:
+                indent, completed, content = task_match.groups()
+                indent_level = len(indent) // 4
+                
+                # Extract metadata and clean content to generate ID
+                all_meta = re.findall(r'\(([^)]*)\)', content)
+                content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
+                project_tags = list(dict.fromkeys(re.findall(r'\+(\w+)', content_no_meta)))
+                context_tags = list(dict.fromkeys(re.findall(r'@(\w+)', content_no_meta)))
+                clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
+                
+                # Generate ID to match
+                task_id = generate_stable_task_id(current_area, clean_content, indent_level, i + 1)
+                
+                if task_id == task_request.task_id:
+                    task_found = True
+                    
+                    # Build the new task line
+                    new_task_line = f"{indent}- [{'x' if task_request.completed else ' '}] {task_request.description}"
+                    
+                    # Build metadata string
+                    metadata_parts = []
+                    if task_request.priority:
+                        metadata_parts.append(f"priority:{task_request.priority}")
+                    if task_request.due_date:
+                        metadata_parts.append(f"due:{task_request.due_date}")
+                    if task_request.recurring:
+                        metadata_parts.append(f"every:{task_request.recurring}")
+                    
+                    if metadata_parts:
+                        new_task_line += f" ({' '.join(metadata_parts)})"
+                    
+                    # Add context and project tags
+                    if task_request.project:
+                        new_task_line += f" +{task_request.project}"
+                    if task_request.context:
+                        new_task_line += f" @{task_request.context}"
+                    
+                    new_task_line += "\n"
+                    
+                    # Handle area change if needed
+                    if task_request.area != current_area:
+                        # Remove from current location
+                        lines.pop(i)
+                        
+                        # Find the new area and insert there
+                        area_found = False
+                        insert_index = -1
+                        
+                        for j, area_line in enumerate(lines):
+                            area_stripped = area_line.rstrip()
+                            if area_stripped == f"{task_request.area}:":
+                                area_found = True
+                                # Find the end of this area
+                                for k in range(j + 1, len(lines)):
+                                    next_stripped = lines[k].rstrip()
+                                    if next_stripped and not next_stripped.startswith(' ') and next_stripped.endswith(':'):
+                                        insert_index = k
+                                        break
+                                else:
+                                    insert_index = len(lines)
+                                break
+                        
+                        if not area_found:
+                            # Area doesn't exist, create it
+                            if lines and not lines[-1].endswith('\n'):
+                                lines.append('\n')
+                            lines.append(f"\n{task_request.area}:\n")
+                            lines.append(new_task_line)
+                        else:
+                            # Insert with proper indentation (4 spaces for top-level task)
+                            if not new_task_line.startswith('    '):
+                                new_task_line = '    ' + new_task_line.lstrip()
+                            lines.insert(insert_index, new_task_line)
+                    else:
+                        # Same area, just replace the line
+                        lines[i] = new_task_line
+                    
+                    break
+        
+        if not task_found:
+            print(f"Task with ID {task_request.task_id} not found")
+            return False
+        
+        # Write back to file
+        with open(tasks_file, 'w') as f:
+            f.writelines(lines)
+        
+        print(f"Successfully edited task: {task_request.description}")
+        return True
+        
+    except Exception as e:
+        print(f"Error editing task: {e}")
+        import traceback
+        traceback.print_exc()
+        return False

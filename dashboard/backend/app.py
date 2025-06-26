@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
-from parser import parse_tasks, parse_recurring_tasks, check_off_task, check_off_recurring_task, parse_tasks_by_priority, parse_tasks_no_sort, create_task
+from parser import parse_tasks, parse_recurring_tasks, check_off_task, check_off_recurring_task, parse_tasks_by_priority, parse_tasks_no_sort, create_task, edit_task
 import re
 import datetime
 from datetime import datetime
@@ -11,6 +11,16 @@ import os
 
 class CheckTaskRequest(BaseModel):
     task_id: str
+
+class EditTaskRequest(BaseModel):
+    area: str
+    description: str
+    priority: Optional[str] = None
+    due_date: Optional[str] = None  # Format: YYYY-MM-DD
+    context: Optional[str] = None
+    project: Optional[str] = None
+    recurring: Optional[str] = None
+    completed: Optional[bool] = None
 
 class CreateTaskRequest(BaseModel):
     area: str
@@ -278,4 +288,34 @@ def post_create_task(request: CreateTaskRequest):
     success = create_task(request)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to create task")
+    return {"success": True}
+
+@app.put("/tasks/{task_id}")
+def put_edit_task(task_id: str, request: EditTaskRequest):
+    """Edit an existing task
+    
+    Args:
+        task_id: The ID of the task to edit
+        request: Updated task details
+    
+    Returns:
+        A success message
+    """
+    # Create a new object with the task_id added
+    class EditTaskRequestWithId:
+        def __init__(self, task_id: str, request: EditTaskRequest):
+            self.task_id = task_id
+            self.area = request.area
+            self.description = request.description
+            self.priority = request.priority
+            self.due_date = request.due_date
+            self.context = request.context
+            self.project = request.project
+            self.recurring = request.recurring
+            self.completed = request.completed
+    
+    edit_request_with_id = EditTaskRequestWithId(task_id, request)
+    success = edit_task(edit_request_with_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Task not found or failed to edit")
     return {"success": True}
