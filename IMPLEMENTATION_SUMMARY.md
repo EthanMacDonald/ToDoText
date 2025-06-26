@@ -51,7 +51,7 @@
 
 ### Status Tracking
 
-- **Log File**: `/Users/ethan/working_files/NOTES/todo_auto/recurring_status_log.txt`
+- **Log File**: `/Users/ethan/working_files/NOTES/todo_auto/archive_files/recurring_status_log.txt`
 - **Format**: `YYYY-MM-DD HH:MM:SS | STATUS | TASK_ID | TASK_DESCRIPTION`
 - **Example**:
   ```
@@ -110,7 +110,7 @@
 
 ## Files Created
 
-- `/Users/ethan/working_files/NOTES/todo_auto/recurring_status_log.txt`
+- `/Users/ethan/working_files/NOTES/todo_auto/archive_files/recurring_status_log.txt`
 
 ## Implementation Notes
 

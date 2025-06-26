@@ -5,7 +5,7 @@ from collections import defaultdict
 area_as_suffix = True  # Set this to True for suffix mode, False for header mode
 AREA_ORDER_KEY = ['Work', 'Personal', 'Health', 'Finances']
 
-def archive_completed_tasks(tasks_file='tasks.txt', archive_file='archive.txt', area_as_suffix=area_as_suffix):
+def archive_completed_tasks(tasks_file='../tasks.txt', archive_file='../archive_files/archive.txt', area_as_suffix=area_as_suffix):
     # Parse tasks using regex, similar to sort_tasks.py
     with open(tasks_file, 'r') as f:
         lines = f.readlines()

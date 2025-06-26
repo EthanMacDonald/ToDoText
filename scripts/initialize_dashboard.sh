@@ -7,8 +7,9 @@ set -e  # Exit on any error
 
 echo "🚀 Initializing Task Dashboard..."
 
-# Get the script directory (project root)
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BACKEND_DIR="$PROJECT_ROOT/dashboard/backend"
 FRONTEND_DIR="$PROJECT_ROOT/dashboard/frontend"
 
@@ -40,7 +41,7 @@ print_error() {
 check_required_files() {
     print_status "Checking required files..."
     
-    local files=("tasks.txt" "recurring_tasks.txt" "archive.txt")
+    local files=("tasks.txt" "recurring_tasks.txt" "archive_files/archive.txt")
     
     for file in "${files[@]}"; do
         if [ ! -f "$PROJECT_ROOT/$file" ]; then
@@ -83,12 +84,12 @@ setup_backend() {
     
     # Start backend server in background
     print_status "Starting FastAPI backend server..."
-    nohup uvicorn app:app --reload --host 127.0.0.1 --port 8000 > "$PROJECT_ROOT/backend.log" 2>&1 &
+    nohup uvicorn app:app --reload --host 127.0.0.1 --port 8000 > "$PROJECT_ROOT/log_files/backend.log" 2>&1 &
     BACKEND_PID=$!
-    echo $BACKEND_PID > "$PROJECT_ROOT/backend.pid"
+    echo $BACKEND_PID > "$PROJECT_ROOT/log_files/backend.pid"
     
     print_success "Backend server started (PID: $BACKEND_PID)"
-    print_status "Backend logs: $PROJECT_ROOT/backend.log"
+    print_status "Backend logs: $PROJECT_ROOT/log_files/backend.log"
     print_status "Backend API: http://127.0.0.1:8000"
     print_status "API docs: http://127.0.0.1:8000/docs"
 }
@@ -116,12 +117,12 @@ setup_frontend() {
     
     # Start frontend server in background
     print_status "Starting React development server..."
-    nohup npm run dev > "$PROJECT_ROOT/frontend.log" 2>&1 &
+    nohup npm run dev > "$PROJECT_ROOT/log_files/frontend.log" 2>&1 &
     FRONTEND_PID=$!
-    echo $FRONTEND_PID > "$PROJECT_ROOT/frontend.pid"
+    echo $FRONTEND_PID > "$PROJECT_ROOT/log_files/frontend.pid"
     
     print_success "Frontend server started (PID: $FRONTEND_PID)"
-    print_status "Frontend logs: $PROJECT_ROOT/frontend.log"
+    print_status "Frontend logs: $PROJECT_ROOT/log_files/frontend.log"
 }
 
 # Wait for servers to start and get frontend URL
@@ -138,12 +139,12 @@ wait_for_servers() {
     
     # Extract frontend URL from logs
     sleep 3
-    if [ -f "$PROJECT_ROOT/frontend.log" ]; then
-        FRONTEND_URL=$(grep -o "http://localhost:[0-9]*" "$PROJECT_ROOT/frontend.log" | head -1)
+    if [ -f "$PROJECT_ROOT/log_files/frontend.log" ]; then
+        FRONTEND_URL=$(grep -o "http://localhost:[0-9]*" "$PROJECT_ROOT/log_files/frontend.log" | head -1)
         if [ -n "$FRONTEND_URL" ]; then
             print_success "Frontend is running at $FRONTEND_URL"
         else
-            print_warning "Frontend URL not detected, check logs: $PROJECT_ROOT/frontend.log"
+            print_warning "Frontend URL not detected, check logs: $PROJECT_ROOT/log_files/frontend.log"
         fi
     fi
 }
@@ -185,19 +186,19 @@ main() {
     if [ -n "$FRONTEND_URL" ]; then
         echo "   • Frontend App: $FRONTEND_URL"
     else
-        echo "   • Frontend App: Check $PROJECT_ROOT/frontend.log for URL"
+        echo "   • Frontend App: Check $PROJECT_ROOT/log_files/frontend.log for URL"
     fi
     echo ""
     echo "📝 Logs:"
-    echo "   • Backend: $PROJECT_ROOT/backend.log"
-    echo "   • Frontend: $PROJECT_ROOT/frontend.log"
+    echo "   • Backend: $PROJECT_ROOT/log_files/backend.log"
+    echo "   • Frontend: $PROJECT_ROOT/log_files/frontend.log"
     echo ""
     echo "🛑 To stop the dashboard:"
     echo "   ./stop_dashboard.sh"
     echo ""
     echo "🔍 To monitor logs:"
-    echo "   tail -f backend.log"
-    echo "   tail -f frontend.log"
+    echo "   tail -f log_files/backend.log"
+    echo "   tail -f log_files/frontend.log"
 }
 
 # Trap to cleanup on script exit

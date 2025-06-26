@@ -78,4 +78,4 @@ def check_syntax(file_path):
             print(f"Line {line_number}: Does not match task, note, or area format. Suggestion: Ensure line starts with '-', '[ ]' or '[x]', or is properly indented as a note.")
 
 if __name__ == '__main__':
-    check_syntax('tasks.txt')
+    check_syntax('../tasks.txt')

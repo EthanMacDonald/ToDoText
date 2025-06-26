@@ -43,7 +43,7 @@ dashboard/frontend/.cache
 dashboard/frontend/.svg
 dashboard/frontend/.DS_Store
 dashboard/frontend/public/*.svg
-dashboard/frontend/*.css
+#dashboard/frontend/*.css
 dashboard/frontend/src/assets/*.svg
 
 *.log

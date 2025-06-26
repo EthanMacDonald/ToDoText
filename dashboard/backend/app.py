@@ -39,7 +39,7 @@ def log_recurring_task_status(task_id: str, status: str, task_description: str) 
     """Log recurring task status to tracking file"""
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        log_file = os.path.join(current_dir, '../../recurring_status_log.txt')
+        log_file = os.path.join(current_dir, '../../archive_files/recurring_status_log.txt')
         
         # Create log entry with timestamp
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -58,7 +58,7 @@ def parse_recurring_status_log():
     """Parse the recurring status log file and return status data"""
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        log_file = os.path.join(current_dir, '../../recurring_status_log.txt')
+        log_file = os.path.join(current_dir, '../../archive_files/recurring_status_log.txt')
         
         status_data = {}  # {task_id: [(date, status, timestamp), ...]}
         
@@ -269,7 +269,7 @@ def archive_completed_tasks():
     """Archive completed tasks using the same logic as archive_completed_items.py"""
     current_dir = os.path.dirname(os.path.abspath(__file__))
     tasks_file = os.path.join(current_dir, '../../tasks.txt')
-    archive_file = os.path.join(current_dir, '../../archive.txt')
+    archive_file = os.path.join(current_dir, '../../archive_files/archive.txt')
     
     area_as_suffix = True
     AREA_ORDER_KEY = ['Work', 'Personal', 'Health', 'Finances']

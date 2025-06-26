@@ -223,7 +223,7 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
 
 
 if __name__ == '__main__':
-    tasks = parse_tasks('tasks.txt')
+    tasks = parse_tasks('../tasks.txt')
 
     sort_combinations = [
         ('area', None), ('due', None), ('priority', None),
