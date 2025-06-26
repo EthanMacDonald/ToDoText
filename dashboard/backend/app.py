@@ -54,8 +54,116 @@ def log_recurring_task_status(task_id: str, status: str, task_description: str) 
         print(f"Error logging recurring task status: {e}")
         return False
 
+def parse_recurring_status_log():
+    """Parse the recurring status log file and return status data"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        log_file = os.path.join(current_dir, '../../recurring_status_log.txt')
+        
+        status_data = {}  # {task_id: [(date, status, timestamp), ...]}
+        
+        if not os.path.exists(log_file):
+            return status_data
+        
+        with open(log_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                # Parse format: "YYYY-MM-DD HH:MM:SS | STATUS | TASK_ID | TASK_DESCRIPTION"
+                parts = line.split(' | ')
+                if len(parts) >= 4:
+                    timestamp_str = parts[0]
+                    status = parts[1].upper()
+                    task_id = parts[2]
+                    
+                    # Parse timestamp
+                    try:
+                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+                        log_date = timestamp.date()
+                        
+                        if task_id not in status_data:
+                            status_data[task_id] = []
+                        
+                        status_data[task_id].append((log_date, status, timestamp))
+                    except ValueError:
+                        continue
+        
+        # Sort entries by timestamp for each task
+        for task_id in status_data:
+            status_data[task_id].sort(key=lambda x: x[2])
+        
+        return status_data
+        
+    except Exception as e:
+        print(f"Error parsing status log: {e}")
+        return {}
+
+def get_task_status_for_date(task_id: str, check_date: date, status_data: dict):
+    """Get the latest status for a task on a specific date"""
+    if task_id not in status_data:
+        return None
+    
+    # Find the latest status entry for this date or before
+    latest_status = None
+    latest_timestamp = None
+    
+    for log_date, status, timestamp in status_data[task_id]:
+        if log_date == check_date:
+            if latest_timestamp is None or timestamp > latest_timestamp:
+                latest_status = status
+                latest_timestamp = timestamp
+    
+    return latest_status
+
+def should_show_recurring_task(task, current_date: date, status_data: dict):
+    """
+    Returns True if task should be visible on current_date
+    
+    Logic:
+    - COMPLETED: Hide until next recurrence
+    - MISSED: 
+      - Daily tasks: Hide for that day only
+      - Non-daily: Keep showing (auto-defer)
+    - DEFERRED:
+      - All tasks: Hide for current day (will show again tomorrow or next occurrence)
+    """
+    task_id = task.get('id')
+    recurring = task.get('recurring', '')
+    
+    if not task_id:
+        return True  # Show if no ID
+    
+    # Get status for current date
+    current_status = get_task_status_for_date(task_id, current_date, status_data)
+    
+    if current_status is None:
+        return True  # Show if no status recorded
+    
+    is_daily = recurring == 'daily'
+    
+    if current_status == 'COMPLETED':
+        # Hide completed tasks until next recurrence
+        return False
+    
+    elif current_status == 'MISSED':
+        if is_daily:
+            # Daily tasks: hide for current day only
+            return False
+        else:
+            # Non-daily tasks: keep showing (auto-defer until completed)
+            return True
+    
+    elif current_status == 'DEFERRED':
+        # All tasks (daily and non-daily): hide for current day
+        # They will show again on their next occurrence or tomorrow (for daily)
+        return False
+    
+    return True
+
 def get_recurring_tasks_by_filter(filter_type: str = "today"):
-    """Get recurring tasks filtered by time period"""
+    """Get recurring tasks filtered by time period and status"""
     try:
         all_recurring = parse_recurring_tasks()
         
@@ -64,15 +172,22 @@ def get_recurring_tasks_by_filter(filter_type: str = "today"):
         
         today = date.today()
         
+        # Parse status log
+        status_data = parse_recurring_status_log()
+        
         def should_show_task(task, filter_type):
-            """Determine if a task should be shown based on its recurrence pattern"""
+            """Determine if a task should be shown based on its recurrence pattern and status"""
+            # First check if task should be visible based on status
+            if not should_show_recurring_task(task, today, status_data):
+                return False
+            
             recurring = task.get('recurring', '')
             if not recurring:
                 return False
             
             # Parse the recurrence pattern
             if recurring == 'daily':
-                return True  # Daily tasks always show
+                return True  # Daily tasks always show (if not hidden by status)
             
             elif recurring.startswith('weekly:'):
                 day_part = recurring.split(':')[1] if ':' in recurring else ''
