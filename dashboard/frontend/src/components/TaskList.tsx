@@ -107,7 +107,6 @@ const TaskItem: React.FC<{
             type="checkbox"
             checked={task.completed}
             onChange={() => onCheck(task.id)}
-            disabled={task.completed}
             style={{ marginTop: '2px' }}
           />
           <span>

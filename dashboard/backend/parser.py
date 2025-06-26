@@ -542,6 +542,27 @@ def toggle_task_in_lines(lines, task_info):
                         if not new_line.endswith('\n'):
                             new_line += '\n'
                 
+                # If marking as incomplete, remove done date metadata
+                elif new_status == ' ' and 'done:' in new_line:
+                    # Remove the done date from metadata
+                    # First try to remove from existing metadata parentheses
+                    def clean_metadata(match):
+                        content = match.group(1)
+                        # Remove done date and clean up
+                        content = re.sub(r'\s*done:\d{4}-\d{2}-\d{2}\s*', ' ', content)
+                        content = re.sub(r'^\s+|\s+$', '', content)  # trim
+                        content = re.sub(r'\s+', ' ', content)  # normalize spaces
+                        if content.strip():
+                            return f'({content})'
+                        else:
+                            return ''  # Remove empty parentheses
+                    
+                    new_line = re.sub(r'\(([^)]*done:[^)]*)\)', clean_metadata, new_line)
+                    # Clean up any extra spaces that might be left
+                    new_line = re.sub(r'\s+', ' ', new_line)
+                    if not new_line.endswith('\n'):
+                        new_line += '\n'
+                
                 lines[i] = new_line
                 return True
     
