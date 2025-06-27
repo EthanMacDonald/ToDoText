@@ -23,8 +23,8 @@ def authenticate_google_calendar():
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists("../log_files/token.json"):
-        creds = Credentials.from_authorized_user_file("../log_files/token.json", SCOPES)
+    if os.path.exists("log_files/token.json"):
+        creds = Credentials.from_authorized_user_file("log_files/token.json", SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -32,11 +32,11 @@ def authenticate_google_calendar():
         else:
             # The client_secrets.json file should be in the same directory.
             flow = InstalledAppFlow.from_client_secrets_file(
-                "../log_files/credentials.json", SCOPES
+                "og_files/credentials.json", SCOPES
             )
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open("../log_files/token.json", "w") as token:
+        with open("log_files/token.json", "w") as token:
             token.write(creds.to_json())
     try:
         service = build("calendar", "v3", credentials=creds)
@@ -145,7 +145,7 @@ if __name__ == "__main__":
         delete_all_future_events(calendar_service)
 
         # STEP 2: Read tasks from your tasks.txt file
-        tasks_from_file = get_tasks_from_file("../tasks.txt")
+        tasks_from_file = get_tasks_from_file("tasks.txt")
         if not tasks_from_file:
             print("No tasks found in tasks.txt.  Exiting.")
         else:
