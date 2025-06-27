@@ -238,4 +238,4 @@ README:
       - indent_level: Indentation depth for subtasks
       - Additional metadata fields as discovered
     
-    Output: Creates `tasks_export.csv` by default, ready for import into spreadsheets or databases.
+    Output: Creates `outputs/tasks_export.csv` by default, ready for import into spreadsheets or databases.
