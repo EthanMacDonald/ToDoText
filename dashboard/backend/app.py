@@ -2011,7 +2011,7 @@ async def api_get_priority_analysis():
 async def api_get_streak_analysis():
     """Get streak analysis for recurring tasks"""
     try:
-        data = get_streak_analysis()
+               data = get_streak_analysis()
         return {"success": True, "data": data}
     except Exception as e:
         return {"success": False, "error": str(e), "data": []}
@@ -2331,13 +2331,14 @@ async def reset_list(list_name: str):
 async def push_due_dates_to_calendar():
     """Push tasks with due dates to Google Calendar"""
     try:
-        # Path to the calendar script
-        script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts', 'push_due_dates_to_calendar.py')
+        # Path to the calendar script (corrected to project root scripts/)
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        script_path = os.path.join(project_root, 'scripts', 'push_due_dates_to_calendar.py')
         
         # Run the calendar script
         result = subprocess.run([
             sys.executable, script_path
-        ], capture_output=True, text=True, cwd=os.path.dirname(os.path.dirname(__file__)))
+        ], capture_output=True, text=True, cwd=project_root)
         
         if result.returncode == 0:
             return {"success": True, "message": "Due dates pushed to calendar successfully"}
