@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config/api';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -63,8 +64,8 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger }) => {
     
     try {
       const [statsResponse, complianceResponse] = await Promise.all([
-        fetch('http://localhost:8000/statistics/time-series'),
-        fetch('http://localhost:8000/recurring/compliance')
+        fetch(`${API_URL}/statistics/time-series`),
+        fetch(`${API_URL}/recurring/compliance`)
       ]);
       
       if (!statsResponse.ok || !complianceResponse.ok) {
@@ -93,7 +94,7 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger }) => {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8000/generate-sample-data', {
+      const response = await fetch(`${API_URL}/generate-sample-data`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

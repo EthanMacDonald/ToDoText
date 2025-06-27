@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Task } from '../types/task';
+import { API_URL } from '../config/api';
 
 type Props = {
   task: Task;
@@ -47,7 +48,7 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
 
       console.log('Sending edit payload:', payload);
 
-      const response = await fetch(`http://localhost:8000/tasks/${task.id}`, {
+      const response = await fetch(`${API_URL}/tasks/${task.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config/api';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -192,17 +193,17 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger }) => {
       const enhancedParam = timeframe ? `?days=${timeframe}&moving_average=${movingAverageWindow}&include_trend=${showTrend}` : `?moving_average=${movingAverageWindow}&include_trend=${showTrend}`;
       
       const urls = [
-        `http://localhost:8000/api/statistics/time-series/enhanced${enhancedParam}`,
-        `http://localhost:8000/api/recurring/compliance`,
-        `http://localhost:8000/api/recurring/compliance/individual${timeframeParam}`,
-        `http://localhost:8000/api/recurring/task-list`,
-        `http://localhost:8000/api/analytics/heatmap${timeframeParam}`,
-        `http://localhost:8000/api/analytics/day-of-week${timeframeParam}`,
-        `http://localhost:8000/api/analytics/correlation${timeframeParam}`,
-        `http://localhost:8000/api/analytics/streaks`,
-        `http://localhost:8000/api/gamification/badges`,
-        `http://localhost:8000/api/analytics/behavioral${timeframeParam}`,
-        `http://localhost:8000/api/gamification/challenges`
+        `${API_URL}/api/statistics/time-series/enhanced${enhancedParam}`,
+        `${API_URL}/api/recurring/compliance`,
+        `${API_URL}/api/recurring/compliance/individual${timeframeParam}`,
+        `${API_URL}/api/recurring/task-list`,
+        `${API_URL}/api/analytics/heatmap${timeframeParam}`,
+        `${API_URL}/api/analytics/day-of-week${timeframeParam}`,
+        `${API_URL}/api/analytics/correlation${timeframeParam}`,
+        `${API_URL}/api/analytics/streaks`,
+        `${API_URL}/api/gamification/badges`,
+        `${API_URL}/api/analytics/behavioral${timeframeParam}`,
+        `${API_URL}/api/gamification/challenges`
       ];
       
       const responses = await Promise.all(urls.map(url => fetch(url)));
@@ -239,7 +240,7 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger }) => {
   const fetchIndividualTaskData = async (taskId: string) => {
     try {
       const enhancedParam = `?task_id=${taskId}${timeframe ? `&days=${timeframe}` : ''}&moving_average=${movingAverageWindow}&include_trend=${showTrend}`;
-      const response = await fetch(`http://localhost:8000/api/recurring/compliance/enhanced${enhancedParam}`);
+      const response = await fetch(`${API_URL}/api/recurring/compliance/enhanced${enhancedParam}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch individual task data');
@@ -268,7 +269,7 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger }) => {
   const generateSampleData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:8000/generate-sample-data', {
+      const response = await fetch(`${API_URL}/generate-sample-data`, {
         method: 'POST'
       });
       

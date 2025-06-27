@@ -5,8 +5,7 @@ import EditTaskForm from './components/EditTaskForm';
 import Statistics from './components/Statistics';
 import TimeSeries from './components/TimeSeries';
 import type { Task, TaskGroup } from './types/task';
-
-const API_URL = 'http://localhost:8000';
+import { API_URL } from './config/api';
 
 function App() {
   const [tasks, setTasks] = useState<TaskGroup[]>([]);

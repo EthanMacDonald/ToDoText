@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config/api';
 
 type StatisticsData = {
   total: number;
@@ -30,7 +31,7 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged }) => {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8000/statistics');
+      const response = await fetch(`${API_URL}/statistics`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch statistics: ${response.status}`);
@@ -54,7 +55,7 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged }) => {
     setArchiveMessage(null);
     
     try {
-      const response = await fetch('http://localhost:8000/tasks/archive', {
+      const response = await fetch(`${API_URL}/tasks/archive`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
