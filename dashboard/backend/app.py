@@ -13,6 +13,7 @@ import os
 import subprocess
 import csv
 import json
+from pathlib import Path
 
 class CheckTaskRequest(BaseModel):
     task_id: str
@@ -2127,3 +2128,178 @@ async def api_get_recurring_task_list():
         return {"success": True, "data": task_list}
     except Exception as e:
         return {"success": False, "error": str(e), "data": []}
+
+# Lists management endpoints
+LISTS_DIR = Path("../../lists")
+
+@app.get("/lists")
+async def get_available_lists():
+    """Get all available list files"""
+    if not LISTS_DIR.exists():
+        LISTS_DIR.mkdir(exist_ok=True)
+        return []
+    
+    lists = []
+    for file_path in LISTS_DIR.glob("*.txt"):
+        # Read first few lines to get any title/description
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                
+            # Count total and completed items
+            total_items = 0
+            completed_items = 0
+            title = file_path.stem.replace('_', ' ').title()
+            
+            for line in lines:
+                line = line.strip()
+                if line.startswith('# ') and 'title' not in locals():
+                    title = line[2:].strip()
+                elif line.startswith('['):
+                    total_items += 1
+                    if line.startswith('[x]') or line.startswith('[X]'):
+                        completed_items += 1
+            
+            completion_pct = (completed_items / total_items * 100) if total_items > 0 else 0
+            
+            lists.append({
+                "name": file_path.stem,
+                "title": title,
+                "filename": file_path.name,
+                "total_items": total_items,
+                "completed_items": completed_items,
+                "completion_percentage": round(completion_pct, 1)
+            })
+        except Exception as e:
+            print(f"Error reading list {file_path}: {e}")
+            continue
+    
+    return lists
+
+@app.get("/lists/{list_name}")
+async def get_list_items(list_name: str):
+    """Get items from a specific list"""
+    file_path = LISTS_DIR / f"{list_name}.txt"
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="List not found")
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        items = []
+        title = list_name.replace('_', ' ').title()
+        
+        for i, line in enumerate(lines):
+            line = line.strip()
+            
+            # Extract title from comments
+            if line.startswith('# ') and len(items) == 0:
+                title = line[2:].strip()
+                continue
+            
+            # Skip comments and empty lines
+            if line.startswith('#') or not line:
+                continue
+            
+            # Parse checkbox items
+            if line.startswith('['):
+                completed = line.startswith('[x]') or line.startswith('[X]')
+                # Extract item text (everything after the checkbox)
+                text = re.sub(r'^\[[ xX]\]\s*', '', line)
+                
+                items.append({
+                    "id": i,
+                    "text": text,
+                    "completed": completed,
+                    "line_number": i
+                })
+        
+        total_items = len(items)
+        completed_items = sum(1 for item in items if item["completed"])
+        completion_pct = (completed_items / total_items * 100) if total_items > 0 else 0
+        
+        return {
+            "name": list_name,
+            "title": title,
+            "items": items,
+            "total_items": total_items,
+            "completed_items": completed_items,
+            "completion_percentage": round(completion_pct, 1)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading list: {str(e)}")
+
+@app.post("/lists/{list_name}/toggle")
+async def toggle_list_item(list_name: str, request: dict):
+    """Toggle completion status of a list item"""
+    file_path = LISTS_DIR / f"{list_name}.txt"
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="List not found")
+    
+    item_index = request.get("item_index")
+    if item_index is None:
+        raise HTTPException(status_code=400, detail="item_index required")
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Get the actual items (not including comments/empty lines)
+        checkbox_lines = []
+        for i, line in enumerate(lines):
+            if line.strip().startswith('['):
+                checkbox_lines.append(i)
+        
+        # Make sure the item_index is valid
+        if item_index < 0 or item_index >= len(checkbox_lines):
+            raise HTTPException(status_code=400, detail="Invalid item index")
+        
+        # Get the actual line number to toggle
+        line_to_toggle = checkbox_lines[item_index]
+        line = lines[line_to_toggle].strip()
+        
+        if line.startswith('[x]') or line.startswith('[X]'):
+            # Mark as incomplete
+            lines[line_to_toggle] = lines[line_to_toggle].replace('[x]', '[ ]').replace('[X]', '[ ]')
+        elif line.startswith('[ ]'):
+            # Mark as complete  
+            lines[line_to_toggle] = lines[line_to_toggle].replace('[ ]', '[x]')
+        
+        # Write back to file
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+        
+        return {"success": True, "message": "Item toggled successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating list: {str(e)}")
+
+@app.post("/lists/{list_name}/reset")
+async def reset_list(list_name: str):
+    """Reset all items in a list to unchecked"""
+    file_path = LISTS_DIR / f"{list_name}.txt"
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="List not found")
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Reset all checkboxes to unchecked
+        for i, line in enumerate(lines):
+            if line.strip().startswith('[x]') or line.strip().startswith('[X]'):
+                lines[i] = line.replace('[x]', '[ ]').replace('[X]', '[ ]')
+        
+        # Write back to file
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+        
+        return {"success": True, "message": "List reset successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error resetting list: {str(e)}")

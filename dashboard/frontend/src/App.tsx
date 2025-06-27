@@ -4,6 +4,7 @@ import CreateTaskForm from './components/CreateTaskForm';
 import EditTaskForm from './components/EditTaskForm';
 import Statistics from './components/Statistics';
 import TimeSeries from './components/TimeSeries';
+import Lists from './components/Lists';
 import type { Task, TaskGroup } from './types/task';
 import { API_URL } from './config/api';
 
@@ -177,6 +178,9 @@ function App() {
       <TimeSeries 
         refreshTrigger={refreshTrigger}
       />
+      
+      {/* Lists */}
+      <Lists />
       
       {/* Git Commit Panel */}
       <div style={{ 

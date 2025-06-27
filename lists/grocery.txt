@@ -1,0 +1,23 @@
+# Grocery Shopping List
+# Updated: 2025-06-27
+
+[ ] Milk (2% or whole)
+[ ] Bread (whole wheat)
+[ ] Eggs (dozen, free range)
+[ ] Bananas (ripe)
+[ ] Chicken breast (2 lbs)
+[ ] Rice (jasmine or basmati)
+[ ] Onions (yellow, 2-3 medium)
+[ ] Tomatoes (Roma, 4-5)
+[ ] Cheese (sharp cheddar block)
+[ ] Greek yogurt (plain, large container)
+[ ] Spinach (fresh bag)
+[ ] Bell peppers (red/yellow)
+[ ] Garlic (1 bulb)
+[ ] Olive oil (extra virgin)
+[ ] Black beans (canned, 2 cans)
+[ ] Pasta (whole wheat)
+[ ] Ground turkey (1 lb)
+[ ] Avocados (2-3, firm)
+[ ] Lemons (3-4)
+[ ] Almonds (raw, unsalted)
