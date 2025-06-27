@@ -58,10 +58,11 @@
 # - tasks.txt:
 #   - Markdown-style checkboxes:
 #     Work:
-#         - [ ] Task description @context +project due:2025-06-25
+#         - [ ] Task description @context &area +project due:2025-06-25
 #         - [x] Completed task
 #   - Areas as headers (`Area:`).
 #   - Contexts as `@context`.
+#   - Areas as `&area`.
 #   - Projects as `+project`.
 #   - Due dates as `due:YYYY-MM-DD`.
 # - recurring_tasks.txt:
@@ -162,6 +163,7 @@
 #       "completed": false,
 #       "area": "Work",
 #       "context": "@home",
+#       "area_tag": "&area",
 #       "project": "+project",
 #       "due_date": "2025-06-25",
 #       "priority": "A"

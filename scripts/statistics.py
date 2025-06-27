@@ -18,25 +18,84 @@ context_pattern = re.compile(r'@\w+')
 
 
 def parse_tasks(filename):
+    """Parse tasks including subtasks with inherited metadata"""
     tasks = []
+    current_area = None
+    parent_stack = []  # Stack to track parent tasks and their metadata
+    
     with open(filename, 'r') as f:
         for line in f:
-            line = line.strip()
+            original_line = line
+            line = line.rstrip()
             if not line or line.startswith('#'):
                 continue
+                
+            # Check for area header
+            area_match = re.match(r'^(\S.+):$', line)
+            if area_match:
+                current_area = area_match.group(1)
+                parent_stack = []  # Reset parent stack for new area
+                continue
+                
+            # Check for task
+            task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', original_line)
+            if not task_match:
+                continue
+                
+            indent, completed, content = task_match.groups()
+            indent_level = len(indent) // 4
+            
+            # Create task object
             task = {'raw': line}
-            # Updated: check for '- [x]' or '- [X]' at the start for completed tasks
-            task['completed'] = line.lower().startswith('- [x]')
-            due_match = due_pattern.search(line)
+            task['completed'] = completed.lower() == 'x'
+            task['area'] = current_area
+            task['indent_level'] = indent_level
+            
+            # Extract metadata from the current task
+            due_match = due_pattern.search(content)
             task['due'] = (
                 datetime.strptime(due_match.group(1), DATE_FORMAT).date()
                 if due_match else None
             )
-            prio_match = priority_pattern.search(line)
+            
+            prio_match = re.search(r'priority:([A-F])', content)
             task['priority'] = prio_match.group(1) if prio_match else None
-            task['projects'] = project_pattern.findall(line)
-            task['contexts'] = context_pattern.findall(line)
+            
+            # Also check for standalone priority letters
+            if not task['priority']:
+                standalone_prio_match = priority_pattern.search(content)
+                task['priority'] = standalone_prio_match.group(1) if standalone_prio_match else None
+            
+            task['projects'] = [match[1:] for match in project_pattern.findall(content)]  # Remove + prefix
+            task['contexts'] = [match[1:] for match in context_pattern.findall(content)]  # Remove @ prefix
+            
+            # Update parent stack based on indentation
+            while parent_stack and parent_stack[-1]['indent_level'] >= indent_level:
+                parent_stack.pop()
+            
+            # If this is a subtask, inherit metadata from parent
+            if indent_level > 1 and parent_stack:
+                parent = parent_stack[-1]
+                
+                # Inherit metadata only if not explicitly set on subtask
+                if not task['due'] and parent.get('due'):
+                    task['due'] = parent['due']
+                    
+                if not task['priority'] and parent.get('priority'):
+                    task['priority'] = parent['priority']
+                    
+                if not task['projects'] and parent.get('projects'):
+                    task['projects'] = parent['projects']
+                    
+                if not task['contexts'] and parent.get('contexts'):
+                    task['contexts'] = parent['contexts']
+            
+            # Add to parent stack for potential children
+            if indent_level >= 1:  # Only add actual tasks to stack
+                parent_stack.append(task)
+            
             tasks.append(task)
+    
     return tasks
 
 

@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from parser import parse_tasks, parse_recurring_tasks, check_off_task, check_off_recurring_task, parse_tasks_by_priority, parse_tasks_no_sort, create_task, edit_task
 import re
 import datetime
+import subprocess
+import random
 from datetime import datetime, timedelta, date
 from collections import Counter, defaultdict
 import os
@@ -389,37 +391,85 @@ def archive_completed_tasks():
         return {"success": False, "message": f"Error archiving tasks: {str(e)}", "archived_count": 0}
 
 def compute_task_statistics():
-    """Compute statistics from the tasks"""
+    """Compute statistics from the tasks, including subtasks with inherited metadata"""
     # Read tasks file
     current_dir = os.path.dirname(os.path.abspath(__file__))
     tasks_file = os.path.join(current_dir, '../../tasks.txt')
     
     tasks = []
+    current_area = None
+    parent_stack = []  # Stack to track parent tasks and their metadata
+    
     with open(tasks_file, 'r') as f:
         for line in f:
-            line = line.strip()
-            if not line or line.startswith('#') or line.endswith(':'):
+            original_line = line
+            line = line.rstrip()
+            if not line or line.startswith('#'):
                 continue
-            task = {'raw': line}
-            # Check for completed tasks
-            task['completed'] = line.lower().startswith('- [x]')
+                
+            # Check for area header
+            area_match = re.match(r'^(\S.+):$', line)
+            if area_match:
+                current_area = area_match.group(1)
+                parent_stack = []  # Reset parent stack for new area
+                continue
+                
+            # Check for task
+            task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', original_line)
+            if not task_match:
+                continue
+                
+            indent, completed, content = task_match.groups()
+            indent_level = len(indent) // 4
             
-            # Extract due dates
-            due_match = re.search(r'due:(\d{4}-\d{2}-\d{2})', line)
+            # Create task object
+            task = {'raw': line}
+            task['completed'] = completed.lower() == 'x'
+            task['area'] = current_area
+            task['indent_level'] = indent_level
+            
+            # Extract metadata from the current task
+            due_match = re.search(r'due:(\d{4}-\d{2}-\d{2})', content)
             task['due'] = (
                 datetime.strptime(due_match.group(1), '%Y-%m-%d').date()
                 if due_match else None
             )
             
-            # Extract priority
-            prio_match = re.search(r'\b([A-Z])\b', line)
+            prio_match = re.search(r'priority:([A-F])', content)
             task['priority'] = prio_match.group(1) if prio_match else None
             
-            # Extract projects (+project)
-            task['projects'] = re.findall(r'\+\w+', line)
+            # Also check for standalone priority letters
+            if not task['priority']:
+                standalone_prio_match = re.search(r'\b([A-F])\b', content)
+                task['priority'] = standalone_prio_match.group(1) if standalone_prio_match else None
             
-            # Extract contexts (@context)
-            task['contexts'] = re.findall(r'@\w+', line)
+            task['projects'] = re.findall(r'\+(\w+)', content)
+            task['contexts'] = re.findall(r'@(\w+)', content)
+            
+            # Update parent stack based on indentation
+            while parent_stack and parent_stack[-1]['indent_level'] >= indent_level:
+                parent_stack.pop()
+            
+            # If this is a subtask, inherit metadata from parent
+            if indent_level > 1 and parent_stack:
+                parent = parent_stack[-1]
+                
+                # Inherit metadata only if not explicitly set on subtask
+                if not task['due'] and parent.get('due'):
+                    task['due'] = parent['due']
+                    
+                if not task['priority'] and parent.get('priority'):
+                    task['priority'] = parent['priority']
+                    
+                if not task['projects'] and parent.get('projects'):
+                    task['projects'] = parent['projects']
+                    
+                if not task['contexts'] and parent.get('contexts'):
+                    task['contexts'] = parent['contexts']
+            
+            # Add to parent stack for potential children
+            if indent_level >= 1:  # Only add actual tasks to stack
+                parent_stack.append(task)
             
             tasks.append(task)
     
