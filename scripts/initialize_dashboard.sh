@@ -62,25 +62,18 @@ setup_backend() {
         exit 1
     fi
     
+    # Check if project virtual environment exists
+    if [ ! -d "$PROJECT_ROOT/todo_env" ]; then
+        print_warning "Project virtual environment 'todo_env' not found"
+        print_status "Please run the setup script first: ./scripts/setup_environment.sh"
+        exit 1
+    fi
+    
+    # Activate project virtual environment
+    print_status "Activating project virtual environment (todo_env)..."
+    source "$PROJECT_ROOT/todo_env/bin/activate"
+    
     cd "$BACKEND_DIR"
-    
-    # Check if virtual environment exists, create if not
-    if [ ! -d "venv" ]; then
-        print_status "Creating Python virtual environment..."
-        python3 -m venv venv
-    fi
-    
-    # Activate virtual environment
-    print_status "Activating virtual environment..."
-    source venv/bin/activate
-    
-    # Install dependencies
-    if [ -f "requirements.txt" ]; then
-        print_status "Installing Python dependencies..."
-        pip install -r requirements.txt
-    else
-        print_warning "requirements.txt not found in backend directory"
-    fi
     
     # Start backend server in background
     print_status "Starting FastAPI backend server..."
@@ -168,6 +161,14 @@ main() {
     
     if ! command -v npm &> /dev/null; then
         print_error "npm is required but not installed"
+        exit 1
+    fi
+    
+    # Check if project environment is set up
+    if [ ! -d "$PROJECT_ROOT/todo_env" ]; then
+        print_error "Project virtual environment not found!"
+        print_status "Please run the environment setup script first:"
+        print_status "  ./scripts/setup_environment.sh"
         exit 1
     fi
     
