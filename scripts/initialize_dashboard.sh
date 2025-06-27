@@ -63,15 +63,15 @@ setup_backend() {
     fi
     
     # Check if project virtual environment exists
-    if [ ! -d "$PROJECT_ROOT/todo_env" ]; then
-        print_warning "Project virtual environment 'todo_env' not found"
+    if [ ! -d "$PROJECT_ROOT/.todo_env" ]; then
+        print_warning "Project virtual environment '.todo_env' not found"
         print_status "Please run the setup script first: ./scripts/setup_environment.sh"
         exit 1
     fi
     
     # Activate project virtual environment
-    print_status "Activating project virtual environment (todo_env)..."
-    source "$PROJECT_ROOT/todo_env/bin/activate"
+    print_status "Activating project virtual environment (.todo_env)..."
+    source "$PROJECT_ROOT/.todo_env/bin/activate"
     
     cd "$BACKEND_DIR"
     
@@ -165,7 +165,7 @@ main() {
     fi
     
     # Check if project environment is set up
-    if [ ! -d "$PROJECT_ROOT/todo_env" ]; then
+    if [ ! -d "$PROJECT_ROOT/.todo_env" ]; then
         print_error "Project virtual environment not found!"
         print_status "Please run the environment setup script first:"
         print_status "  ./scripts/setup_environment.sh"

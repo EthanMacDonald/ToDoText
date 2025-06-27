@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Get the project root directory (parent of scripts)
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VENV_NAME="todo_env"
+VENV_NAME=".todo_env"
 VENV_PATH="$PROJECT_ROOT/$VENV_NAME"
 
 echo -e "${BLUE}Setting up todo_auto project environment...${NC}"
