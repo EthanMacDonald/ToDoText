@@ -732,7 +732,7 @@ def read_statistics_csv():
     """Read historical statistics from CSV file"""
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_file = os.path.join(current_dir, '../../task_statistics.csv')
+        csv_file = os.path.join(current_dir, '../../archive_files/task_statistics.csv')
         
         if not os.path.exists(csv_file):
             return []
@@ -923,7 +923,7 @@ def generate_sample_data():
     """Generate sample historical data for demonstration purposes"""
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_file = os.path.join(current_dir, '../../task_statistics.csv')
+        csv_file = os.path.join(current_dir, '../../archive_files/task_statistics.csv')
         
         # Generate data for the past 30 days
         import random

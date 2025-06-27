@@ -5,7 +5,7 @@ from datetime import datetime
 from collections import Counter, defaultdict
 
 TASKS_FILE = '../tasks.txt'
-CSV_FILE = '../task_statistics.csv'
+CSV_FILE = '../archive_files/task_statistics.csv'
 DATE_FORMAT = '%Y-%m-%d'
 TODAY = datetime.now().date()
 

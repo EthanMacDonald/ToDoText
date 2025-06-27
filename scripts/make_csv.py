@@ -200,8 +200,8 @@ def main():
     parser = argparse.ArgumentParser(description='Export tasks.txt to CSV format')
     parser.add_argument('--input', '-i', default='../tasks.txt', 
                        help='Input tasks file (default: ../tasks.txt)')
-    parser.add_argument('--output', '-o', default='../tasks_export.csv',
-                       help='Output CSV file (default: tasks_export.csv)')
+    parser.add_argument('--output', '-o', default='../outputs/tasks_export.csv',
+                       help='Output CSV file (default: outputs/tasks_export.csv)')
     parser.add_argument('--verbose', '-v', action='store_true',
                        help='Show detailed output')
     
