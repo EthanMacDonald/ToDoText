@@ -6,6 +6,7 @@ from parser import parse_tasks, parse_recurring_tasks, check_off_task, check_off
 import re
 import datetime
 import subprocess
+import sys
 import random
 from datetime import datetime, timedelta, date
 from collections import Counter, defaultdict
@@ -2325,3 +2326,24 @@ async def reset_list(list_name: str):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error resetting list: {str(e)}")
+
+@app.post("/calendar/push-due-dates")
+async def push_due_dates_to_calendar():
+    """Push tasks with due dates to Google Calendar"""
+    try:
+        # Path to the calendar script
+        script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts', 'push_due_dates_to_calendar.py')
+        
+        # Run the calendar script
+        result = subprocess.run([
+            sys.executable, script_path
+        ], capture_output=True, text=True, cwd=os.path.dirname(os.path.dirname(__file__)))
+        
+        if result.returncode == 0:
+            return {"success": True, "message": "Due dates pushed to calendar successfully"}
+        else:
+            error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+            return {"success": False, "message": f"Calendar push failed: {error_msg}"}
+            
+    except Exception as e:
+        return {"success": False, "message": f"Error pushing to calendar: {str(e)}"}

@@ -18,6 +18,7 @@ function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0); // For triggering statistics refresh
   const [editingTask, setEditingTask] = useState<Task | null>(null); // For editing tasks
   const [commitStatus, setCommitStatus] = useState<string>(''); // For git commit status
+  const [calendarStatus, setCalendarStatus] = useState<string>(''); // For calendar push status
   const [isCommitExpanded, setIsCommitExpanded] = useState(false); // For git commit panel expansion
 
   useEffect(() => {
@@ -127,6 +128,30 @@ function App() {
     }
   };
 
+  const handlePushToCalendar = async () => {
+    try {
+      setCalendarStatus('Pushing to calendar...');
+      const response = await fetch(`${API_URL}/calendar/push-due-dates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setCalendarStatus('✓ Due dates pushed to calendar successfully!');
+      } else {
+        setCalendarStatus(`✗ Calendar push failed: ${result.message}`);
+      }
+      
+      // Clear status after 3 seconds
+      setTimeout(() => setCalendarStatus(''), 3000);
+    } catch (error) {
+      setCalendarStatus('✗ Error pushing to calendar');
+      setTimeout(() => setCalendarStatus(''), 3000);
+    }
+  };
+
   // Extract unique values for filters from both task groups and recurring tasks
   const getAllTasks = (): Task[] => {
     const allTasks: Task[] = [];
@@ -207,7 +232,7 @@ function App() {
             alignItems: 'center'
           }}
         >
-          <span>📝 Git Commit</span>
+          <span>📝 Commit</span>
           <span style={{ fontSize: '12px' }}>
             {isCommitExpanded ? '▲ Collapse' : '▼ Expand'}
           </span>
@@ -228,31 +253,51 @@ function App() {
               </div>
             )}
             
-            <p style={{ 
-              margin: '0 0 16px 0', 
-              fontSize: '14px', 
-              color: '#e2e8f0',
-              lineHeight: '1.4'
-            }}>
-              Commits the following files to git with message "Checking in task lists and archives.":
-            </p>
+            {calendarStatus && (
+              <div style={{
+                backgroundColor: calendarStatus.includes('✓') ? '#c6f6d5' : '#fed7d7',
+                color: calendarStatus.includes('✓') ? '#22543d' : '#c53030',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '14px'
+              }}>
+                {calendarStatus}
+              </div>
+            )}
             
-            <ul style={{ 
-              margin: '0 0 16px 0', 
-              paddingLeft: '20px',
-              fontSize: '14px', 
-              color: '#cbd5e0',
-              lineHeight: '1.4'
-            }}>
-              <li>tasks.txt</li>
-              <li>recurring_tasks.txt</li>
-              <li>All files in archive_files/</li>
-            </ul>
-            
-            <div style={{ 
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
+            {/* Git Commit Section */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ 
+                margin: '0 0 12px 0', 
+                fontSize: '16px', 
+                color: '#f7fafc',
+                fontWeight: 'bold'
+              }}>
+                📝 Git Commit
+              </h4>
+              
+              <p style={{ 
+                margin: '0 0 12px 0', 
+                fontSize: '14px', 
+                color: '#e2e8f0',
+                lineHeight: '1.4'
+              }}>
+                Commits the following files to git with message "Checking in task lists and archives.":
+              </p>
+              
+              <ul style={{ 
+                margin: '0 0 16px 0', 
+                paddingLeft: '20px',
+                fontSize: '14px', 
+                color: '#cbd5e0',
+                lineHeight: '1.4'
+              }}>
+                <li>tasks.txt</li>
+                <li>recurring_tasks.txt</li>
+                <li>All files in archive_files/</li>
+              </ul>
+              
               <button
                 onClick={handleCommitTasks}
                 disabled={commitStatus === 'Committing...'}
@@ -269,6 +314,45 @@ function App() {
                 }}
               >
                 {commitStatus === 'Committing...' ? '📝 Committing...' : '📝 Commit Task Files'}
+              </button>
+            </div>
+            
+            {/* Calendar Push Section */}
+            <div>
+              <h4 style={{ 
+                margin: '0 0 12px 0', 
+                fontSize: '16px', 
+                color: '#f7fafc',
+                fontWeight: 'bold'
+              }}>
+                📅 Google Calendar
+              </h4>
+              
+              <p style={{ 
+                margin: '0 0 16px 0', 
+                fontSize: '14px', 
+                color: '#e2e8f0',
+                lineHeight: '1.4'
+              }}>
+                Push tasks with due dates to your Google Calendar for better scheduling and reminders.
+              </p>
+              
+              <button
+                onClick={handlePushToCalendar}
+                disabled={calendarStatus === 'Pushing to calendar...'}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: calendarStatus === 'Pushing to calendar...' ? '#6c757d' : '#4285f4',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: calendarStatus === 'Pushing to calendar...' ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  opacity: calendarStatus === 'Pushing to calendar...' ? 0.6 : 1
+                }}
+              >
+                {calendarStatus === 'Pushing to calendar...' ? '� Pushing...' : '� Push Due Dates to Calendar'}
               </button>
             </div>
           </div>
