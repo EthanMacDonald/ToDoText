@@ -6,6 +6,8 @@ interface ListItem {
   text: string;
   completed: boolean;
   line_number: number;
+  is_area_header?: boolean;
+  area?: string;
 }
 
 interface ListData {
@@ -66,7 +68,13 @@ function Lists() {
   };
 
   const toggleItem = async (itemIndex: number) => {
-    if (!selectedList) return;
+    if (!selectedList || !listData) return;
+    
+    // Get only checkbox items (not area headers)
+    const checkboxItems = listData.items.filter(item => !item.is_area_header);
+    
+    // Make sure we're clicking on a valid checkbox item
+    if (itemIndex >= checkboxItems.length) return;
     
     try {
       await fetch(`${API_URL}/lists/${selectedList}/toggle`, {
@@ -178,44 +186,42 @@ function Lists() {
             alignItems: 'center',
             marginBottom: '16px'
           }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <select
-                value={selectedList}
-                onChange={(e) => setSelectedList(e.target.value)}
+            <select
+              value={selectedList}
+              onChange={(e) => setSelectedList(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '14px'
+              }}
+            >
+              {availableLists.map(list => (
+                <option key={list} value={list}>
+                  {list.replace('.txt', '')}
+                </option>
+              ))}
+            </select>
+            
+            {listData && (
+              <button
+                onClick={resetList}
                 style={{
                   padding: '8px 12px',
+                  backgroundColor: '#e53e3e',
+                  color: 'white',
+                  border: 'none',
                   borderRadius: '4px',
-                  border: '1px solid #4a5568',
-                  backgroundColor: '#1a202c',
-                  color: '#f7fafc',
-                  fontSize: '14px'
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
                 }}
               >
-                {availableLists.map(list => (
-                  <option key={list} value={list}>
-                    {list.replace('.txt', '')}
-                  </option>
-                ))}
-              </select>
-              
-              {listData && (
-                <button
-                  onClick={resetList}
-                  style={{
-                    padding: '8px 12px',
-                    backgroundColor: '#e53e3e',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Reset
-                </button>
-              )}
-            </div>
+                Reset
+              </button>
+            )}
           </div>
 
           {loading && (
@@ -263,60 +269,85 @@ function Lists() {
 
               {/* List Items */}
               <div>
-                {listData.items.map((item, index) => (
-                  <div
-                    key={index}
-                    onClick={() => toggleItem(index)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '8px 12px',
-                      margin: '4px 0',
-                      backgroundColor: item.completed ? '#1a202c' : '#4a5568',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      border: '1px solid transparent'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#63b3ed';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'transparent';
-                    }}
-                  >
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '3px',
-                      border: '2px solid #63b3ed',
-                      marginRight: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: item.completed ? '#3182ce' : 'transparent',
-                      flexShrink: 0
-                    }}>
-                      {item.completed && (
-                        <span style={{ 
-                          color: 'white', 
-                          fontSize: '10px',
-                          fontWeight: 'bold'
+                {listData.items.map((item, index) => {
+                  if (item.is_area_header) {
+                    // Render area header
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          color: '#4299e1',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          margin: '16px 0 8px 0',
+                          paddingBottom: '4px',
+                          borderBottom: '2px solid #4299e1'
+                        }}
+                      >
+                        {item.text}
+                      </div>
+                    );
+                  } else {
+                    // Render checkbox item
+                    const checkboxItems = listData.items.filter(i => !i.is_area_header);
+                    const checkboxIndex = checkboxItems.findIndex(i => i.id === item.id);
+                    
+                    return (
+                      <div
+                        key={index}
+                        onClick={() => toggleItem(checkboxIndex)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '8px 12px',
+                          margin: '4px 0 4px 16px', // Indent checkbox items
+                          backgroundColor: item.completed ? '#1a202c' : '#4a5568',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          border: '1px solid transparent'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#63b3ed';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'transparent';
+                        }}
+                      >
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          borderRadius: '3px',
+                          border: '2px solid #63b3ed',
+                          marginRight: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: item.completed ? '#3182ce' : 'transparent',
+                          flexShrink: 0
                         }}>
-                          ✓
+                          {item.completed && (
+                            <span style={{ 
+                              color: 'white', 
+                              fontSize: '10px',
+                              fontWeight: 'bold'
+                            }}>
+                              ✓
+                            </span>
+                          )}
+                        </div>
+                        <span style={{
+                          color: item.completed ? '#a0aec0' : '#f7fafc',
+                          textDecoration: item.completed ? 'line-through' : 'none',
+                          fontSize: '14px',
+                          lineHeight: '1.4'
+                        }}>
+                          {item.text}
                         </span>
-                      )}
-                    </div>
-                    <span style={{
-                      color: item.completed ? '#a0aec0' : '#f7fafc',
-                      textDecoration: item.completed ? 'line-through' : 'none',
-                      fontSize: '14px',
-                      lineHeight: '1.4'
-                    }}>
-                      {item.text}
-                    </span>
-                  </div>
-                ))}
+                      </div>
+                    );
+                  }
+                })}
               </div>
 
               {listData.items.length === 0 && (

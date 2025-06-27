@@ -1,46 +1,46 @@
 # Travel Packing Checklist
 # For 3-5 day trips
 
-# Documents & Money
-[ ] Passport/Driver's License
-[ ] Travel insurance documents
-[ ] Flight/hotel confirmations
-[ ] Cash (local currency)
-[ ] Credit/debit cards
-[ ] Emergency contact list
+Documents & Money:
+    - [ ] Passport/Driver's License
+    - [ ] Travel insurance documents
+    - [ ] Flight/hotel confirmations
+    - [ ] Cash (local currency)
+    - [ ] Credit/debit cards
+    - [ ] Emergency contact list
 
-# Electronics
-[ ] Phone + charger
-[ ] Laptop + charger
-[ ] Camera + memory cards
-[ ] Portable battery pack
-[ ] Universal adapter (international)
-[ ] Headphones/earbuds
+Electronics:
+    - [ ] Phone + charger
+    - [ ] Laptop + charger
+    - [ ] Camera + memory cards
+    - [ ] Portable battery pack
+    - [ ] Universal adapter (international)
+    - [ ] Headphones/earbuds
 
-# Clothing
-[ ] Underwear (4-5 pairs)
-[ ] Socks (4-5 pairs)
-[ ] Shirts/tops (3-4)
-[ ] Pants/bottoms (2-3)
-[ ] Light jacket/sweater
-[ ] Comfortable walking shoes
-[ ] Sleepwear
-[ ] Weather-appropriate outerwear
+Clothing:
+    - [ ] Underwear (4-5 pairs)
+    - [ ] Socks (4-5 pairs)
+    - [ ] Shirts/tops (3-4)
+    - [ ] Pants/bottoms (2-3)
+    - [ ] Light jacket/sweater
+    - [ ] Comfortable walking shoes
+    - [ ] Sleepwear
+    - [ ] Weather-appropriate outerwear
 
-# Toiletries & Health
-[ ] Toothbrush + toothpaste
-[ ] Shampoo/conditioner (travel size)
-[ ] Body wash/soap
-[ ] Deodorant
-[ ] Prescription medications
-[ ] First aid kit (basic)
-[ ] Sunscreen (SPF 30+)
-[ ] Sunglasses
+Toiletries & Health:
+    - [ ] Toothbrush + toothpaste
+    - [ ] Shampoo/conditioner (travel size)
+    - [ ] Body wash/soap
+    - [ ] Deodorant
+    - [ ] Prescription medications
+    - [ ] First aid kit (basic)
+    - [ ] Sunscreen (SPF 30+)
+    - [ ] Sunglasses
 
-# Miscellaneous
-[ ] Travel pillow
-[ ] Reusable water bottle
-[ ] Snacks for travel
-[ ] Book/e-reader
-[ ] Laundry bag
-[ ] Travel-size laundry detergent
+Miscellaneous:
+    - [ ] Travel pillow
+    - [ ] Reusable water bottle
+    - [ ] Snacks for travel
+    - [ ] Book/e-reader
+    - [ ] Laundry bag
+    - [ ] Travel-size laundry detergent

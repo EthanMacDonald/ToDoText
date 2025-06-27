@@ -2155,9 +2155,9 @@ async def get_available_lists():
                 line = line.strip()
                 if line.startswith('# ') and 'title' not in locals():
                     title = line[2:].strip()
-                elif line.startswith('['):
+                elif line.startswith('- ['):
                     total_items += 1
-                    if line.startswith('[x]') or line.startswith('[X]'):
+                    if line.startswith('- [x]') or line.startswith('- [X]'):
                         completed_items += 1
             
             completion_pct = (completed_items / total_items * 100) if total_items > 0 else 0
@@ -2190,8 +2190,10 @@ async def get_list_items(list_name: str):
         
         items = []
         title = list_name.replace('_', ' ').title()
+        current_area = None
         
         for i, line in enumerate(lines):
+            original_line = line
             line = line.strip()
             
             # Extract title from comments
@@ -2203,21 +2205,38 @@ async def get_list_items(list_name: str):
             if line.startswith('#') or not line:
                 continue
             
-            # Parse checkbox items
-            if line.startswith('['):
-                completed = line.startswith('[x]') or line.startswith('[X]')
+            # Check for area headers (lines ending with colon, not indented)
+            if line.endswith(':') and not original_line.startswith('    ') and not original_line.startswith('\t'):
+                current_area = line[:-1]  # Remove the colon
+                items.append({
+                    "id": i,
+                    "text": current_area,
+                    "completed": False,
+                    "line_number": i,
+                    "is_area_header": True,
+                    "area": current_area
+                })
+                continue
+            
+            # Parse checkbox items (must be indented)
+            if line.startswith('- [') and (original_line.startswith('    ') or original_line.startswith('\t')):
+                completed = line.startswith('- [x]') or line.startswith('- [X]')
                 # Extract item text (everything after the checkbox)
-                text = re.sub(r'^\[[ xX]\]\s*', '', line)
+                text = re.sub(r'^- \[[ xX]\]\s*', '', line)
                 
                 items.append({
                     "id": i,
                     "text": text,
                     "completed": completed,
-                    "line_number": i
+                    "line_number": i,
+                    "is_area_header": False,
+                    "area": current_area
                 })
         
-        total_items = len(items)
-        completed_items = sum(1 for item in items if item["completed"])
+        # Count only checkbox items for progress
+        checkbox_items = [item for item in items if not item.get("is_area_header", False)]
+        total_items = len(checkbox_items)
+        completed_items = sum(1 for item in checkbox_items if item["completed"])
         completion_pct = (completed_items / total_items * 100) if total_items > 0 else 0
         
         return {
@@ -2248,10 +2267,13 @@ async def toggle_list_item(list_name: str, request: dict):
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         
-        # Get the actual items (not including comments/empty lines)
+        # Get the actual checkbox items (not including comments/empty lines/area headers)
         checkbox_lines = []
         for i, line in enumerate(lines):
-            if line.strip().startswith('['):
+            original_line = line
+            stripped_line = line.strip()
+            # Only count indented checkbox items
+            if stripped_line.startswith('- [') and (original_line.startswith('    ') or original_line.startswith('\t')):
                 checkbox_lines.append(i)
         
         # Make sure the item_index is valid
@@ -2262,12 +2284,12 @@ async def toggle_list_item(list_name: str, request: dict):
         line_to_toggle = checkbox_lines[item_index]
         line = lines[line_to_toggle].strip()
         
-        if line.startswith('[x]') or line.startswith('[X]'):
+        if line.startswith('- [x]') or line.startswith('- [X]'):
             # Mark as incomplete
-            lines[line_to_toggle] = lines[line_to_toggle].replace('[x]', '[ ]').replace('[X]', '[ ]')
-        elif line.startswith('[ ]'):
+            lines[line_to_toggle] = lines[line_to_toggle].replace('- [x]', '- [ ]').replace('- [X]', '- [ ]')
+        elif line.startswith('- [ ]'):
             # Mark as complete  
-            lines[line_to_toggle] = lines[line_to_toggle].replace('[ ]', '[x]')
+            lines[line_to_toggle] = lines[line_to_toggle].replace('- [ ]', '- [x]')
         
         # Write back to file
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -2292,8 +2314,8 @@ async def reset_list(list_name: str):
         
         # Reset all checkboxes to unchecked
         for i, line in enumerate(lines):
-            if line.strip().startswith('[x]') or line.strip().startswith('[X]'):
-                lines[i] = line.replace('[x]', '[ ]').replace('[X]', '[ ]')
+            if line.strip().startswith('- [x]') or line.strip().startswith('- [X]'):
+                lines[i] = line.replace('- [x]', '- [ ]').replace('- [X]', '- [ ]')
         
         # Write back to file
         with open(file_path, 'w', encoding='utf-8') as f:
