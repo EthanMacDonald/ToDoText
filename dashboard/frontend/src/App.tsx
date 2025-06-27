@@ -3,6 +3,7 @@ import TaskList from './components/TaskList';
 import CreateTaskForm from './components/CreateTaskForm';
 import EditTaskForm from './components/EditTaskForm';
 import Statistics from './components/Statistics';
+import TimeSeries from './components/TimeSeries';
 import type { Task, TaskGroup } from './types/task';
 
 const API_URL = 'http://localhost:8000';
@@ -171,6 +172,11 @@ function App() {
       <Statistics 
         refreshTrigger={refreshTrigger} 
         onTasksChanged={refreshTasks}
+      />
+      
+      {/* Time Series Analysis */}
+      <TimeSeries 
+        refreshTrigger={refreshTrigger}
       />
       
       {/* Git Commit Panel */}

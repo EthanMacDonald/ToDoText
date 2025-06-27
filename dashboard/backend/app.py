@@ -9,6 +9,8 @@ from datetime import datetime, timedelta, date
 from collections import Counter, defaultdict
 import os
 import subprocess
+import csv
+import json
 
 class CheckTaskRequest(BaseModel):
     task_id: str
@@ -489,6 +491,26 @@ def get_statistics():
     """Get task statistics"""
     return compute_task_statistics()
 
+@app.get("/statistics/time-series")
+def get_statistics_time_series_endpoint():
+    """Get historical statistics time series"""
+    return get_statistics_time_series()
+
+@app.get("/recurring/compliance")
+def get_recurring_compliance():
+    """Get recurring task compliance data over time"""
+    return get_recurring_task_compliance_data()
+
+@app.get("/recurring/compliance/individual")
+def get_individual_compliance(task_id: str = None, days: int = None):
+    """Get compliance data for individual recurring tasks"""
+    return get_individual_recurring_task_compliance(task_id, days)
+
+@app.get("/statistics/time-series/filtered")
+def get_filtered_time_series(days: int = None):
+    """Get filtered time series statistics"""
+    return get_statistics_time_series_filtered(days)
+
 @app.post("/tasks/archive")
 def post_archive_completed_tasks():
     """Archive all completed tasks"""
@@ -655,3 +677,1403 @@ async def commit_task_files():
         raise HTTPException(status_code=408, detail="Git commit script timed out")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error running git commit: {str(e)}")
+
+def read_statistics_csv():
+    """Read historical statistics from CSV file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_file = os.path.join(current_dir, '../../task_statistics.csv')
+        
+        if not os.path.exists(csv_file):
+            return []
+        
+        data = []
+        current_headers = None
+        
+        with open(csv_file, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            if not line:
+                i += 1
+                continue
+                
+            # Check if this line is a header (starts with 'timestamp')
+            if line.startswith('timestamp,'):
+                current_headers = line.split(',')
+                i += 1
+                continue
+            
+            # If we have headers, try to parse data rows
+            if current_headers:
+                values = line.split(',')
+                if len(values) == len(current_headers):
+                    row = dict(zip(current_headers, values))
+                    
+                    # Skip if timestamp is 'timestamp' (duplicate header)
+                    if row.get('timestamp') == 'timestamp':
+                        i += 1
+                        continue
+                    
+                    # Parse timestamp
+                    try:
+                        timestamp = datetime.strptime(row['timestamp'], '%Y-%m-%d %H:%M:%S')
+                        row['timestamp'] = timestamp
+                        
+                        # Convert numeric fields
+                        for key, value in row.items():
+                            if key != 'timestamp' and value and isinstance(value, str):
+                                # Check if it's a number (including negative and decimal)
+                                if value.replace('.', '').replace('-', '').isdigit():
+                                    row[key] = float(value) if '.' in value else int(value)
+                        
+                        data.append(row)
+                    except ValueError:
+                        pass
+            
+            i += 1
+        
+        # Sort by timestamp
+        data.sort(key=lambda x: x['timestamp'])
+        return data
+        
+    except Exception as e:
+        print(f"Error reading statistics CSV: {e}")
+        return []
+
+def get_recurring_task_compliance_data():
+    """Calculate recurring task compliance over time"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        log_file = os.path.join(current_dir, '../../archive_files/recurring_status_log.txt')
+        
+        if not os.path.exists(log_file):
+            return []
+        
+        # Parse the log file
+        daily_stats = defaultdict(lambda: {'completed': 0, 'missed': 0, 'deferred': 0, 'total': 0})
+        
+        with open(log_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                parts = line.split(' | ')
+                if len(parts) >= 4:
+                    timestamp_str = parts[0]
+                    status = parts[1].upper()
+                    task_id = parts[2]
+                    
+                    try:
+                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+                        date_str = timestamp.strftime('%Y-%m-%d')
+                        
+                        daily_stats[date_str]['total'] += 1
+                        if status == 'COMPLETED':
+                            daily_stats[date_str]['completed'] += 1
+                        elif status == 'MISSED':
+                            daily_stats[date_str]['missed'] += 1
+                        elif status == 'DEFERRED':
+                            daily_stats[date_str]['deferred'] += 1
+                            
+                    except ValueError:
+                        continue
+        
+        # Convert to list and calculate compliance percentage
+        compliance_data = []
+        for date_str, stats in sorted(daily_stats.items()):
+            total = stats['total']
+            completed = stats['completed']
+            compliance_pct = (completed / total * 100) if total > 0 else 0
+            
+            compliance_data.append({
+                'date': date_str,
+                'completed': completed,
+                'missed': stats['missed'],
+                'deferred': stats['deferred'],
+                'total': total,
+                'compliance_pct': round(compliance_pct, 2)
+            })
+        
+        return compliance_data
+        
+    except Exception as e:
+        print(f"Error calculating compliance data: {e}")
+        return []
+
+def get_statistics_time_series():
+    """Get statistics time series data from CSV"""
+    data = read_statistics_csv()
+    
+    # Group by date (in case there are multiple entries per day)
+    daily_data = defaultdict(list)
+    for row in data:
+        date_str = row['timestamp'].strftime('%Y-%m-%d')
+        daily_data[date_str].append(row)
+    
+    # Take the latest entry for each day and format for charting
+    time_series = []
+    for date_str in sorted(daily_data.keys()):
+        latest_entry = max(daily_data[date_str], key=lambda x: x['timestamp'])
+        
+        time_series.append({
+            'date': date_str,
+            'total': latest_entry.get('total', 0),
+            'completed': latest_entry.get('completed', 0),
+            'incomplete': latest_entry.get('incomplete', 0),
+            'completion_pct': latest_entry.get('completion_pct', 0),
+            'with_due_date': latest_entry.get('with_due_date', 0),
+            'overdue': latest_entry.get('overdue', 0),
+            'due_today': latest_entry.get('due_today', 0),
+            'due_this_week': latest_entry.get('due_this_week', 0)
+        })
+    
+    return time_series
+
+@app.get("/statistics/time-series")
+def get_statistics_time_series_endpoint():
+    """Get time-series statistics data for charts"""
+    try:
+        # Get compliance data
+        compliance_data = get_recurring_task_compliance_data()
+        
+        # Get general statistics time series
+        general_time_series = get_statistics_time_series()
+        
+        # Combine data: for each date, add compliance stats to the general stats
+        combined_data = {}
+        for entry in general_time_series:
+            date_str = entry['date']
+            combined_data[date_str] = {
+                'date': date_str,
+                'total': entry['total'],
+                'completed': entry['completed'],
+                'incomplete': entry['incomplete'],
+                'completion_pct': entry['completion_pct'],
+                'with_due_date': entry['with_due_date'],
+                'overdue': entry['overdue'],
+                'due_today': entry['due_today'],
+                'due_this_week': entry['due_this_week'],
+                'compliance': next((c for c in compliance_data if c['date'] == date_str), None)
+            }
+        
+        # Convert back to sorted list
+        combined_list = sorted(combined_data.values(), key=lambda x: x['date'])
+        
+        return combined_list
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-sample-data")
+def generate_sample_data():
+    """Generate sample historical data for demonstration purposes"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_file = os.path.join(current_dir, '../../task_statistics.csv')
+        
+        # Generate data for the past 30 days
+        import random
+        from datetime import datetime, timedelta
+        
+        base_date = datetime.now() - timedelta(days=30)
+        sample_data = []
+        
+        for i in range(30):
+            date = base_date + timedelta(days=i)
+            total_tasks = random.randint(50, 200)
+            completed = random.randint(5, total_tasks // 3)
+            incomplete = total_tasks - completed
+            completion_pct = (completed / total_tasks) * 100
+            with_due_date = random.randint(10, total_tasks // 2)
+            overdue = random.randint(0, with_due_date // 4)
+            due_today = random.randint(0, 5)
+            due_this_week = random.randint(due_today, 15)
+            
+            sample_data.append({
+                'timestamp': date.strftime('%Y-%m-%d %H:%M:%S'),
+                'total': total_tasks,
+                'completed': completed,
+                'incomplete': incomplete,
+                'completion_pct': round(completion_pct, 2),
+                'with_due_date': with_due_date,
+                'overdue': overdue,
+                'due_today': due_today,
+                'due_this_week': due_this_week
+            })
+        
+        # Write to CSV (append mode)
+        with open(csv_file, 'a', encoding='utf-8') as f:
+            if sample_data:
+                # Check if file is empty to write header
+                if os.path.getsize(csv_file) == 0:
+                    f.write('timestamp,total,completed,incomplete,completion_pct,with_due_date,overdue,due_today,due_this_week\n')
+                
+                for entry in sample_data:
+                    f.write(f"{entry['timestamp']},{entry['total']},{entry['completed']},{entry['incomplete']},{entry['completion_pct']},{entry['with_due_date']},{entry['overdue']},{entry['due_today']},{entry['due_this_week']}\n")
+        
+        return {"success": True, "message": f"Generated {len(sample_data)} sample data points"}
+        
+    except Exception as e:
+        return {"success": False, "message": f"Error generating sample data: {str(e)}"}
+
+def get_individual_recurring_task_compliance(task_id: str = None, days: int = None):
+    """Get compliance data for individual recurring tasks"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        log_file = os.path.join(current_dir, '../../archive_files/recurring_status_log.txt')
+        
+        if not os.path.exists(log_file):
+            return []
+        
+        # Parse the log file
+        task_stats = defaultdict(lambda: defaultdict(lambda: {'completed': 0, 'missed': 0, 'deferred': 0, 'total': 0}))
+        task_descriptions = {}
+        
+        # Calculate date cutoff if days is specified
+        cutoff_date = None
+        if days:
+            cutoff_date = datetime.now() - timedelta(days=days)
+        
+        with open(log_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                parts = line.split(' | ')
+                if len(parts) >= 4:
+                    timestamp_str = parts[0]
+                    status = parts[1].upper()
+                    task_id_log = parts[2]
+                    task_description = parts[3]
+                    
+                    try:
+                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+                        
+                        # Apply date filter if specified
+                        if cutoff_date and timestamp < cutoff_date:
+                            continue
+                            
+                        date_str = timestamp.strftime('%Y-%m-%d')
+                        
+                        # Store task description
+                        task_descriptions[task_id_log] = task_description
+                        
+                        # Filter by specific task if requested
+                        if task_id and task_id_log != task_id:
+                            continue
+                        
+                        task_stats[task_id_log][date_str]['total'] += 1
+                        if status == 'COMPLETED':
+                            task_stats[task_id_log][date_str]['completed'] += 1
+                        elif status == 'MISSED':
+                            task_stats[task_id_log][date_str]['missed'] += 1
+                        elif status == 'DEFERRED':
+                            task_stats[task_id_log][date_str]['deferred'] += 1
+                            
+                    except ValueError:
+                        continue
+        
+        # Convert to the desired format
+        if task_id:
+            # Return data for specific task
+            if task_id not in task_stats:
+                return []
+            
+            result = []
+            for date_str, stats in sorted(task_stats[task_id].items()):
+                total = stats['total']
+                completed = stats['completed']
+                compliance_pct = (completed / total * 100) if total > 0 else 0
+                
+                result.append({
+                    'date': date_str,
+                    'task_id': task_id,
+                    'task_description': task_descriptions.get(task_id, 'Unknown'),
+                    'completed': completed,
+                    'missed': stats['missed'],
+                    'deferred': stats['deferred'],
+                    'total': total,
+                    'compliance_pct': round(compliance_pct, 2)
+                })
+            return result
+        else:
+            # Return summary data for all tasks
+            result = []
+            for task_id_key, date_data in task_stats.items():
+                # Calculate overall stats for this task
+                total_completed = sum(day['completed'] for day in date_data.values())
+                total_missed = sum(day['missed'] for day in date_data.values())
+                total_deferred = sum(day['deferred'] for day in date_data.values())
+                total_all = total_completed + total_missed + total_deferred
+                overall_compliance = (total_completed / total_all * 100) if total_all > 0 else 0
+                
+                result.append({
+                    'task_id': task_id_key,
+                    'task_description': task_descriptions.get(task_id_key, 'Unknown'),
+                    'total_completed': total_completed,
+                    'total_missed': total_missed,
+                    'total_deferred': total_deferred,
+                    'total_entries': total_all,
+                    'overall_compliance_pct': round(overall_compliance, 2),
+                    'first_date': min(date_data.keys()) if date_data else None,
+                    'last_date': max(date_data.keys()) if date_data else None
+                })
+            
+            # Sort by compliance percentage (descending)
+            result.sort(key=lambda x: x['overall_compliance_pct'], reverse=True)
+            return result
+        
+    except Exception as e:
+        print(f"Error getting individual task compliance: {e}")
+        return []
+
+def get_statistics_time_series_filtered(days: int = None):
+    """Get statistics time series data with optional day filter"""
+    data = read_statistics_csv()
+    
+    # Apply date filter if specified
+    if days:
+        cutoff_date = datetime.now() - timedelta(days=days)
+        data = [row for row in data if row['timestamp'] >= cutoff_date]
+    
+    # Group by date (in case there are multiple entries per day)
+    daily_data = defaultdict(list)
+    for row in data:
+        date_str = row['timestamp'].strftime('%Y-%m-%d')
+        daily_data[date_str].append(row)
+    
+    # Take the latest entry for each day and format for charting
+    time_series = []
+    for date_str in sorted(daily_data.keys()):
+        latest_entry = max(daily_data[date_str], key=lambda x: x['timestamp'])
+        
+        time_series.append({
+            'date': date_str,
+            'total': latest_entry.get('total', 0),
+            'completed': latest_entry.get('completed', 0),
+            'incomplete': latest_entry.get('incomplete', 0),
+            'completion_pct': latest_entry.get('completion_pct', 0),
+            'with_due_date': latest_entry.get('with_due_date', 0),
+            'overdue': latest_entry.get('overdue', 0),
+            'due_today': latest_entry.get('due_today', 0),
+            'due_this_week': latest_entry.get('due_this_week', 0)
+        })
+    
+    return time_series
+
+def get_task_performance_heatmap(days: int = 365):
+    """Generate task performance heatmap data for calendar visualization"""
+    try:
+        # Get compliance data for recurring tasks
+        compliance_data = get_recurring_task_compliance_data()
+        
+        # Get general statistics
+        stats_data = get_statistics_time_series_filtered(days)
+        
+        # Create heatmap data structure
+        heatmap_data = []
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=days)
+        
+        # Create dict for quick lookup
+        compliance_dict = {item['date']: item for item in compliance_data}
+        stats_dict = {item['date']: item for item in stats_data}
+        
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = current_date.strftime('%Y-%m-%d')
+            
+            # Get compliance for this date
+            compliance = compliance_dict.get(date_str, {})
+            stats = stats_dict.get(date_str, {})
+            
+            # Calculate overall performance score (0-100)
+            performance_score = 0
+            factors = 0
+            
+            # Factor 1: Recurring task compliance
+            if compliance.get('total', 0) > 0:
+                performance_score += compliance.get('compliance_pct', 0)
+                factors += 1
+            
+            # Factor 2: General task completion rate
+            if stats.get('total', 0) > 0:
+                performance_score += stats.get('completion_pct', 0)
+                factors += 1
+            
+            # Factor 3: Overdue task penalty
+            overdue_penalty = 0
+            if stats.get('overdue', 0) > 0 and stats.get('total', 0) > 0:
+                overdue_penalty = min(50, (stats.get('overdue', 0) / stats.get('total', 0)) * 100)
+            
+            # Calculate final score
+            if factors > 0:
+                performance_score = (performance_score / factors) - overdue_penalty
+                performance_score = max(0, min(100, performance_score))
+            
+            heatmap_data.append({
+                'date': date_str,
+                'performance_score': round(performance_score, 2),
+                'recurring_compliance': compliance.get('compliance_pct', 0),
+                'task_completion': stats.get('completion_pct', 0),
+                'overdue_count': stats.get('overdue', 0),
+                'total_tasks': stats.get('total', 0),
+                'recurring_total': compliance.get('total', 0)
+            })
+            
+            current_date += timedelta(days=1)
+        
+        return heatmap_data
+        
+    except Exception as e:
+        print(f"Error generating heatmap data: {e}")
+        return []
+
+def get_day_of_week_analysis(days: int = 90):
+    """Analyze task performance by day of the week"""
+    try:
+        # Get compliance data
+        compliance_data = get_recurring_task_compliance_data()
+        stats_data = get_statistics_time_series_filtered(days)
+        
+        # Initialize day-of-week counters
+        weekday_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        weekday_stats = {day: {'compliance': [], 'completion': [], 'total_tasks': [], 'overdue': []} for day in weekday_names}
+        
+        # Process compliance data
+        for item in compliance_data:
+            try:
+                date_obj = datetime.strptime(item['date'], '%Y-%m-%d').date()
+                if (datetime.now().date() - date_obj).days <= days:
+                    weekday_name = weekday_names[date_obj.weekday()]
+                    if item.get('total', 0) > 0:
+                        weekday_stats[weekday_name]['compliance'].append(item.get('compliance_pct', 0))
+            except ValueError:
+                continue
+        
+        # Process general stats
+        for item in stats_data:
+            try:
+                date_obj = datetime.strptime(item['date'], '%Y-%m-%d').date()
+                weekday_name = weekday_names[date_obj.weekday()]
+                if item.get('total', 0) > 0:
+                    weekday_stats[weekday_name]['completion'].append(item.get('completion_pct', 0))
+                    weekday_stats[weekday_name]['total_tasks'].append(item.get('total', 0))
+                    weekday_stats[weekday_name]['overdue'].append(item.get('overdue', 0))
+            except ValueError:
+                continue
+        
+        # Calculate averages
+        analysis_result = []
+        for day in weekday_names:
+            stats = weekday_stats[day]
+            
+            avg_compliance = sum(stats['compliance']) / len(stats['compliance']) if stats['compliance'] else 0
+            avg_completion = sum(stats['completion']) / len(stats['completion']) if stats['completion'] else 0
+            avg_total_tasks = sum(stats['total_tasks']) / len(stats['total_tasks']) if stats['total_tasks'] else 0
+            avg_overdue = sum(stats['overdue']) / len(stats['overdue']) if stats['overdue'] else 0
+            
+            analysis_result.append({
+                'day': day,
+                'avg_compliance_pct': round(avg_compliance, 2),
+                'avg_completion_pct': round(avg_completion, 2),
+                'avg_total_tasks': round(avg_total_tasks, 1),
+                'avg_overdue': round(avg_overdue, 1),
+                'data_points': len(stats['completion']),
+                'overall_performance': round((avg_compliance + avg_completion) / 2, 2)
+            })
+        
+        return analysis_result
+        
+    except Exception as e:
+        print(f"Error in day-of-week analysis: {e}")
+        return []
+
+def get_task_correlation_analysis(days: int = 90):
+    """Analyze which tasks are often completed together"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        log_file = os.path.join(current_dir, '../../archive_files/recurring_status_log.txt')
+        
+        if not os.path.exists(log_file):
+            return []
+        
+        # Get tasks completed on the same day
+        daily_completions = defaultdict(set)
+        task_descriptions = {}
+        
+        cutoff_date = datetime.now() - timedelta(days=days)
+        
+        with open(log_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                parts = line.split(' | ')
+                if len(parts) >= 4:
+                    timestamp_str = parts[0]
+                    status = parts[1].upper()
+                    task_id = parts[2]
+                    task_description = parts[3]
+                    
+                    try:
+                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+                        if timestamp < cutoff_date:
+                            continue
+                            
+                        if status == 'COMPLETED':
+                            date_str = timestamp.strftime('%Y-%m-%d')
+                            daily_completions[date_str].add(task_id)
+                            task_descriptions[task_id] = task_description
+                    except ValueError:
+                        continue
+        
+        # Calculate correlation matrix
+        task_ids = list(task_descriptions.keys())
+        correlations = []
+        
+        for i, task1 in enumerate(task_ids):
+            for j, task2 in enumerate(task_ids):
+                if i >= j:  # Avoid duplicates and self-correlation
+                    continue
+                
+                # Count days both tasks were completed
+                both_completed = 0
+                task1_completed = 0
+                task2_completed = 0
+                total_days = len(daily_completions)
+                
+                for date_str, completed_tasks in daily_completions.items():
+                    task1_done = task1 in completed_tasks
+                    task2_done = task2 in completed_tasks
+                    
+                    if task1_done and task2_done:
+                        both_completed += 1
+                    if task1_done:
+                        task1_completed += 1
+                    if task2_done:
+                        task2_completed += 1
+                
+                # Calculate correlation coefficient (Jaccard similarity)
+                if task1_completed + task2_completed - both_completed > 0:
+                    correlation = both_completed / (task1_completed + task2_completed - both_completed)
+                else:
+                    correlation = 0
+                
+                if correlation > 0.1:  # Only include meaningful correlations
+                    correlations.append({
+                        'task1_id': task1,
+                        'task1_description': task_descriptions[task1],
+                        'task2_id': task2,
+                        'task2_description': task_descriptions[task2],
+                        'correlation': round(correlation, 3),
+                        'both_completed_days': both_completed,
+                        'task1_completed_days': task1_completed,
+                        'task2_completed_days': task2_completed,
+                        'total_days_analyzed': total_days
+                    })
+        
+        # Sort by correlation strength
+        correlations.sort(key=lambda x: x['correlation'], reverse=True)
+        return correlations[:20]  # Top 20 correlations
+        
+    except Exception as e:
+        print(f"Error in correlation analysis: {e}")
+        return []
+
+def get_priority_vs_completion_analysis():
+    """Analyze completion rates by task priority"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        tasks_file = os.path.join(current_dir, '../../tasks.txt')
+        
+        priority_stats = defaultdict(lambda: {'total': 0, 'completed': 0})
+        
+        with open(tasks_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#') or line.endswith(':'):
+                    continue
+                
+                # Check if task is completed
+                is_completed = line.lower().startswith('- [x]')
+                
+                # Extract priority (A, B, C)
+                prio_match = re.search(r'\b([A-C])\b', line)
+                priority = prio_match.group(1) if prio_match else 'No Priority'
+                
+                priority_stats[priority]['total'] += 1
+                if is_completed:
+                    priority_stats[priority]['completed'] += 1
+        
+        # Calculate completion rates
+        analysis_result = []
+        for priority in ['A', 'B', 'C', 'No Priority']:
+            if priority in priority_stats:
+                stats = priority_stats[priority]
+                completion_rate = (stats['completed'] / stats['total'] * 100) if stats['total'] > 0 else 0
+                
+                analysis_result.append({
+                    'priority': priority,
+                    'total_tasks': stats['total'],
+                    'completed_tasks': stats['completed'],
+                    'incomplete_tasks': stats['total'] - stats['completed'],
+                    'completion_rate': round(completion_rate, 2)
+                })
+        
+        return analysis_result
+        
+    except Exception as e:
+        print(f"Error in priority analysis: {e}")
+        return []
+
+def get_streak_analysis():
+    """Calculate current and best streaks for recurring tasks"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        log_file = os.path.join(current_dir, '../../archive_files/recurring_status_log.txt')
+        
+        if not os.path.exists(log_file):
+            return []
+        
+        # Parse log data by task
+        task_data = defaultdict(list)
+        task_descriptions = {}
+        
+        with open(log_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                parts = line.split(' | ')
+                if len(parts) >= 4:
+                    timestamp_str = parts[0]
+                    status = parts[1].upper()
+                    task_id = parts[2]
+                    task_description = parts[3]
+                    
+                    try:
+                        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+                        date_str = timestamp.strftime('%Y-%m-%d');
+                        
+                        task_data[task_id].append({
+                            'date': date_str,
+                            'status': status,
+                            'timestamp': timestamp
+                        })
+                        task_descriptions[task_id] = task_description
+                    except ValueError:
+                        continue
+        
+        # Calculate streaks for each task
+        streak_results = []
+        
+        for task_id, entries in task_data.items():
+            # Sort by date
+            entries.sort(key=lambda x: x['timestamp'])
+            
+            # Group by date (take latest status per day)
+            daily_status = {}
+            for entry in entries:
+                daily_status[entry['date']] = entry['status']
+            
+            # Calculate streaks
+            current_streak = 0
+            best_streak = 0
+            temp_streak = 0
+            
+            # Get all dates from first entry to today
+            if entries:
+                start_date = datetime.strptime(min(daily_status.keys()), '%Y-%m-%d').date()
+                end_date = datetime.now().date()
+                
+                current_date = start_date
+                streak_active = True
+                
+                while current_date <= end_date:
+                    date_str = current_date.strftime('%Y-%m-%d')
+                    status = daily_status.get(date_str)
+                    
+                    if status == 'COMPLETED':
+                        temp_streak += 1
+                        if streak_active:
+                            current_streak = temp_streak
+                    else:
+                        if temp_streak > best_streak:
+                            best_streak = temp_streak
+                        if status in ['MISSED', 'DEFERRED']:
+                            streak_active = False
+                        temp_streak = 0
+                    
+                    current_date += timedelta(days=1)
+                
+                # Final check for best streak
+                if temp_streak > best_streak:
+                    best_streak = temp_streak
+            
+            # Calculate completion rate
+            total_entries = len(daily_status)
+            completed_entries = sum(1 for status in daily_status.values() if status == 'COMPLETED')
+            completion_rate = (completed_entries / total_entries * 100) if total_entries > 0 else 0
+            
+            streak_results.append({
+                'task_id': task_id,
+                'task_description': task_descriptions[task_id],
+                'current_streak': current_streak,
+                'best_streak': best_streak,
+                'completion_rate': round(completion_rate, 2),
+                'total_entries': total_entries,
+                'completed_entries': completed_entries
+            })
+        
+        # Sort by current streak (descending)
+        streak_results.sort(key=lambda x: x['current_streak'], reverse=True)
+        return streak_results
+        
+    except Exception as e:
+        print(f"Error in streak analysis: {e}")
+        return []
+
+def get_performance_badges():
+    """Award performance badges based on various criteria"""
+    try:
+        # Get data for badge calculations
+        streak_data = get_streak_analysis()
+        compliance_data = get_individual_recurring_task_compliance()
+        priority_data = get_priority_vs_completion_analysis()
+        
+        badges = []
+        
+        # Streak-based badges
+        for task in streak_data:
+            if task['current_streak'] >= 30:
+                badges.append({
+                    'type': 'streak',
+                    'level': 'platinum',
+                    'title': 'Consistency Master',
+                    'description': f"30+ day streak on '{task['task_description']}'",
+                    'task_id': task['task_id'],
+                    'value': task['current_streak']
+                })
+            elif task['current_streak'] >= 14:
+                badges.append({
+                    'type': 'streak',
+                    'level': 'gold',
+                    'title': 'Habit Builder',
+                    'description': f"14+ day streak on '{task['task_description']}'",
+                    'task_id': task['task_id'],
+                    'value': task['current_streak']
+                })
+            elif task['current_streak'] >= 7:
+                badges.append({
+                    'type': 'streak',
+                    'level': 'silver',
+                    'title': 'Week Warrior',
+                    'description': f"7+ day streak on '{task['task_description']}'",
+                    'task_id': task['task_id'],
+                    'value': task['current_streak']
+                })
+        
+        # Compliance-based badges
+        for task in compliance_data:
+            if task['overall_compliance_pct'] >= 95 and task['total_entries'] >= 10:
+                badges.append({
+                    'type': 'compliance',
+                    'level': 'platinum',
+                    'title': 'Perfectionist',
+                    'description': f"95%+ compliance on '{task['task_description']}'",
+                    'task_id': task['task_id'],
+                    'value': task['overall_compliance_pct']
+                })
+            elif task['overall_compliance_pct'] >= 85 and task['total_entries'] >= 10:
+                badges.append({
+                    'type': 'compliance',
+                    'level': 'gold',
+                    'title': 'High Achiever',
+                    'description': f"85%+ compliance on '{task['task_description']}'",
+                    'task_id': task['task_id'],
+                    'value': task['overall_compliance_pct']
+                })
+            elif task['overall_compliance_pct'] >= 70 and task['total_entries'] >= 10:
+                badges.append({
+                    'type': 'compliance',
+                    'level': 'silver',
+                    'title': 'Consistent Performer',
+                    'description': f"70%+ compliance on '{task['task_description']}'",
+                    'task_id': task['task_id'],
+                    'value': task['overall_compliance_pct']
+                })
+        
+        # Priority completion badges
+        high_priority_task = next((p for p in priority_data if p['priority'] == 'A'), None)
+        if high_priority_task and high_priority_task['completion_rate'] >= 80:
+            badges.append({
+                'type': 'priority',
+                'level': 'gold',
+                'title': 'Priority Master',
+                'description': f"80%+ completion rate on Priority A tasks",
+                'task_id': None,
+                'value': high_priority_task['completion_rate']
+            })
+        
+        # Overall performance badges
+        total_tasks = sum(task['total_entries'] for task in compliance_data)
+        if total_tasks >= 100:
+            badges.append({
+                'type': 'volume',
+                'level': 'gold',
+                'title': 'Task Veteran',
+                'description': f"Completed {total_tasks}+ recurring task instances",
+                'task_id': None,
+                'value': total_tasks
+            })
+        
+        # Sort badges by level priority
+        level_order = {'platinum': 0, 'gold': 1, 'silver': 2, 'bronze': 3}
+        badges.sort(key=lambda x: (level_order.get(x['level'], 4), -x['value']))
+        
+        return badges
+        
+    except Exception as e:
+        print(f"Error generating badges: {e}")
+        return []
+
+def get_comparative_time_series(task_ids: list, days: int = 30):
+    """Compare multiple recurring tasks' compliance over time"""
+    try:
+        comparison_data = []
+        
+        for task_id in task_ids:
+            task_data = get_individual_recurring_task_compliance(task_id, days)
+            if task_data:
+                comparison_data.append({
+                    'task_id': task_id,
+                    'task_description': task_data[0]['task_description'],
+                    'data': task_data
+                })
+        
+        # Create unified date range
+        all_dates = set()
+        for task in comparison_data:
+            for entry in task['data']:
+                all_dates.add(entry['date'])
+        
+        # Fill in missing dates with 0 values
+        unified_data = []
+        for date_str in sorted(all_dates):
+            date_entry = {'date': date_str}
+            
+            for task in comparison_data:
+                task_id = task['task_id']
+                # Find data for this date
+                day_data = next((d for d in task['data'] if d['date'] == date_str), None)
+                if day_data:
+                    date_entry[f"{task_id}_compliance"] = day_data['compliance_pct']
+                    date_entry[f"{task_id}_description"] = day_data['task_description']
+                else:
+                    date_entry[f"{task_id}_compliance"] = 0
+                    date_entry[f"{task_id}_description"] = task['task_description']
+            
+            unified_data.append(date_entry)
+        
+        return {
+            'data': unified_data,
+            'tasks': [{'task_id': task['task_id'], 'description': task['task_description']} for task in comparison_data]
+        }
+        
+    except Exception as e:
+        print(f"Error in comparative analysis: {e}")
+        return {'data': [], 'tasks': []}
+
+def get_behavioral_metrics(days: int = 30):
+    """Calculate behavioral metrics like procrastination and completion velocity"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        log_file = os.path.join(current_dir, '../../archive_files/recurring_status_log.txt')
+        tasks_file = os.path.join(current_dir, '../../tasks.txt')
+        
+        metrics = {
+            'procrastination_score': 0,
+            'completion_velocity': 0,
+            'task_difficulty_distribution': {},
+            'peak_performance_hours': [],
+            'consistency_score': 0
+        }
+        
+        # Analyze recurring task completion patterns
+        if os.path.exists(log_file):
+            cutoff_date = datetime.now() - timedelta(days=days)
+            hourly_completions = defaultdict(int)
+            daily_completions = defaultdict(int)
+            deferred_vs_completed = {'deferred': 0, 'completed': 0}
+            
+            with open(log_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    parts = line.split(' | ')
+                    if len(parts) >= 4:
+                        timestamp_str = parts[0]
+                        status = parts[1].upper()
+                        
+                        try:
+                            timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+                            if timestamp < cutoff_date:
+                                continue
+                            
+                            hour = timestamp.hour
+                            date_str = timestamp.strftime('%Y-%m-%d')
+                            
+                            if status == 'COMPLETED':
+                                hourly_completions[hour] += 1
+                                daily_completions[date_str] += 1
+                                deferred_vs_completed['completed'] += 1
+                            elif status == 'DEFERRED':
+                                deferred_vs_completed['deferred'] += 1
+                                
+                        except ValueError:
+                            continue
+            
+            # Calculate procrastination score (higher deferred rate = more procrastination)
+            total_actions = deferred_vs_completed['completed'] + deferred_vs_completed['deferred']
+            if total_actions > 0:
+                metrics['procrastination_score'] = round(
+                    (deferred_vs_completed['deferred'] / total_actions) * 100, 2
+                )
+            
+            # Calculate completion velocity (tasks per day)
+            if daily_completions:
+                metrics['completion_velocity'] = round(
+                    sum(daily_completions.values()) / len(daily_completions), 2
+                )
+            
+            # Find peak performance hours
+            if hourly_completions:
+                max_completions = max(hourly_completions.values())
+                metrics['peak_performance_hours'] = [
+                    hour for hour, count in hourly_completions.items() 
+                    if count >= max_completions * 0.8  # Within 80% of peak
+                ]
+            
+            # Calculate consistency score (standard deviation of daily completions)
+            if len(daily_completions) > 1:
+                completion_values = list(daily_completions.values())
+                mean_completions = sum(completion_values) / len(completion_values)
+                variance = sum((x - mean_completions) ** 2 for x in completion_values) / len(completion_values)
+                std_dev = variance ** 0.5
+                # Convert to consistency score (lower std dev = higher consistency)
+                metrics['consistency_score'] = round(max(0, 100 - (std_dev / mean_completions) * 100), 2)
+        
+        # Analyze task difficulty from current tasks
+        if os.path.exists(tasks_file):
+            priority_counts = defaultdict(int)
+            
+            with open(tasks_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#') or line.endswith(':'):
+                        continue
+                    
+                    # Extract priority as difficulty indicator
+                    prio_match = re.search(r'\b([A-C])\b', line)
+                    if prio_match:
+                        priority_counts[prio_match.group(1)] += 1
+                    else:
+                        priority_counts['No Priority'] += 1
+            
+            total_tasks = sum(priority_counts.values())
+            if total_tasks > 0:
+                metrics['task_difficulty_distribution'] = {
+                    priority: round((count / total_tasks) * 100, 2)
+                    for priority, count in priority_counts.items()
+                }
+        
+        return metrics
+        
+    except Exception as e:
+        print(f"Error calculating behavioral metrics: {e}")
+        return metrics
+
+def get_leaderboard_data():
+    """Generate leaderboard data for gamification"""
+    try:
+        # This would typically compare multiple users, but for single-user setup,
+        # we'll create categories and rankings based on different metrics
+        
+        streak_data = get_streak_analysis()
+        compliance_data = get_individual_recurring_task_compliance()
+        behavioral_data = get_behavioral_metrics()
+        
+        leaderboards = {
+            'streaks': {
+                'title': 'Longest Current Streaks',
+                'entries': [
+                    {
+                        'rank': i + 1,
+                        'name': task['task_description'],
+                        'value': task['current_streak'],
+                        'metric': 'days'
+                    }
+                    for i, task in enumerate(sorted(streak_data, key=lambda x: x['current_streak'], reverse=True)[:10])
+                ]
+            },
+            'compliance': {
+                'title': 'Highest Compliance Rates',
+                'entries': [
+                    {
+                        'rank': i + 1,
+                        'name': task['task_description'],
+                        'value': task['overall_compliance_pct'],
+                        'metric': '%'
+                    }
+                    for i, task in enumerate(sorted(compliance_data, key=lambda x: x['overall_compliance_pct'], reverse=True)[:10])
+                ]
+            },
+            'volume': {
+                'title': 'Most Completed Tasks',
+                'entries': [
+                    {
+                        'rank': i + 1,
+                        'name': task['task_description'],
+                        'value': task['total_completed'],
+                        'metric': 'tasks'
+                    }
+                    for i, task in enumerate(sorted(compliance_data, key=lambda x: x['total_completed'], reverse=True)[:10])
+                ]
+            }
+        }
+        
+        return leaderboards
+        
+    except Exception as e:
+        print(f"Error generating leaderboard: {e}")
+        return {}
+
+def get_challenge_modes():
+    """Define and track progress on various productivity challenges"""
+    try:
+        current_stats = compute_task_statistics()
+        streak_data = get_streak_analysis()
+        behavioral_data = get_behavioral_metrics()
+        
+        challenges = [
+            {
+                'id': 'perfect_week',
+                'title': 'Perfect Week Challenge',
+                'description': 'Complete all recurring tasks for 7 consecutive days',
+                'target': 7,
+                'current': max([task['current_streak'] for task in streak_data] + [0]),
+                'progress': min(100, (max([task['current_streak'] for task in streak_data] + [0]) / 7) * 100),
+                'type': 'streak',
+                'difficulty': 'medium',
+                'reward': 'Week Warrior Badge'
+            },
+            {
+                'id': 'zero_overdue',
+                'title': 'Zero Overdue Challenge',
+                'description': 'Maintain zero overdue tasks for 30 days',
+                'target': 30,
+                'current': 0 if current_stats.get('overdue', 0) > 0 else 1,  # Simplified tracking
+                'progress': 0 if current_stats.get('overdue', 0) > 0 else 100,
+                'type': 'maintenance',
+                'difficulty': 'hard',
+                'reward': 'Organization Master Badge'
+            },
+            {
+                'id': 'high_priority_focus',
+                'title': 'Priority A Focus',
+                'description': 'Complete 90% of Priority A tasks this month',
+                'target': 90,
+                'current': 75,  # Would calculate from actual data
+                'progress': 83.3,  # (75/90)*100
+                'type': 'completion',
+                'difficulty': 'medium',
+                'reward': 'Priority Master Badge'
+            },
+            {
+                'id': 'consistency_champion',
+                'title': 'Consistency Champion',
+                'description': 'Achieve 85% consistency score for 14 days',
+                'target': 85,
+                'current': behavioral_data.get('consistency_score', 0),
+                'progress': min(100, (behavioral_data.get('consistency_score', 0) / 85) * 100),
+                'type': 'behavioral',
+                'difficulty': 'hard',
+                'reward': 'Consistency Master Badge'
+            },
+            {
+                'id': 'speed_demon',
+                'title': 'Speed Demon',
+                'description': 'Achieve completion velocity of 5+ tasks per day',
+                'target': 5,
+                'current': behavioral_data.get('completion_velocity', 0),
+                'progress': min(100, (behavioral_data.get('completion_velocity', 0) / 5) * 100),
+                'type': 'velocity',
+                'difficulty': 'easy',
+                'reward': 'Speed Badge'
+            }
+        ]
+        
+        # Add status to each challenge
+        for challenge in challenges:
+            if challenge['progress'] >= 100:
+                challenge['status'] = 'completed'
+            elif challenge['progress'] >= 50:
+                challenge['status'] = 'in_progress'
+            else:
+                challenge['status'] = 'not_started'
+        
+        return challenges
+        
+    except Exception as e:
+        print(f"Error generating challenges: {e}")
+        return []
+
+def add_moving_average_to_time_series(data: list, window: int = 7, field: str = 'completion_pct'):
+    """Add moving average to time series data"""
+    try:
+        if len(data) < window:
+            return data
+        
+        # Calculate moving average
+        for i in range(len(data)):
+            if i >= window - 1:
+                # Get the window of values
+                window_values = []
+                for j in range(i - window + 1, i + 1):
+                    if field in data[j] and data[j][field] is not None:
+                        window_values.append(data[j][field])
+                
+                # Calculate average
+                if window_values:
+                    data[i][f'{field}_ma_{window}'] = round(sum(window_values) / len(window_values), 2)
+                else:
+                    data[i][f'{field}_ma_{window}'] = None
+            else:
+                data[i][f'{field}_ma_{window}'] = None
+        
+        return data
+        
+    except Exception as e:
+        print(f"Error adding moving average: {e}")
+        return data
+
+def add_trend_line_to_time_series(data: list, field: str = 'completion_pct'):
+    """Add linear trend line to time series data"""
+    try:
+        if len(data) < 2:
+            return data
+        
+        # Prepare data for linear regression
+        x_values = []
+        y_values = []
+        
+        for i, point in enumerate(data):
+            if field in point and point[field] is not None:
+                x_values.append(i)
+                y_values.append(point[field])
+        
+        if len(x_values) < 2:
+            return data
+        
+        # Calculate linear regression (y = mx + b)
+        n = len(x_values)
+        sum_x = sum(x_values)
+        sum_y = sum(y_values)
+        sum_xy = sum(x * y for x, y in zip(x_values, y_values))
+        sum_x2 = sum(x * x for x in x_values)
+        
+        # Calculate slope and intercept
+        denominator = n * sum_x2 - sum_x * sum_x
+        if denominator != 0:
+            slope = (n * sum_xy - sum_x * sum_y) / denominator
+            intercept = (sum_y - slope * sum_x) / n
+            
+            # Add trend values to each data point
+            for i, point in enumerate(data):
+                point[f'{field}_trend'] = round(slope * i + intercept, 2)
+        
+        return data
+        
+    except Exception as e:
+        print(f"Error adding trend line: {e}")
+        return data
+
+# Additional analytics endpoints
+
+@app.get("/api/statistics/time-series/filtered")
+async def api_get_filtered_time_series(days: int = None):
+    """Get filtered time series statistics"""
+    try:
+        data = get_statistics_time_series_filtered(days)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.get("/api/analytics/heatmap")
+async def api_get_heatmap(days: int = 365):
+    """Get task performance heatmap data"""
+    try:
+        data = get_task_performance_heatmap(days)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.get("/api/analytics/day-of-week")
+async def api_get_day_of_week_analysis(days: int = 90):
+    """Get day-of-week performance analysis"""
+    try:
+        data = get_day_of_week_analysis(days)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.get("/api/analytics/correlation")
+async def api_get_correlation_analysis(days: int = 90):
+    """Get task correlation analysis"""
+    try:
+        data = get_task_correlation_analysis(days)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.get("/api/analytics/priority-completion")
+async def api_get_priority_analysis():
+    """Get priority vs completion analysis"""
+    try:
+        data = get_priority_vs_completion_analysis()
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.get("/api/analytics/streaks")
+async def api_get_streak_analysis():
+    """Get streak analysis for recurring tasks"""
+    try:
+        data = get_streak_analysis()
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.get("/api/gamification/badges")
+async def api_get_badges():
+    """Get earned performance badges"""
+    try:
+        data = get_performance_badges()
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.get("/api/analytics/comparative")
+async def api_get_comparative_analysis(task_ids: str, days: int = 30):
+    """Compare multiple tasks over time"""
+    try:
+        # Parse comma-separated task IDs
+        task_id_list = [tid.strip() for tid in task_ids.split(',') if tid.strip()]
+        data = get_comparative_time_series(task_id_list, days)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": {"data": [], "tasks": []}}
+
+@app.get("/api/analytics/behavioral")
+async def api_get_behavioral_metrics(days: int = 30):
+    """Get behavioral metrics and patterns"""
+    try:
+        data = get_behavioral_metrics(days)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": {}}
+
+@app.get("/api/gamification/leaderboard")
+async def api_get_leaderboard():
+    """Get leaderboard data"""
+    try:
+        data = get_leaderboard_data()
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": {}}
+
+@app.get("/api/gamification/challenges")
+async def api_get_challenges():
+    """Get available challenges and progress"""
+    try:
+        data = get_challenge_modes()
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.get("/api/statistics/time-series/enhanced")
+async def api_get_enhanced_time_series(days: int = None, moving_average: int = 7, include_trend: bool = True):
+    """Get time series with moving averages and trend lines"""
+    try:
+        data = get_statistics_time_series_filtered(days)
+        
+        if moving_average > 1:
+            data = add_moving_average_to_time_series(data, moving_average, 'completion_pct')
+        
+        if include_trend:
+            data = add_trend_line_to_time_series(data, 'completion_pct')
+        
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+@app.get("/api/recurring/compliance/enhanced")
+async def api_get_enhanced_compliance(task_id: str = None, days: int = 30, moving_average: int = 7, include_trend: bool = True):
+    """Get compliance data with moving averages and trend lines"""
+    try:
+        if task_id:
+            data = get_individual_recurring_task_compliance(task_id, days)
+        else:
+            data = get_recurring_task_compliance_data()
+            # Filter by days if specified
+            if days and data:
+                cutoff_date = datetime.now() - timedelta(days=days)
+                data = [item for item in data if datetime.strptime(item['date'], '%Y-%m-%d') >= cutoff_date]
+        
+        if moving_average > 1 and data:
+            data = add_moving_average_to_time_series(data, moving_average, 'compliance_pct')
+        
+        if include_trend and data:
+            data = add_trend_line_to_time_series(data, 'compliance_pct')
+        
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
+
+# Helper endpoint to list available recurring task IDs for comparative analysis
+@app.get("/api/recurring/task-list")
+async def api_get_recurring_task_list():
+    """Get list of all recurring task IDs and descriptions"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        log_file = os.path.join(current_dir, '../../archive_files/recurring_status_log.txt')
+        
+        task_descriptions = {}
+        
+        if os.path.exists(log_file):
+            with open(log_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    parts = line.split(' | ')
+                    if len(parts) >= 4:
+                        task_id = parts[2]
+                        task_description = parts[3]
+                        task_descriptions[task_id] = task_description
+        
+        task_list = [{"task_id": tid, "description": desc} for tid, desc in task_descriptions.items()]
+        return {"success": True, "data": task_list}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": []}
