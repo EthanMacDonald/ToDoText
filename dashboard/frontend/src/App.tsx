@@ -16,6 +16,8 @@ function App() {
   const [recurringFilter, setRecurringFilter] = useState('today'); // 'today', 'next7days', 'all'
   const [refreshTrigger, setRefreshTrigger] = useState(0); // For triggering statistics refresh
   const [editingTask, setEditingTask] = useState<Task | null>(null); // For editing tasks
+  const [commitStatus, setCommitStatus] = useState<string>(''); // For git commit status
+  const [isCommitExpanded, setIsCommitExpanded] = useState(false); // For git commit panel expansion
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -100,6 +102,30 @@ function App() {
     setEditingTask(null);
   };
 
+  const handleCommitTasks = async () => {
+    try {
+      setCommitStatus('Committing...');
+      const response = await fetch(`${API_URL}/git/commit-tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setCommitStatus('✓ Tasks committed successfully!');
+      } else {
+        setCommitStatus(`✗ Commit failed: ${result.message}`);
+      }
+      
+      // Clear status after 3 seconds
+      setTimeout(() => setCommitStatus(''), 3000);
+    } catch (error) {
+      setCommitStatus('✗ Error committing tasks');
+      setTimeout(() => setCommitStatus(''), 3000);
+    }
+  };
+
   // Extract unique values for filters from both task groups and recurring tasks
   const getAllTasks = (): Task[] => {
     const allTasks: Task[] = [];
@@ -146,6 +172,99 @@ function App() {
         refreshTrigger={refreshTrigger} 
         onTasksChanged={refreshTasks}
       />
+      
+      {/* Git Commit Panel */}
+      <div style={{ 
+        backgroundColor: '#2d3748', 
+        border: '1px solid #4a5568', 
+        borderRadius: '8px', 
+        marginBottom: '24px',
+        overflow: 'hidden'
+      }}>
+        <button
+          onClick={() => setIsCommitExpanded(!isCommitExpanded)}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            backgroundColor: '#1a202c',
+            border: 'none',
+            borderBottom: isCommitExpanded ? '1px solid #4a5568' : 'none',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            color: 'white',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
+        >
+          <span>📝 Git Commit</span>
+          <span style={{ fontSize: '12px' }}>
+            {isCommitExpanded ? '▲ Collapse' : '▼ Expand'}
+          </span>
+        </button>
+        
+        {isCommitExpanded && (
+          <div style={{ padding: '16px' }}>
+            {commitStatus && (
+              <div style={{
+                backgroundColor: commitStatus.includes('✓') ? '#c6f6d5' : '#fed7d7',
+                color: commitStatus.includes('✓') ? '#22543d' : '#c53030',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '14px'
+              }}>
+                {commitStatus}
+              </div>
+            )}
+            
+            <p style={{ 
+              margin: '0 0 16px 0', 
+              fontSize: '14px', 
+              color: '#e2e8f0',
+              lineHeight: '1.4'
+            }}>
+              Commits the following files to git with message "Checking in task lists and archives.":
+            </p>
+            
+            <ul style={{ 
+              margin: '0 0 16px 0', 
+              paddingLeft: '20px',
+              fontSize: '14px', 
+              color: '#cbd5e0',
+              lineHeight: '1.4'
+            }}>
+              <li>tasks.txt</li>
+              <li>recurring_tasks.txt</li>
+              <li>All files in archive_files/</li>
+            </ul>
+            
+            <div style={{ 
+              display: 'flex',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={handleCommitTasks}
+                disabled={commitStatus === 'Committing...'}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: commitStatus === 'Committing...' ? '#6c757d' : '#059669',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: commitStatus === 'Committing...' ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  opacity: commitStatus === 'Committing...' ? 0.6 : 1
+                }}
+              >
+                {commitStatus === 'Committing...' ? '📝 Committing...' : '📝 Commit Task Files'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
       
       {/* Edit Task Form */}
       {editingTask && (

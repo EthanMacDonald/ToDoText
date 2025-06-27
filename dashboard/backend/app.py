@@ -8,6 +8,7 @@ import datetime
 from datetime import datetime, timedelta, date
 from collections import Counter, defaultdict
 import os
+import subprocess
 
 class CheckTaskRequest(BaseModel):
     task_id: str
@@ -124,7 +125,7 @@ def should_show_recurring_task(task, current_date: date, status_data: dict):
     Logic:
     - COMPLETED: Hide until next recurrence
     - MISSED: 
-      - Daily tasks: Hide for that day only
+      - Daily tasks: Hide for current day only
       - Non-daily: Keep showing (auto-defer)
     - DEFERRED:
       - All tasks: Hide for current day (will show again tomorrow or next occurrence)
@@ -592,3 +593,65 @@ def post_recurring_status(request: RecurringTaskStatusRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing status update: {str(e)}")
+
+@app.post("/git/commit")
+def post_git_commit(message: str):
+    """Run git commit script for task files"""
+    try:
+        # Navigate to the tasks directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        tasks_dir = os.path.join(current_dir, '../../')
+        
+        # Git commit command
+        command = ['git', 'commit', '-m', message]
+        
+        # Run the command
+        result = subprocess.run(command, cwd=tasks_dir, text=True, capture_output=True)
+        
+        # Check for errors
+        if result.returncode != 0:
+            raise Exception(f"Git commit failed: {result.stderr.strip()}")
+        
+        return {"success": True, "message": "Changes committed to git"}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/git/commit-tasks")
+async def commit_task_files():
+    """Run the git commit script for task files"""
+    try:
+        # Get the absolute path to the script
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        script_path = os.path.join(current_dir, '../../scripts/commit_task_files.sh')
+        
+        # Change to the project root directory before running the script
+        project_root = os.path.join(current_dir, '../..')
+        
+        # Run the script
+        result = subprocess.run(
+            ['bash', script_path],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=30  # 30 second timeout
+        )
+        
+        if result.returncode == 0:
+            return {
+                "success": True,
+                "message": "Task files committed successfully",
+                "output": result.stdout
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Git commit failed",
+                "error": result.stderr,
+                "output": result.stdout
+            }
+            
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=408, detail="Git commit script timed out")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error running git commit: {str(e)}")
