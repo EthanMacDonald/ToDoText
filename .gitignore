@@ -6,7 +6,7 @@ token.json
 
 dashboard/backend/__pycache__/**
 dashboard/backend/venv/**
-todo_env/**
+.todo_env/**
 
 # Logs
 dashboard/blogs
