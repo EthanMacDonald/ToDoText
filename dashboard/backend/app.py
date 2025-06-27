@@ -2011,7 +2011,7 @@ async def api_get_priority_analysis():
 async def api_get_streak_analysis():
     """Get streak analysis for recurring tasks"""
     try:
-               data = get_streak_analysis()
+        data = get_streak_analysis()
         return {"success": True, "data": data}
     except Exception as e:
         return {"success": False, "error": str(e), "data": []}
