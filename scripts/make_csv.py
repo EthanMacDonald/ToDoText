@@ -71,9 +71,10 @@ def parse_task_line(line: str) -> Optional[Dict[str, Any]]:
     
     # Parse description and tags
     if description_and_tags:
-        # Extract projects (+Project) and contexts (@Context)
+        # Extract projects (+Project), contexts (@Context), and areas (&Area)
         projects = re.findall(r'\+(\w+)', description_and_tags)
         contexts = re.findall(r'@(\w+)', description_and_tags)
+        areas = re.findall(r'&(\w+)', description_and_tags)
         
         # Set primary project and context
         if projects:
@@ -86,10 +87,16 @@ def parse_task_line(line: str) -> Optional[Dict[str, Any]]:
             if len(contexts) > 1:
                 task_data['extra_contexts'] = ' '.join(contexts[1:])
         
+        if areas:
+            task_data['area_tag'] = areas[0]
+            if len(areas) > 1:
+                task_data['extra_areas'] = ' '.join(areas[1:])
+        
         # Clean description by removing tags
         description = description_and_tags
         description = re.sub(r'\+\w+', '', description)  # Remove projects
         description = re.sub(r'@\w+', '', description)   # Remove contexts
+        description = re.sub(r'&\w+', '', description)   # Remove areas
         description = re.sub(r'\s+', ' ', description).strip()  # Clean whitespace
         
         task_data['description'] = description

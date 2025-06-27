@@ -347,10 +347,10 @@ def archive_completed_tasks():
             for task, area in completed_tasks:
                 if task.strip():
                     task_line = task.rstrip('\n')
-                    # Only add +Area to top-level tasks (4 spaces indent), not subtasks
+                    # Only add &Area to top-level tasks (4 spaces indent), not subtasks
                     indent_match = re.match(r'^(\s*)- \[', task_line)
                     if indent_match and len(indent_match.group(1)) == 4:
-                        archive_entry.append(f'{task_line} +{area}\n')
+                        archive_entry.append(f'{task_line} &{area}\n')
                     else:
                         archive_entry.append(f'{task_line}\n')
             archive_entry.append('\n')  # Add an empty line at the end

@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
                 # Extract clean task summary by removing known metadata patterns
                 task_summary_clean = re.sub(
-                    r'\s*(\(priority:[A-Z]\)|\(due:\d{4}-\d{2}-\d{2}\)|\(progress:\d{1,3}%\)|\(rec:[\w\s]+\)|\(done:\d{4}-\d{2}-\d{2}\)|\+\w+|@\w+)',
+                    r'\s*(\(priority:[A-Z]\)|\(due:\d{4}-\d{2}-\d{2}\)|\(progress:\d{1,3}%\)|\(rec:[\w\s]+\)|\(done:\d{4}-\d{2}-\d{2}\)|\+\w+|@\w+|&\w+)',
                     '',
                     task_full_string
                 ).strip()

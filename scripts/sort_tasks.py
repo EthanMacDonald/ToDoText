@@ -64,7 +64,7 @@ def parse_tasks(file_path):
                     'type': 'task',
                     'area': current_area,
                     'completed': completed == 'x',
-                    'content': re.sub(r'([+@]\w+)', '', content_no_meta).strip(),
+                    'content': re.sub(r'([+@&]\w+)', '', content_no_meta).strip(),
                     'priority': priority,
                     'due': due,
                     'done_date': done_date,
@@ -129,7 +129,7 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                 tags.append(f"@{c}")
         # Only add area tag for primary tasks (not subtasks) and not when sorting by area
         if primary_task and sort_key != 'area' and 'area' in task and task['area']:
-            tags.append(f"+{task['area']}")
+            tags.append(f"&{task['area']}")
         return ' ' + ' '.join(dict.fromkeys(tags)) if tags else ''
 
     grouped_tasks = {}

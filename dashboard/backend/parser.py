@@ -84,7 +84,7 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                     context_tags = list(dict.fromkeys(re.findall(r'@(\w+)', content_no_meta)))
                     
                     # Clean content by removing tags
-                    clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
+                    clean_content = re.sub(r'([+@&]\w+)', '', content_no_meta).strip()
                     
                     task = {
                         'id': generate_stable_task_id(area, clean_content, indent_level, line_number),
@@ -353,7 +353,7 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
                     # Extract tags
                     project_tags = list(dict.fromkeys(re.findall(r'\+(\w+)', content_no_meta)))
                     context_tags = list(dict.fromkeys(re.findall(r'@(\w+)', content_no_meta)))
-                    clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
+                    clean_content = re.sub(r'([+@&]\w+)', '', content_no_meta).strip()
                     
                     task = {
                         'id': generate_stable_task_id(area, clean_content, indent_level, line_number),

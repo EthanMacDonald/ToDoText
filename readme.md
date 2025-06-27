@@ -84,9 +84,9 @@ README:
         - If you include multiple sets of parentheses, only the first will be parsed for metadata.
         - Avoid using spaces within values (e.g., use freq:monthly:3rd Tue not freq:monthly:3rd  Tue).
 
-    Context and Project Tags
+    Context, Area, and Project Tags
 
-        Context tags (`@`) and project tags (`+`) enhance clarity and usability by clearly indicating the context or environment needed and categorizing tasks within their relevant projects.
+        Context tags (`@`), area tags (`&`), and project tags (`+`) enhance clarity and usability by clearly indicating the context or environment needed, the life area involved, and categorizing tasks within their relevant projects.
 
       Context Tags (`@`)**:
         Describe the ideal environment or tool required to complete a task.
@@ -97,20 +97,29 @@ README:
           `@Phone`: Tasks involving phone calls.
           `@Online`: Tasks requiring internet access.
 
+      Area Tags (`&`)**:
+        Represent broad life areas or domains of responsibility.
+        
+        Examples:
+          `&Work`: Professional responsibilities and tasks.
+          `&Personal`: Personal life and individual goals.
+          `&Health`: Health and wellness related tasks.
+          `&Finances`: Financial planning and money management.
+
       Project Tags (`+`)**:
-        Categorize tasks within specific projects or broader categories.
+        Categorize tasks within specific projects or focused initiatives.
   
         Examples:
-          `+Finance`: Tasks related to financial planning and budgets.
-          `+Documentation`: Tasks involving documentation creation or updates.
-          `+Marketing`: Tasks associated with marketing campaigns.
-          `+Personal`: Tasks related to personal goals and activities.
+          `+WebsiteRedesign`: Tasks related to redesigning the company website.
+          `+VacationPlanning`: Tasks for planning an upcoming vacation.
+          `+HomeSecurity`: Tasks related to improving home security.
+          `+SkillDevelopment`: Tasks for learning new skills.
 
       Example**:
-        - [ ] Finalize annual budget report +Finance @Office
-        - [ ] Schedule client follow-up call +Sales @Phone
-        - [ ] Prepare content for website +Marketing @Online
-        - [ ] Organize garage @Home
+        - [ ] Finalize annual budget report +FinancialPlanning &Finances @Office
+        - [ ] Schedule client follow-up call +SalesQ4 &Work @Phone
+        - [ ] Prepare content for website +WebsiteRedesign &Work @Online
+        - [ ] Organize garage +HomeOrganization &Personal @Home
   
   Getting Started:
     Installation: |
@@ -187,7 +196,7 @@ README:
     Features:
       - Parses tasks.txt and extracts all metadata and tags
       - Exports to CSV with separate columns for each field
-      - Handles projects (+Project), contexts (@Context), priorities, due dates, etc.
+      - Handles projects (+Project), areas (&Area), contexts (@Context), priorities, due dates, etc.
       - Maintains area information and task hierarchy (indent levels)
       - Leaves fields blank when no data is present
     

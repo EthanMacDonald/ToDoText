@@ -55,7 +55,7 @@ const TaskItem: React.FC<{
     return meta.length > 0 ? ` (${meta.join(' ')})` : '';
   };
 
-  // Build tags string in the format: +Project @Context
+  // Build tags string in the format: +Project @Context &Area
   const buildTagsString = (task: Task, isPrimaryTask: boolean = false) => {
     const tags: string[] = [];
     
@@ -89,7 +89,7 @@ const TaskItem: React.FC<{
     
     // Add area tag for primary tasks (not subtasks)
     if (isPrimaryTask && task.area && depth === 0) {
-      tags.push(`+${task.area}`);
+      tags.push(`&${task.area}`);
     }
     
     return tags.length > 0 ? ` ${tags.join(' ')}` : '';

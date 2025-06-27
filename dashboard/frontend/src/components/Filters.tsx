@@ -7,7 +7,7 @@ type FiltersProps = {
 
 const areas = ['', 'Work', 'Personal', 'Health', 'Finances'];
 const contexts = ['', '@home', '@work', '@computer'];
-const projects = ['', '+project1', '+project2'];
+const projects = ['', '+WebsiteRedesign', '+VacationPlanning'];
 
 const Filters: React.FC<FiltersProps> = ({ filters, setFilters }) => (
   <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
