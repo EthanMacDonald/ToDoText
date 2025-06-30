@@ -2228,7 +2228,7 @@ class ListToggleRequest(BaseModel):
     item_index: int
 
 def parse_list_file(filepath: str):
-    """Parse a list file and extract items with area headers"""
+    """Parse a list file and extract items with area headers and indentation levels"""
     items = []
     current_area = None
     
@@ -2244,7 +2244,7 @@ def parse_list_file(filepath: str):
                 continue
                 
             # Check if this is an area header (ends with :)
-            if stripped.endswith(':') and not line.startswith('    '):
+            if stripped.endswith(':') and not line.startswith(' '):
                 current_area = stripped[:-1]  # Remove the :
                 items.append({
                     'id': line_num,
@@ -2252,22 +2252,30 @@ def parse_list_file(filepath: str):
                     'completed': False,
                     'line_number': line_num,
                     'is_area_header': True,
-                    'area': current_area
+                    'area': current_area,
+                    'indent_level': 0
                 })
             # Check if this is a checkbox item (starts with indentation)
-            elif line.startswith('    ') and ('- [ ]' in stripped or '- [x]' in stripped):
-                is_completed = '- [x]' in stripped
-                # Extract the text after the checkbox
-                text = stripped.replace('- [ ]', '').replace('- [x]', '').strip()
+            elif ('- [ ]' in stripped or '- [x]' in stripped):
+                # Calculate indentation level (4 spaces = 1 level, 8 spaces = 2 levels, etc.)
+                leading_spaces = len(line) - len(line.lstrip(' '))
+                indent_level = max(1, leading_spaces // 4)  # Minimum level 1 for list items
                 
-                items.append({
-                    'id': line_num,
-                    'text': text,
-                    'completed': is_completed,
-                    'line_number': line_num,
-                    'is_area_header': False,
-                    'area': current_area or 'General'
-                })
+                # Only process if there's some indentation
+                if leading_spaces > 0:
+                    is_completed = '- [x]' in stripped
+                    # Extract the text after the checkbox
+                    text = stripped.replace('- [ ]', '').replace('- [x]', '').strip()
+                    
+                    items.append({
+                        'id': line_num,
+                        'text': text,
+                        'completed': is_completed,
+                        'line_number': line_num,
+                        'is_area_header': False,
+                        'area': current_area or 'General',
+                        'indent_level': indent_level
+                    })
                 
     except Exception as e:
         print(f"Error parsing list file {filepath}: {e}")
@@ -2379,7 +2387,9 @@ async def toggle_list_item(list_name: str, request: ListToggleRequest):
         checkbox_line_numbers = []
         for line_num, line in enumerate(lines):
             stripped = line.strip()
-            if line.startswith('    ') and ('- [ ]' in stripped or '- [x]' in stripped):
+            # Check for any level of indentation with checkboxes
+            leading_spaces = len(line) - len(line.lstrip(' '))
+            if leading_spaces > 0 and ('- [ ]' in stripped or '- [x]' in stripped):
                 checkbox_line_numbers.append(line_num)
                 
         # Validate item index

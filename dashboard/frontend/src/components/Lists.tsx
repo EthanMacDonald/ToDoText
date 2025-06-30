@@ -8,6 +8,7 @@ interface ListItem {
   line_number: number;
   is_area_header?: boolean;
   area?: string;
+  indent_level?: number;
 }
 
 interface ListData {
@@ -303,9 +304,11 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded }: Props) {
                       </div>
                     );
                   } else {
-                    // Render checkbox item
+                    // Render checkbox item with proper indentation
                     const checkboxItems = listData.items.filter(i => !i.is_area_header);
                     const checkboxIndex = checkboxItems.findIndex(i => i.id === item.id);
+                    const indentLevel = item.indent_level || 1;
+                    const leftMargin = 16 + ((indentLevel - 1) * 24); // Base 16px + 24px per additional level
                     
                     return (
                       <div
@@ -315,7 +318,7 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded }: Props) {
                           display: 'flex',
                           alignItems: 'center',
                           padding: '8px 12px',
-                          margin: '4px 0 4px 16px', // Indent checkbox items
+                          margin: `4px 0 4px ${leftMargin}px`, // Dynamic left margin based on indent level
                           backgroundColor: item.completed ? '#1a202c' : '#4a5568',
                           borderRadius: '4px',
                           cursor: 'pointer',
