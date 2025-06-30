@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import TaskList from './components/TaskList';
 import CreateTaskForm from './components/CreateTaskForm';
-import EditTaskForm from './components/EditTaskForm';
 import Statistics from './components/Statistics';
 import TimeSeries from './components/TimeSeries';
 import Lists from './components/Lists';
@@ -16,7 +15,6 @@ function App() {
   const [taskTypeFilter, setTaskTypeFilter] = useState('all'); // 'all', 'regular', 'recurring'
   const [recurringFilter, setRecurringFilter] = useState('today'); // 'today', 'next7days', 'all'
   const [refreshTrigger, setRefreshTrigger] = useState(0); // For triggering statistics refresh
-  const [editingTask, setEditingTask] = useState<Task | null>(null); // For editing tasks
   const [commitStatus, setCommitStatus] = useState<string>(''); // For git commit status
   const [calendarStatus, setCalendarStatus] = useState<string>(''); // For calendar push status
   const [isCommitExpanded, setIsCommitExpanded] = useState(false); // For git commit panel expansion
@@ -93,15 +91,11 @@ function App() {
     // Refresh tasks after editing and trigger statistics refresh
     refreshTasks();
     setRefreshTrigger(prev => prev + 1);
-    setEditingTask(null); // Close edit form
   };
 
   const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingTask(null);
+    // This function is kept for compatibility but inline editing handles it now
+    console.log('Edit task requested for:', task.id);
   };
 
   const handleCommitTasks = async () => {
@@ -359,15 +353,7 @@ function App() {
         )}
       </div>
       
-      {/* Edit Task Form */}
-      {editingTask && (
-        <EditTaskForm
-          task={editingTask}
-          areas={areas}
-          onTaskEdited={handleTaskEdited}
-          onCancel={handleCancelEdit}
-        />
-      )}
+
       
       <div style={{ 
         display: 'flex', 
@@ -475,6 +461,8 @@ function App() {
             onRecurringStatus={handleRecurringStatus}
             filters={filters} 
             isRecurring={true}
+            areas={areas}
+            onTaskEdited={handleTaskEdited}
           />
         </div>
       )}
@@ -490,7 +478,9 @@ function App() {
             data={tasks} 
             onCheck={(id) => handleCheck(id, false)} 
             onEdit={handleEditTask}
-            filters={filters} 
+            filters={filters}
+            areas={areas}
+            onTaskEdited={handleTaskEdited}
           />
         </div>
       )}
