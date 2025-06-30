@@ -47,6 +47,9 @@ const TaskItem: React.FC<{
     if (task.done_date_obj) {
       meta.push(`done:${task.done_date_obj}`);
     }
+    if (task.followup_date) {
+      meta.push(`followup:${task.followup_date}`);
+    }
     if (task.recurring) {
       meta.push(`every:${task.recurring}`);
     }
@@ -54,8 +57,8 @@ const TaskItem: React.FC<{
     // Add any additional metadata from the metadata object
     if (task.metadata) {
       Object.entries(task.metadata).forEach(([key, value]) => {
-        // Skip keys we've already handled
-        if (!['priority', 'due', 'done', 'every'].includes(key) && value) {
+        // Skip keys we've already handled above
+        if (!['priority', 'due', 'done', 'done_date', 'followup', 'followup_date', 'every'].includes(key) && value) {
           meta.push(`${key}:${value}`);
         }
       });
@@ -107,16 +110,31 @@ const TaskItem: React.FC<{
   const metadataString = buildMetadataString(task);
   const tagsString = buildTagsString(task, depth === 0);
 
+  // Determine task styling based on status
+  const getTaskStyle = () => {
+    let opacity = 1;
+    let backgroundColor = 'transparent';
+    let borderLeft = 'none';
+    
+    if (task.completed || task.status === 'done') {
+      opacity = 0.5;
+    }
+    
+    return {
+      margin: '4px 0',
+      opacity,
+      backgroundColor,
+      borderLeft,
+      borderRadius: '4px',
+      padding: '0',
+      marginLeft: `${depth * 20}px`,
+      fontSize: depth > 0 ? '14px' : '16px'
+    };
+  };
+
   return (
     <>
-      <li 
-        style={{ 
-          margin: '4px 0', 
-          opacity: task.completed ? 0.5 : 1,
-          marginLeft: `${depth * 20}px`,
-          fontSize: depth > 0 ? '14px' : '16px'
-        }}
-      >
+      <li style={getTaskStyle()}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
           {/* Status buttons for recurring tasks - moved to left */}
           {isRecurring && onRecurringStatus && (
@@ -184,7 +202,11 @@ const TaskItem: React.FC<{
               type="checkbox"
               checked={task.completed}
               onChange={() => onCheck(task.id)}
-              style={{ marginTop: '2px' }}
+              style={{ 
+                marginTop: '2px',
+                cursor: 'pointer'
+              }}
+              title={task.followup_date ? 'Mark as completed and remove follow-up' : 'Mark as completed'}
             />
           )}
           
@@ -203,24 +225,42 @@ const TaskItem: React.FC<{
           </span>
           
           {onEdit && (
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                onEditingTaskIdChange(editingTaskId === task.id ? null : task.id);
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#3182ce',
-                cursor: 'pointer',
-                fontSize: '12px',
-                padding: '2px 4px',
-                borderRadius: '2px'
-              }}
-              title="Edit task"
-            >
-              {editingTaskId === task.id ? '❌' : '✏️'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {/* Purple tag for follow-up tasks */}
+              {task.followup_date && (
+                <span
+                  style={{
+                    backgroundColor: '#8b5cf6',
+                    color: 'white',
+                    fontSize: '10px',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontWeight: 'bold'
+                  }}
+                  title={`Follow-up date: ${task.followup_date}`}
+                >
+                  Follow-up
+                </span>
+              )}
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onEditingTaskIdChange(editingTaskId === task.id ? null : task.id);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#3182ce',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  padding: '2px 4px',
+                  borderRadius: '2px'
+                }}
+                title="Edit task"
+              >
+                {editingTaskId === task.id ? '❌' : '✏️'}
+              </button>
+            </div>
           )}
         </div>
       </li>

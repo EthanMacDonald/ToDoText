@@ -1,6 +1,6 @@
 import re
 import uuid
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
 
 import os
@@ -29,7 +29,7 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                 continue
                 
             area_match = re.match(r'^(\S.+):$', stripped)
-            task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
+            task_match = re.match(r'^(\s*)- \[( |x|%)\] (.+)', line)
             note_match = re.match(r'^(\s+)[^-\[].+', line)
             
             if area_match:
@@ -78,6 +78,11 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                             done_date = datetime.strptime(metadata['done'], '%Y-%m-%d').date()
                         except ValueError:
                             print(f"Invalid done date on line {line_number}: {metadata['done']}")
+                    elif metadata.get('done_date'):
+                        try:
+                            done_date = datetime.strptime(metadata['done_date'], '%Y-%m-%d').date()
+                        except ValueError:
+                            print(f"Invalid done_date on line {line_number}: {metadata['done_date']}")
                     
                     # Extract project and context tags
                     project_tags = list(dict.fromkeys(re.findall(r'\+(\w+)', content_no_meta)))
@@ -86,17 +91,39 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                     # Clean content by removing tags
                     clean_content = re.sub(r'([+@&]\w+)', '', content_no_meta).strip()
                     
+                    # Determine task status
+                    if completed == '%':
+                        task_status = 'followup'
+                        is_completed = False  # Follow-up tasks are not truly completed
+                    elif completed == 'x':
+                        if metadata.get('followup') or metadata.get('followup_date'):
+                            task_status = 'followup'
+                            is_completed = True  # Task is completed, but still needs follow-up
+                        else:
+                            task_status = 'done'
+                            is_completed = True
+                    elif metadata.get('followup') or metadata.get('followup_date'):
+                        # Task has follow-up date but is not checked - it's in follow-up state
+                        task_status = 'followup'
+                        is_completed = False
+                    else:
+                        task_status = 'incomplete'
+                        is_completed = False
+                    
                     task = {
                         'id': generate_stable_task_id(area, clean_content, indent_level, line_number),
                         'type': 'task',
                         'description': clean_content,
-                        'completed': completed == 'x',
+                        'completed': is_completed,
+                        'status': task_status,
                         'area': area,
                         'context': context_tags[0] if context_tags else '',
                         'project': project_tags[0] if project_tags else '',
                         'due_date': due_date.strftime('%Y-%m-%d') if due_date else '',
+                        'done_date': done_date.strftime('%Y-%m-%d') if done_date else '',
                         'priority': metadata.get('priority', ''),
                         'recurring': metadata.get('every', ''),
+                        'followup_date': metadata.get('followup_date', metadata.get('followup', '')),
                         'indent_level': indent_level,
                         'subtasks': [],
                         'notes': [],
@@ -163,9 +190,10 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
     
     all_tasks = extract_all_tasks(parsed_data)
     
-    # Separate completed tasks and incomplete tasks
-    completed_tasks = [t for t in all_tasks if t['completed']]
-    incomplete_tasks = [t for t in all_tasks if not t['completed']]
+    # Separate tasks by status: incomplete, follow-up, and completed
+    incomplete_tasks = [t for t in all_tasks if not t.get('followup_date') and not t['completed']]
+    followup_tasks = [t for t in all_tasks if t.get('followup_date')]  # Any task with follow-up date
+    completed_tasks = [t for t in all_tasks if t['completed'] and not t.get('followup_date')]  # Only truly completed tasks
     
     # Also include parent tasks that have completed subtasks in the Done group
     def find_completed_subtask_hierarchies(items):
@@ -255,6 +283,35 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
             'tasks': add_hierarchy_to_tasks(no_due_tasks, include_completed_subtasks=False)
         })
     
+    # Add follow-up tasks group (sorted by follow-up date, upcoming first)
+    if followup_tasks:
+        # Parse follow-up dates and sort - prioritize upcoming dates over past ones
+        def parse_followup_date(task):
+            followup_str = task.get('followup_date', '')
+            if followup_str:
+                try:
+                    followup_date = datetime.strptime(followup_str, '%Y-%m-%d').date()
+                    today = date.today()
+                    
+                    # Prioritize upcoming dates: put them first, then past dates
+                    if followup_date >= today:
+                        # Future/today dates: sort normally (earliest first)
+                        return (0, followup_date)
+                    else:
+                        # Past dates: sort by reverse date (most recent past first)
+                        return (1, -followup_date.toordinal())
+                except ValueError:
+                    pass
+            return (2, 0)  # Put tasks with invalid dates at the end
+        
+        followup_tasks.sort(key=parse_followup_date)
+        
+        result.append({
+            'type': 'group',
+            'title': 'Follow-up Required',
+            'tasks': add_hierarchy_to_tasks(followup_tasks, include_completed_subtasks=False, preserve_order=True)
+        })
+    
     # Add completed tasks group at the bottom
     if completed_tasks or parent_tasks_with_completed_subtasks:
         # Combine completed tasks and parent tasks with completed subtasks
@@ -267,7 +324,7 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
     
     return result
 
-def add_hierarchy_to_tasks(task_list: List[Dict[str, Any]], include_completed_subtasks: bool = False) -> List[Dict[str, Any]]:
+def add_hierarchy_to_tasks(task_list: List[Dict[str, Any]], include_completed_subtasks: bool = False, preserve_order: bool = False) -> List[Dict[str, Any]]:
     """Add subtasks back to their parent tasks and return only top-level tasks"""
     # Find all top-level tasks (indent_level 0 or 1, since our top-level tasks are at level 1)
     top_level_tasks = [t for t in task_list if t['indent_level'] <= 1]
@@ -295,12 +352,13 @@ def add_hierarchy_to_tasks(task_list: List[Dict[str, Any]], include_completed_su
         
         result_tasks.append(task_copy)
     
-    # Sort by priority and content for consistent ordering
-    priority_order = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, '': 99}
-    result_tasks.sort(key=lambda x: (
-        priority_order.get(x.get('priority', ''), 99),
-        x['description']
-    ))
+    # Sort by priority and content for consistent ordering (unless preserve_order is True)
+    if not preserve_order:
+        priority_order = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, '': 99}
+        result_tasks.sort(key=lambda x: (
+            priority_order.get(x.get('priority', ''), 99),
+            x['description']
+        ))
     
     return result_tasks
 
@@ -504,12 +562,14 @@ def toggle_task_in_lines(lines, task_info):
             continue
             
         # Look for task lines
-        task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
+        task_match = re.match(r'^(\s*)- \[( |x|%)\] (.+)', line)
         if task_match and in_correct_area:
             indent, completed, content = task_match.groups()
             
             # Check if this is the right indentation level
-            if len(indent) != len(expected_indent):
+            # Calculate indent level from actual indent (same logic as parser)
+            actual_indent_level = len(indent) // 4
+            if actual_indent_level != indent_level:
                 continue
                 
             # Remove metadata and tags from content for comparison
@@ -518,41 +578,71 @@ def toggle_task_in_lines(lines, task_info):
             
             # Compare with the task description
             if clean_content == description:
-                # Found the task! Toggle its completion status
-                new_status = ' ' if completed == 'x' else 'x'
-                new_line = line.replace(f'[{completed}]', f'[{new_status}]', 1)
+                # Found the task! Handle toggle based on current status and follow-up metadata
+                new_line = line  # Initialize new_line with current line
                 
-                # If marking as complete, add done date metadata
-                if new_status == 'x' and 'done:' not in new_line:
-                    # Find a good place to insert the done date
-                    # Look for existing metadata parentheses
-                    if re.search(r'\([^)]*\)', new_line):
-                        # Add to existing metadata
-                        new_line = re.sub(r'\(([^)]*)\)', rf'(\1 done:{date.today().strftime("%Y-%m-%d")})', new_line, 1)
-                    else:
-                        # Add new metadata at the end before any tags
-                        content_part = new_line.split('] ', 1)[1] if '] ' in new_line else new_line
-                        # Insert before the first tag or at the end
-                        tag_match = re.search(r'([+@]\w+)', content_part)
-                        if tag_match:
-                            insert_pos = tag_match.start()
-                            content_before = content_part[:insert_pos].rstrip()
-                            content_after = content_part[insert_pos:]
-                            new_content = f"{content_before} (done:{date.today().strftime('%Y-%m-%d')}) {content_after}"
-                        else:
-                            new_content = f"{content_part.rstrip()} (done:{date.today().strftime('%Y-%m-%d')})"
+                # Check if task has follow-up metadata
+                has_followup = 'followup:' in line or 'followup_date:' in line
+                
+                if completed == ' ':  # Unchecked task
+                    # Mark as completed and add done date (regardless of follow-up status)
+                    new_line = line.replace('[ ]', '[x]', 1)
+                    
+                    # If this task has follow-up metadata, remove it when completing
+                    if has_followup:
+                        # Remove follow-up metadata
+                        def clean_followup_metadata(match):
+                            content = match.group(1)
+                            # Remove follow-up date but keep other metadata
+                            content = re.sub(r'\s*followup:\d{4}-\d{2}-\d{2}\s*', ' ', content)
+                            content = re.sub(r'\s*followup_date:\d{4}-\d{2}-\d{2}\s*', ' ', content)
+                            content = re.sub(r'^\s+|\s+$', '', content)  # trim
+                            content = re.sub(r'\s+', ' ', content)  # normalize spaces
+                            if content.strip():
+                                return f'({content})'
+                            else:
+                                return ''  # Remove empty parentheses
                         
-                        new_line = new_line.split('] ', 1)[0] + '] ' + new_content
-                        if not new_line.endswith('\n'):
-                            new_line += '\n'
-                
-                # If marking as incomplete, remove done date metadata
-                elif new_status == ' ' and 'done:' in new_line:
-                    # Remove the done date from metadata
-                    # First try to remove from existing metadata parentheses
+                        new_line = re.sub(r'\(([^)]*)\)', clean_followup_metadata, new_line)
+                        # Clean up any extra spaces that might be left
+                        new_line = re.sub(r'\s+', ' ', new_line)
+                    
+                    # Add done date if not present
+                    done_date = date.today().strftime('%Y-%m-%d')
+                    if 'done:' not in new_line:
+                        if re.search(r'\([^)]*\)', new_line):
+                            # Add to existing metadata
+                            new_line = re.sub(r'\(([^)]*)\)', rf'(\1 done:{done_date})', new_line, 1)
+                            # Clean up double spaces
+                            new_line = re.sub(r'\(\s+', '(', new_line)
+                            new_line = re.sub(r'\s+\)', ')', new_line)
+                            new_line = re.sub(r'\s+', ' ', new_line)
+                        else:
+                            # Add new metadata at the end before any tags
+                            content_part = new_line.split('] ', 1)[1] if '] ' in new_line else new_line
+                            # Insert before the first tag or at the end
+                            tag_match = re.search(r'([+@]\w+)', content_part)
+                            if tag_match:
+                                insert_pos = tag_match.start()
+                                content_before = content_part[:insert_pos].rstrip()
+                                content_after = content_part[insert_pos:]
+                                new_content = f"{content_before} (done:{done_date}) {content_after}"
+                            else:
+                                new_content = f"{content_part.rstrip()} (done:{done_date})"
+                            
+                            new_line = new_line.split('] ', 1)[0] + '] ' + new_content
+                    
+                    if not new_line.endswith('\n'):
+                        new_line += '\n'
+                            
+                elif completed == 'x':  # Completed task
+                    # Uncheck completed task and remove done date
+                    new_line = line.replace('[x]', '[ ]', 1)
+                    
+                    # Remove done date metadata
                     def clean_metadata(match):
                         content = match.group(1)
-                        # Remove done date and clean up
+                        # Remove done date but keep other metadata
                         content = re.sub(r'\s*done:\d{4}-\d{2}-\d{2}\s*', ' ', content)
                         content = re.sub(r'^\s+|\s+$', '', content)  # trim
                         content = re.sub(r'\s+', ' ', content)  # normalize spaces
@@ -561,9 +651,15 @@ def toggle_task_in_lines(lines, task_info):
                         else:
                             return ''  # Remove empty parentheses
                     
-                    new_line = re.sub(r'\(([^)]*done:[^)]*)\)', clean_metadata, new_line)
+                    new_line = re.sub(r'\(([^)]*)\)', clean_metadata, new_line)
                     # Clean up any extra spaces that might be left
                     new_line = re.sub(r'\s+', ' ', new_line)
+                    if not new_line.endswith('\n'):
+                        new_line += '\n'
+                        
+                elif completed == '%':  # Follow-up task (legacy)
+                    # Convert legacy follow-up format to unchecked with follow-up metadata
+                    new_line = line.replace('[%]', '[ ]', 1)
                     if not new_line.endswith('\n'):
                         new_line += '\n'
                 
@@ -624,9 +720,10 @@ def build_priority_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[D
     
     all_tasks = extract_all_tasks(parsed_data)
     
-    # Separate completed tasks and incomplete tasks
-    completed_tasks = [t for t in all_tasks if t['completed']]
-    incomplete_tasks = [t for t in all_tasks if not t['completed']]
+    # Separate tasks by status: incomplete, follow-up, and completed  
+    incomplete_tasks = [t for t in all_tasks if not t.get('followup_date') and not t['completed']]
+    followup_tasks = [t for t in all_tasks if t.get('followup_date')]  # Any task with follow-up date
+    completed_tasks = [t for t in all_tasks if t['completed'] and not t.get('followup_date')]  # Only truly completed tasks
     
     # Also include parent tasks that have completed subtasks in the Done group
     def find_completed_subtask_hierarchies_priority(items):
@@ -718,6 +815,35 @@ def build_priority_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[D
             'type': 'group',
             'title': 'No Priority',
             'tasks': add_hierarchy_to_tasks(no_priority_tasks, include_completed_subtasks=False)
+        })
+    
+    # Add follow-up tasks group (sorted by follow-up date, upcoming first)
+    if followup_tasks:
+        # Parse follow-up dates and sort - prioritize upcoming dates over past ones
+        def parse_followup_date(task):
+            followup_str = task.get('followup_date', '')
+            if followup_str:
+                try:
+                    followup_date = datetime.strptime(followup_str, '%Y-%m-%d').date()
+                    today = date.today()
+                    
+                    # Prioritize upcoming dates: put them first, then past dates
+                    if followup_date >= today:
+                        # Future/today dates: sort normally (earliest first)
+                        return (0, followup_date)
+                    else:
+                        # Past dates: sort by reverse date (most recent past first)
+                        return (1, -followup_date.toordinal())
+                except ValueError:
+                    pass
+            return (2, 0)  # Put tasks with invalid dates at the end
+        
+        followup_tasks.sort(key=parse_followup_date)
+        
+        result.append({
+            'type': 'group',
+            'title': 'Follow-up Required',
+            'tasks': add_hierarchy_to_tasks(followup_tasks, include_completed_subtasks=False, preserve_order=True)
         })
     
     # Add completed tasks group at the bottom
@@ -869,6 +995,10 @@ def edit_task(task_request) -> bool:
                         metadata_parts.append(f"priority:{task_request.priority}")
                     if task_request.due_date:
                         metadata_parts.append(f"due:{task_request.due_date}")
+                    if task_request.done_date:
+                        metadata_parts.append(f"done:{task_request.done_date}")
+                    if task_request.followup_date:
+                        metadata_parts.append(f"followup:{task_request.followup_date}")
                     if task_request.recurring:
                         metadata_parts.append(f"every:{task_request.recurring}")
                     
@@ -939,3 +1069,208 @@ def edit_task(task_request) -> bool:
         import traceback
         traceback.print_exc()
         return False
+
+def mark_task_for_followup(task_id: str, followup_date: str) -> bool:
+    """Mark a completed task for follow-up - converts [x] to [%] and adds followup metadata"""
+    try:
+        # First, parse all tasks to find the one with the matching ID
+        raw_tasks = parse_tasks_raw()
+        task_to_modify = find_task_by_id(raw_tasks, task_id)
+        
+        if not task_to_modify:
+            print(f"Task with ID {task_id} not found")
+            return False
+        
+        # Check if task is currently completed ([x])
+        if task_to_modify.get('status') != 'done':
+            print(f"Task {task_id} is not completed, cannot mark for follow-up")
+            return False
+            
+        # Read the current file content
+        with open(tasks_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Find and modify the task
+        success = mark_followup_in_lines(lines, task_to_modify, followup_date)
+        
+        if success:
+            # Write the modified content back to the file
+            with open(tasks_file, 'w') as f:
+                f.writelines(lines)
+            print(f"Successfully marked task for follow-up: {task_to_modify['description']}")
+            return True
+        else:
+            print(f"Failed to find task in file: {task_to_modify['description']}")
+            return False
+            
+    except Exception as e:
+        print(f"Error marking task {task_id} for follow-up: {e}")
+        return False
+
+def verify_followup_task(task_id: str) -> bool:
+    """Verify follow-up completion - converts [%] to [x] and removes followup metadata"""
+    try:
+        # First, parse all tasks to find the one with the matching ID
+        raw_tasks = parse_tasks_raw()
+        task_to_modify = find_task_by_id(raw_tasks, task_id)
+        
+        if not task_to_modify:
+            print(f"Task with ID {task_id} not found")
+            return False
+        
+        # Check if task is currently in follow-up status
+        if task_to_modify.get('status') != 'followup':
+            print(f"Task {task_id} is not in follow-up status, cannot verify")
+            return False
+            
+        # Read the current file content
+        with open(tasks_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Find and modify the task
+        success = verify_followup_in_lines(lines, task_to_modify)
+        
+        if success:
+            # Write the modified content back to the file
+            with open(tasks_file, 'w') as f:
+                f.writelines(lines)
+            print(f"Successfully verified follow-up for task: {task_to_modify['description']}")
+            return True
+        else:
+            print(f"Failed to find task in file: {task_to_modify['description']}")
+            return False
+            
+    except Exception as e:
+        print(f"Error verifying follow-up for task {task_id}: {e}")
+        return False
+
+def mark_followup_in_lines(lines, task_info, followup_date):
+    """Find and mark a task for follow-up in the file lines"""
+    area = task_info.get('area')
+    description = task_info.get('description', '').strip()
+    indent_level = task_info.get('indent_level', 0)
+    
+    # Calculate the expected indentation
+    expected_indent = '    ' * indent_level  # 4 spaces per level
+    
+    # Look for the area first if this is a top-level task
+    current_area = None
+    in_correct_area = False
+    
+    for i, line in enumerate(lines):
+        stripped = line.rstrip()
+        
+        # Track current area
+        area_match = re.match(r'^(\S.+):$', stripped)
+        if area_match:
+            current_area = area_match.group(1)
+            in_correct_area = (area is None or current_area == area)
+            continue
+            
+        # Look for task lines
+        task_match = re.match(r'^(\s*)- \[x\] (.+)', line)
+        if task_match and in_correct_area:
+            indent, content = task_match.groups()
+            
+            # Check if this is the right indentation level
+            if len(indent) != len(expected_indent):
+                continue
+                
+            # Remove metadata and tags from content for comparison
+            content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
+            clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
+            
+            # Compare with the task description
+            if clean_content == description:
+                # Found the task! Convert [x] to [%] and add followup metadata
+                new_line = line.replace('[x]', '[%]', 1)
+                
+                # Add followup date metadata
+                if re.search(r'\([^)]*\)', new_line):
+                    # Add to existing metadata
+                    new_line = re.sub(r'\(([^)]*)\)', rf'(\1 followup:{followup_date})', new_line, 1)
+                else:
+                    # Add new metadata at the end before any tags
+                    content_part = new_line.split('] ', 1)[1] if '] ' in new_line else new_line
+                    # Insert before the first tag or at the end
+                    tag_match = re.search(r'([+@]\w+)', content_part)
+                    if tag_match:
+                        insert_pos = tag_match.start()
+                        content_before = content_part[:insert_pos].rstrip()
+                        content_after = content_part[insert_pos:]
+                        new_content = f"{content_before} (followup:{followup_date}) {content_after}"
+                    else:
+                        new_content = f"{content_part.rstrip()} (followup:{followup_date})"
+                    
+                    new_line = new_line.split('] ', 1)[0] + '] ' + new_content
+                    if not new_line.endswith('\n'):
+                        new_line += '\n'
+                
+                lines[i] = new_line
+                return True
+    
+    return False
+
+def verify_followup_in_lines(lines, task_info):
+    """Find and verify follow-up for a task in the file lines"""
+    area = task_info.get('area')
+    description = task_info.get('description', '').strip()
+    indent_level = task_info.get('indent_level', 0)
+    
+    # Calculate the expected indentation
+    expected_indent = '    ' * indent_level  # 4 spaces per level
+    
+    # Look for the area first if this is a top-level task
+    current_area = None
+    in_correct_area = False
+    
+    for i, line in enumerate(lines):
+        stripped = line.rstrip()
+        
+        # Track current area
+        area_match = re.match(r'^(\S.+):$', stripped)
+        if area_match:
+            current_area = area_match.group(1)
+            in_correct_area = (area is None or current_area == area)
+            continue
+            
+        # Look for task lines with [%] status
+        task_match = re.match(r'^(\s*)- \[%\] (.+)', line)
+        if task_match and in_correct_area:
+            indent, content = task_match.groups()
+            
+            # Check if this is the right indentation level
+            if len(indent) != len(expected_indent):
+                continue
+                
+            # Remove metadata and tags from content for comparison
+            content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
+            clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
+            
+            # Compare with the task description
+            if clean_content == description:
+                # Found the task! Convert [%] to [x] and remove followup metadata
+                new_line = line.replace('[%]', '[x]', 1)
+                
+                # Remove followup date from metadata
+                def clean_metadata(match):
+                    content = match.group(1)
+                    # Remove followup date and clean up
+                    content = re.sub(r'\s*followup:\d{4}-\d{2}-\d{2}\s*', ' ', content)
+                    content = re.sub(r'^\s+|\s+$', '', content)  # trim
+                    content = re.sub(r'\s+', ' ', content)  # normalize spaces
+                    if content.strip():
+                        return f'({content})'
+                    else:
+                        return ''  # Remove empty parentheses
+                
+                new_line = re.sub(r'\(([^)]*followup:[^)]*)\)', clean_metadata, new_line)
+                # Clean up any extra spaces that might be left
+                new_line = re.sub(r'\s+', ' ', new_line)
+                if not new_line.endswith('\n'):
+                    new_line += '\n'
+                
+                lines[i] = new_line
+                return True
+    
+    return False
