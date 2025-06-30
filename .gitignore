@@ -49,3 +49,6 @@ dashboard/frontend/src/assets/*.svg
 
 *.log
 *.pid
+
+# Dashboard state
+dashboard/frontend/dashboard-state.json

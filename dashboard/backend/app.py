@@ -2012,6 +2012,7 @@ async def api_get_streak_analysis():
     """Get streak analysis for recurring tasks"""
     try:
        
+       
         data = get_streak_analysis()
         return {"success": True, "data": data}
     except Exception as e:
@@ -2131,223 +2132,86 @@ async def api_get_recurring_task_list():
     except Exception as e:
         return {"success": False, "error": str(e), "data": []}
 
-# Lists management endpoints
-LISTS_DIR = Path("../../lists")
+# State management endpoints for dashboard persistence
+class DashboardStateModel(BaseModel):
+    filters: dict
+    sortBy: str
+    taskTypeFilter: str
+    recurringFilter: str
+    panelStates: dict
 
-@app.get("/lists")
-async def get_available_lists():
-    """Get all available list files"""
-    if not LISTS_DIR.exists():
-        LISTS_DIR.mkdir(exist_ok=True)
-        return []
-    
-    lists = []
-    for file_path in LISTS_DIR.glob("*.txt"):
-        # Read first few lines to get any title/description
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-                
-            # Count total and completed items
-            total_items = 0
-            completed_items = 0
-            title = file_path.stem.replace('_', ' ').title()
-            
-            for line in lines:
-                line = line.strip()
-                if line.startswith('# ') and 'title' not in locals():
-                    title = line[2:].strip()
-                elif line.startswith('- ['):
-                    total_items += 1
-                    if line.startswith('- [x]') or line.startswith('- [X]'):
-                        completed_items += 1
-            
-            completion_pct = (completed_items / total_items * 100) if total_items > 0 else 0
-            
-            lists.append({
-                "name": file_path.stem,
-                "title": title,
-                "filename": file_path.name,
-                "total_items": total_items,
-                "completed_items": completed_items,
-                "completion_percentage": round(completion_pct, 1)
-            })
-        except Exception as e:
-            print(f"Error reading list {file_path}: {e}")
-            continue
-    
-    return lists
+STATE_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../frontend/dashboard-state.json')
 
-@app.get("/lists/{list_name}")
-async def get_list_items(list_name: str):
-    """Get items from a specific list"""
-    file_path = LISTS_DIR / f"{list_name}.txt"
-    
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="List not found")
-    
+@app.post("/state")
+async def save_dashboard_state(state: DashboardStateModel):
+    """Save dashboard state to a local file"""
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(STATE_FILE_PATH), exist_ok=True)
         
-        items = []
-        title = list_name.replace('_', ' ').title()
-        current_area = None
-        
-        for i, line in enumerate(lines):
-            original_line = line
-            line = line.strip()
-            
-            # Extract title from comments
-            if line.startswith('# ') and len(items) == 0:
-                title = line[2:].strip()
-                continue
-            
-            # Skip comments and empty lines
-            if line.startswith('#') or not line:
-                continue
-            
-            # Check for area headers (lines ending with colon, not indented)
-            if line.endswith(':') and not original_line.startswith('    ') and not original_line.startswith('\t'):
-                current_area = line[:-1]  # Remove the colon
-                items.append({
-                    "id": i,
-                    "text": current_area,
-                    "completed": False,
-                    "line_number": i,
-                    "is_area_header": True,
-                    "area": current_area
-                })
-                continue
-            
-            # Parse checkbox items (must be indented)
-            if line.startswith('- [') and (original_line.startswith('    ') or original_line.startswith('\t')):
-                completed = line.startswith('- [x]') or line.startswith('- [X]')
-                # Extract item text (everything after the checkbox)
-                text = re.sub(r'^- \[[ xX]\]\s*', '', line)
-                
-                items.append({
-                    "id": i,
-                    "text": text,
-                    "completed": completed,
-                    "line_number": i,
-                    "is_area_header": False,
-                    "area": current_area
-                })
-        
-        # Count only checkbox items for progress
-        checkbox_items = [item for item in items if not item.get("is_area_header", False)]
-        total_items = len(checkbox_items)
-        completed_items = sum(1 for item in checkbox_items if item["completed"])
-        completion_pct = (completed_items / total_items * 100) if total_items > 0 else 0
-        
-        return {
-            "name": list_name,
-            "title": title,
-            "items": items,
-            "total_items": total_items,
-            "completed_items": completed_items,
-            "completion_percentage": round(completion_pct, 1)
+        # Convert to dict and save
+        state_dict = {
+            "filters": state.filters,
+            "sortBy": state.sortBy,
+            "taskTypeFilter": state.taskTypeFilter,
+            "recurringFilter": state.recurringFilter,
+            "panelStates": state.panelStates,
+            "lastUpdated": datetime.now().isoformat()
         }
         
+        with open(STATE_FILE_PATH, 'w') as f:
+            json.dump(state_dict, f, indent=2)
+        
+        return {"success": True, "message": "State saved successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error reading list: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to save state: {str(e)}")
 
-@app.post("/lists/{list_name}/toggle")
-async def toggle_list_item(list_name: str, request: dict):
-    """Toggle completion status of a list item"""
-    file_path = LISTS_DIR / f"{list_name}.txt"
-    
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="List not found")
-    
-    item_index = request.get("item_index")
-    if item_index is None:
-        raise HTTPException(status_code=400, detail="item_index required")
-    
+@app.get("/state")
+async def load_dashboard_state():
+    """Load dashboard state from local file"""
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
+        if not os.path.exists(STATE_FILE_PATH):
+            # Return default state if file doesn't exist
+            return {
+                "filters": {"area": "", "context": "", "project": ""},
+                "sortBy": "due",
+                "taskTypeFilter": "all",
+                "recurringFilter": "today",
+                "panelStates": {
+                    "isCommitExpanded": False,
+                    "isStatisticsExpanded": False,
+                    "isTimeSeriesExpanded": False,
+                    "isListsExpanded": False
+                }
+            }
         
-        # Get the actual checkbox items (not including comments/empty lines/area headers)
-        checkbox_lines = []
-        for i, line in enumerate(lines):
-            original_line = line
-            stripped_line = line.strip()
-            # Only count indented checkbox items
-            if stripped_line.startswith('- [') and (original_line.startswith('    ') or original_line.startswith('\t')):
-                checkbox_lines.append(i)
+        with open(STATE_FILE_PATH, 'r') as f:
+            state = json.load(f)
         
-        # Make sure the item_index is valid
-        if item_index < 0 or item_index >= len(checkbox_lines):
-            raise HTTPException(status_code=400, detail="Invalid item index")
-        
-        # Get the actual line number to toggle
-        line_to_toggle = checkbox_lines[item_index]
-        line = lines[line_to_toggle].strip()
-        
-        if line.startswith('- [x]') or line.startswith('- [X]'):
-            # Mark as incomplete
-            lines[line_to_toggle] = lines[line_to_toggle].replace('- [x]', '- [ ]').replace('- [X]', '- [ ]')
-        elif line.startswith('- [ ]'):
-            # Mark as complete  
-            lines[line_to_toggle] = lines[line_to_toggle].replace('- [ ]', '- [x]')
-        
-        # Write back to file
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.writelines(lines)
-        
-        return {"success": True, "message": "Item toggled successfully"}
-        
+        # Remove lastUpdated before returning
+        state.pop('lastUpdated', None)
+        return state
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error updating list: {str(e)}")
+        # Return default state if there's an error reading the file
+        return {
+            "filters": {"area": "", "context": "", "project": ""},
+            "sortBy": "due", 
+            "taskTypeFilter": "all",
+            "recurringFilter": "today",
+            "panelStates": {
+                "isCommitExpanded": False,
+                "isStatisticsExpanded": False,
+                "isTimeSeriesExpanded": False,
+                "isListsExpanded": False
+            }
+        }
 
-@app.post("/lists/{list_name}/reset")
-async def reset_list(list_name: str):
-    """Reset all items in a list to unchecked"""
-    file_path = LISTS_DIR / f"{list_name}.txt"
-    
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="List not found")
-    
+@app.delete("/state")
+async def clear_dashboard_state():
+    """Clear saved dashboard state"""
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-        
-        # Reset all checkboxes to unchecked
-        for i, line in enumerate(lines):
-            if line.strip().startswith('- [x]') or line.strip().startswith('- [X]'):
-                lines[i] = line.replace('- [x]', '- [ ]').replace('- [X]', '- [ ]')
-        
-        # Write back to file
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.writelines(lines)
-        
-        return {"success": True, "message": "List reset successfully"}
-        
+        if os.path.exists(STATE_FILE_PATH):
+            os.remove(STATE_FILE_PATH)
+        return {"success": True, "message": "State cleared successfully"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error resetting list: {str(e)}")
-
-@app.post("/calendar/push-due-dates")
-async def push_due_dates_to_calendar():
-    """Push tasks with due dates to Google Calendar"""
-    try:
-        # Get the correct project root - this file is in dashboard/backend/app.py
-        # So we need to go up two directories to get to the project root
-        current_dir = os.path.dirname(os.path.abspath(__file__))  # dashboard/backend/
-        dashboard_dir = os.path.dirname(current_dir)  # dashboard/
-        project_root = os.path.dirname(dashboard_dir)  # project root
-        script_path = os.path.join(project_root, 'scripts', 'push_due_dates_to_calendar.py')
-        
-        # Run the calendar script
-        result = subprocess.run([
-            sys.executable, script_path
-        ], capture_output=True, text=True, cwd=project_root)
-        
-        if result.returncode == 0:
-            return {"success": True, "message": "Due dates pushed to calendar successfully"}
-        else:
-            error_msg = result.stderr.strip() if result.stderr else "Unknown error"
-            return {"success": False, "message": f"Calendar push failed: {error_msg}"}
-    except Exception as e:
-        return {"success": False, "message": f"Error pushing to calendar: {str(e)}"}
+        raise HTTPException(status_code=500, detail=f"Failed to clear state: {str(e)}")

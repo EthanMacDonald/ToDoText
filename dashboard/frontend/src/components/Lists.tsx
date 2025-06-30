@@ -19,12 +19,27 @@ interface ListData {
   completion_percentage: number;
 }
 
-function Lists() {
+interface Props {
+  isExpanded?: boolean; // Control expand/collapse state externally
+  onToggleExpanded?: (expanded: boolean) => void; // Callback when expand state changes
+}
+
+function Lists({ isExpanded: externalIsExpanded, onToggleExpanded }: Props) {
   const [availableLists, setAvailableLists] = useState<string[]>([]);
   const [selectedList, setSelectedList] = useState<string>('');
   const [listData, setListData] = useState<ListData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [internalIsExpanded, setInternalIsExpanded] = useState(false);
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
+
+  const toggleExpanded = () => {
+    const newExpanded = !isExpanded;
+    if (onToggleExpanded) {
+      onToggleExpanded(newExpanded);
+    } else {
+      setInternalIsExpanded(newExpanded);
+    }
+  };
 
   // Fetch available lists on component mount
   useEffect(() => {
@@ -115,7 +130,7 @@ function Lists() {
         overflow: 'hidden'
       }}>
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={toggleExpanded}
           style={{
             width: '100%',
             padding: '12px 16px',
@@ -156,7 +171,7 @@ function Lists() {
       overflow: 'hidden'
     }}>
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={toggleExpanded}
         style={{
           width: '100%',
           padding: '12px 16px',

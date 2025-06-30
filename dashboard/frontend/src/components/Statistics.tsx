@@ -16,10 +16,22 @@ type StatisticsData = {
 type Props = {
   refreshTrigger?: number; // Optional prop to trigger refresh
   onTasksChanged?: () => void; // Callback when tasks are modified (e.g., archived)
+  isExpanded?: boolean; // Control expand/collapse state externally
+  onToggleExpanded?: (expanded: boolean) => void; // Callback when expand state changes
 };
 
-const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpanded: externalIsExpanded, onToggleExpanded }) => {
+  const [internalIsExpanded, setInternalIsExpanded] = useState(false);
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
+
+  const toggleExpanded = () => {
+    const newExpanded = !isExpanded;
+    if (onToggleExpanded) {
+      onToggleExpanded(newExpanded);
+    } else {
+      setInternalIsExpanded(newExpanded);
+    }
+  };
   const [statistics, setStatistics] = useState<StatisticsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -283,7 +295,7 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged }) => {
       overflow: 'hidden'
     }}>
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={toggleExpanded}
         style={{
           width: '100%',
           padding: '12px 16px',

@@ -151,10 +151,22 @@ type RecurringTask = {
 
 type Props = {
   refreshTrigger?: number;
+  isExpanded?: boolean; // Control expand/collapse state externally
+  onToggleExpanded?: (expanded: boolean) => void; // Callback when expand state changes
 };
 
-const TimeSeries: React.FC<Props> = ({ refreshTrigger }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const TimeSeries: React.FC<Props> = ({ refreshTrigger, isExpanded: externalIsExpanded, onToggleExpanded }) => {
+  const [internalIsExpanded, setInternalIsExpanded] = useState(false);
+  const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
+
+  const toggleExpanded = () => {
+    const newExpanded = !isExpanded;
+    if (onToggleExpanded) {
+      onToggleExpanded(newExpanded);
+    } else {
+      setInternalIsExpanded(newExpanded);
+    }
+  };
   const [statisticsData, setStatisticsData] = useState<TimeSeriesData[]>([]);
   const [complianceData, setComplianceData] = useState<ComplianceData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -1052,7 +1064,7 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger }) => {
       overflow: 'hidden'
     }}>
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={toggleExpanded}
         style={{
           width: '100%',
           padding: '12px 16px',

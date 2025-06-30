@@ -6,20 +6,25 @@ import TimeSeries from './components/TimeSeries';
 import Lists from './components/Lists';
 import type { Task, TaskGroup } from './types/task';
 import { API_URL } from './config/api';
+import { useDashboardState } from './hooks/useDashboardState';
+import StateStorage from './utils/stateStorage';
 
 function App() {
   const [tasks, setTasks] = useState<TaskGroup[]>([]);
   const [recurring, setRecurring] = useState<TaskGroup[]>([]);
-  const [filters, setFilters] = useState({ area: '', context: '', project: '' });
-  const [sortBy, setSortBy] = useState('due'); // 'none', 'due', 'priority'
-  const [taskTypeFilter, setTaskTypeFilter] = useState('all'); // 'all', 'regular', 'recurring'
-  const [recurringFilter, setRecurringFilter] = useState('today'); // 'today', 'next7days', 'all'
   const [refreshTrigger, setRefreshTrigger] = useState(0); // For triggering statistics refresh
   const [commitStatus, setCommitStatus] = useState<string>(''); // For git commit status
   const [calendarStatus, setCalendarStatus] = useState<string>(''); // For calendar push status
-  const [isCommitExpanded, setIsCommitExpanded] = useState(false); // For git commit panel expansion
+
+  // Use persistent dashboard state
+  const { state: dashboardState, updateState, updateFilters, updatePanelStates, isLoaded } = useDashboardState();
+  const { filters, sortBy, taskTypeFilter, recurringFilter, panelStates } = dashboardState;
+  const { isCommitExpanded, isStatisticsExpanded, isTimeSeriesExpanded, isListsExpanded } = panelStates;
 
   useEffect(() => {
+    // Only fetch tasks once the dashboard state is loaded
+    if (!isLoaded) return;
+
     const fetchTasks = async () => {
       const tasksUrl = sortBy === 'none' ? '/tasks?sort=none' : 
                       sortBy === 'priority' ? '/tasks?sort=priority' : '/tasks';
@@ -37,7 +42,7 @@ function App() {
     };
     
     fetchTasks();
-  }, [sortBy, recurringFilter]);
+  }, [sortBy, recurringFilter, isLoaded]);
 
   const handleCheck = async (id: string, recurringTask: boolean = false) => {
     await fetch(`${API_URL}/${recurringTask ? 'recurring' : 'tasks'}/check`, {
@@ -177,6 +182,34 @@ function App() {
   const contexts = unique(allTasks.map(t => t.context));
   const projects = unique(allTasks.map(t => t.project));
 
+  // Show loading spinner while state is being loaded
+  if (!isLoaded) {
+    return (
+      <div style={{ 
+        maxWidth: 800, 
+        margin: 'auto', 
+        padding: 24,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '200px'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }}></div>
+          <p style={{ color: '#666' }}>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: 800, margin: 'auto', padding: 24 }}>
       <h1>Task Dashboard</h1>
@@ -191,15 +224,22 @@ function App() {
       <Statistics 
         refreshTrigger={refreshTrigger} 
         onTasksChanged={refreshTasks}
+        isExpanded={isStatisticsExpanded}
+        onToggleExpanded={(expanded: boolean) => updatePanelStates({ isStatisticsExpanded: expanded })}
       />
       
       {/* Time Series Analysis */}
       <TimeSeries 
         refreshTrigger={refreshTrigger}
+        isExpanded={isTimeSeriesExpanded}
+        onToggleExpanded={(expanded: boolean) => updatePanelStates({ isTimeSeriesExpanded: expanded })}
       />
       
       {/* Lists */}
-      <Lists />
+      <Lists 
+        isExpanded={isListsExpanded}
+        onToggleExpanded={(expanded: boolean) => updatePanelStates({ isListsExpanded: expanded })}
+      />
       
       {/* Git Commit Panel */}
       <div style={{ 
@@ -210,7 +250,7 @@ function App() {
         overflow: 'hidden'
       }}>
         <button
-          onClick={() => setIsCommitExpanded(!isCommitExpanded)}
+          onClick={() => updatePanelStates({ isCommitExpanded: !isCommitExpanded })}
           style={{
             width: '100%',
             padding: '12px 16px',
@@ -367,7 +407,7 @@ function App() {
           </label>
           <select 
             value={taskTypeFilter} 
-            onChange={e => setTaskTypeFilter(e.target.value)}
+            onChange={e => updateState({ taskTypeFilter: e.target.value })}
             style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd' }}
           >
             <option value='all'>All Tasks</option>
@@ -381,7 +421,7 @@ function App() {
           </label>
           <select 
             value={filters.area} 
-            onChange={e => setFilters({ ...filters, area: e.target.value })}
+            onChange={e => updateFilters({ area: e.target.value })}
             style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd' }}
           >
             <option value=''>All Areas</option>
@@ -395,7 +435,7 @@ function App() {
           </label>
           <select 
             value={filters.context} 
-            onChange={e => setFilters({ ...filters, context: e.target.value })}
+            onChange={e => updateFilters({ context: e.target.value })}
             style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd' }}
           >
             <option value=''>All Contexts</option>
@@ -409,7 +449,7 @@ function App() {
           </label>
           <select 
             value={filters.project} 
-            onChange={e => setFilters({ ...filters, project: e.target.value })}
+            onChange={e => updateFilters({ project: e.target.value })}
             style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd' }}
           >
             <option value=''>All Projects</option>
@@ -423,7 +463,7 @@ function App() {
           </label>
           <select 
             value={sortBy} 
-            onChange={e => setSortBy(e.target.value)}
+            onChange={e => updateState({ sortBy: e.target.value })}
             style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd' }}
           >
             <option value='due'>Due Date</option>
@@ -445,7 +485,7 @@ function App() {
               </label>
               <select 
                 value={recurringFilter} 
-                onChange={e => setRecurringFilter(e.target.value)}
+                onChange={e => updateState({ recurringFilter: e.target.value })}
                 style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd', minWidth: 120 }}
               >
                 <option value='today'>Today</option>
@@ -482,6 +522,55 @@ function App() {
             areas={areas}
             onTaskEdited={handleTaskEdited}
           />
+        </div>
+      )}
+
+      {/* State Management Panel - Development/Debug */}
+      {import.meta.env.DEV && (
+        <div style={{ 
+          backgroundColor: '#1a1a2e', 
+          border: '1px solid #4a5568', 
+          borderRadius: '8px', 
+          marginBottom: '24px',
+          padding: '16px'
+        }}>
+          <h4 style={{ 
+            margin: '0 0 12px 0', 
+            fontSize: '14px', 
+            color: '#f7fafc',
+            fontWeight: 'bold'
+          }}>
+            🔧 State Management (Development)
+          </h4>
+          <p style={{ 
+            margin: '0 0 12px 0', 
+            fontSize: '12px', 
+            color: '#e2e8f0'
+          }}>
+            Dashboard settings are automatically saved. Use the button below to reset to defaults.
+          </p>
+          <button
+            onClick={async () => {
+              try {
+                await StateStorage.clearState();
+                window.location.reload();
+              } catch (error) {
+                console.error('Failed to clear state:', error);
+              }
+            }}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: '#dc2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 'bold'
+            }}
+          >
+            🗑️ Reset Dashboard State
+          </button>
         </div>
       )}
     </div>
