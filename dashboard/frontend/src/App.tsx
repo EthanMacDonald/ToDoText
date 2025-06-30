@@ -15,6 +15,7 @@ function App() {
   const [refreshTrigger, setRefreshTrigger] = useState(0); // For triggering statistics refresh
   const [commitStatus, setCommitStatus] = useState<string>(''); // For git commit status
   const [calendarStatus, setCalendarStatus] = useState<string>(''); // For calendar push status
+  const [statisticsStatus, setStatisticsStatus] = useState<string>(''); // For statistics save status
 
   // Use persistent dashboard state
   const { state: dashboardState, updateState, updateFilters, updatePanelStates, updateFormStates, updateListsState, isLoaded } = useDashboardState();
@@ -148,6 +149,30 @@ function App() {
     } catch (error) {
       setCalendarStatus('✗ Error pushing to calendar');
       setTimeout(() => setCalendarStatus(''), 3000);
+    }
+  };
+
+  const handleSaveStatistics = async () => {
+    try {
+      setStatisticsStatus('Saving statistics...');
+      const response = await fetch(`${API_URL}/tasks/save-statistics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setStatisticsStatus('✓ Statistics saved to log successfully!');
+      } else {
+        setStatisticsStatus(`✗ Statistics save failed: ${result.message}`);
+      }
+      
+      // Clear status after 3 seconds
+      setTimeout(() => setStatisticsStatus(''), 3000);
+    } catch (error) {
+      setStatisticsStatus('✗ Error saving statistics');
+      setTimeout(() => setStatisticsStatus(''), 3000);
     }
   };
 
@@ -305,6 +330,19 @@ function App() {
               </div>
             )}
             
+            {statisticsStatus && (
+              <div style={{
+                backgroundColor: statisticsStatus.includes('✓') ? '#c6f6d5' : '#fed7d7',
+                color: statisticsStatus.includes('✓') ? '#22543d' : '#c53030',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '14px'
+              }}>
+                {statisticsStatus}
+              </div>
+            )}
+            
             {/* Git Commit Section */}
             <div style={{ marginBottom: '24px' }}>
               <h4 style={{ 
@@ -391,7 +429,46 @@ function App() {
                   opacity: calendarStatus === 'Pushing to calendar...' ? 0.6 : 1
                 }}
               >
-                {calendarStatus === 'Pushing to calendar...' ? '� Pushing...' : '� Push Due Dates to Calendar'}
+                {calendarStatus === 'Pushing to calendar...' ? '📅 Pushing...' : '📅 Push Due Dates to Calendar'}
+              </button>
+            </div>
+            
+            {/* Statistics Section */}
+            <div>
+              <h4 style={{ 
+                margin: '0 0 12px 0', 
+                fontSize: '16px', 
+                color: '#f7fafc',
+                fontWeight: 'bold'
+              }}>
+                📊 Statistics Log
+              </h4>
+              
+              <p style={{ 
+                margin: '0 0 16px 0', 
+                fontSize: '14px', 
+                color: '#e2e8f0',
+                lineHeight: '1.4'
+              }}>
+                Save current task statistics to historical log for time-series analysis.
+              </p>
+              
+              <button
+                onClick={handleSaveStatistics}
+                disabled={statisticsStatus === 'Saving statistics...'}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: statisticsStatus === 'Saving statistics...' ? '#6c757d' : '#9333ea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: statisticsStatus === 'Saving statistics...' ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  opacity: statisticsStatus === 'Saving statistics...' ? 0.6 : 1
+                }}
+              >
+                {statisticsStatus === 'Saving statistics...' ? '📊 Saving...' : '📊 Save Statistics to Log'}
               </button>
             </div>
           </div>
