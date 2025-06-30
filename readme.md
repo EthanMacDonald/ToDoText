@@ -41,10 +41,15 @@ README:
     
     Metadata Tags:
       Priority: "(priority:A|B|C...)"
+      Due Date: "(due:YYYY-MM-DD)"
+      Done Date: "(done:YYYY-MM-DD)"
+      Follow-up Date: "(followup:YYYY-MM-DD)"
       Frequency: "(freq:daily|weekly:Mon,Wed|monthly:15|monthly:3rd Tue|yearly:06-24|custom:14d)"
       Last Done: "(lastdone:YYYY-MM-DD) (optional, for recurring tasks)"
       Example: |
-        - [ ] Prepare quarterly report (priority:A)
+        - [ ] Prepare quarterly report (priority:A due:2025-07-15)
+        - [x] Submit expense report (done:2025-06-20 priority:B)
+        - [ ] Follow up with client (priority:B followup:2025-07-10)
         - [ ] Pay rent (freq:monthly:1 lastdone:2025-06-01)
         - [ ] Take medication (freq:daily lastdone:2025-06-24)
         - [ ] Team meeting (freq:weekly:Mon,Thu lastdone:2025-06-23)
@@ -53,6 +58,28 @@ README:
         - [ ] Celebrate anniversary (freq:yearly:06-24 lastdone:2024-06-24)
 
       Multiple metadata tags can be included within a single set of parentheses, separated by spaces. Each tag should be in the format key:value.
+      
+      Follow-up System:
+        The follow-up feature helps track tasks that require future attention after completion. This is perfect for tasks that are "done" but need a follow-up action later.
+        
+        How it works:
+        - Add a `followup:YYYY-MM-DD` tag to any task to mark it for follow-up
+        - Tasks with follow-up dates appear in a special "Follow-up Required" section
+        - These tasks cannot be checked off via the dashboard checkbox (since they require follow-up)
+        - Follow-up tasks are sorted by follow-up date (nearest first)
+        - In the dashboard, follow-up tasks display a purple "Follow-up" tag for easy identification
+        - Use the edit form to modify or remove follow-up dates
+        
+        Examples:
+        - [ ] Submit proposal (priority:A done:2025-06-30 followup:2025-07-15) @Work
+        - [ ] Send follow-up email (followup:2025-07-05) +ClientProject
+        - [ ] Review meeting notes (done:2025-06-25 followup:2025-07-01)
+        
+        Use cases:
+        - Tasks completed but requiring follow-up (e.g., "Submit application" → follow up in 2 weeks)
+        - Scheduled check-ins or reviews
+        - Time-delayed actions after task completion
+        - Reminders to follow up on delegated work
       
       Recurring Tasks:
         - Use the `freq:` tag to specify recurrence:
@@ -70,19 +97,22 @@ README:
             - [ ] Team lunch (freq:monthly:3rd Thu lastdone:2025-06-19)
 
       Examples:
-        - [ ] Prepare quarterly report (priority:A)
+        - [ ] Prepare quarterly report (priority:A due:2025-07-15)
         - [x] Submit expense report (done:2025-06-20 priority:B)
+        - [ ] Follow up on proposal (priority:A followup:2025-07-10)
         - [ ] Plan event (priority:C freq:monthly:1)
         - [ ] Water plants (freq:daily lastdone:2025-06-24)
         - [ ] Test smoke alarms (freq:yearly:06-24 lastdone:2024-06-24)
         - [ ] Review goals (freq:custom:90d lastdone:2025-04-01)
+        - [ ] Complete project (done:2025-06-25 followup:2025-07-08) +ProjectAlpha
 
       Notes:
-        - All metadata tags must be inside one set of parentheses, e.g. (priority:A freq:monthly:1).
+        - All metadata tags must be inside one set of parentheses, e.g. (priority:A due:2025-07-15 followup:2025-07-22).
         - Tags can appear in any order within the parentheses.
         - The parser will extract all key:value pairs from the parentheses, so you can include as many as needed.
         - If you include multiple sets of parentheses, only the first will be parsed for metadata.
         - Avoid using spaces within values (e.g., use freq:monthly:3rd Tue not freq:monthly:3rd  Tue).
+        - Follow-up dates should be in YYYY-MM-DD format for proper sorting and display.
 
     Context, Area, and Project Tags
 
@@ -184,10 +214,15 @@ README:
       The project includes a modern web dashboard for task management with Google Calendar integration:
       
       Features:
-      - View tasks organized by area headers
+      - View tasks organized by area headers and grouped by due dates
       - Filter by area, context, and project with labeled dropdown menus
       - Sort by priority, due date, or no sorting
       - Check off tasks and recurring tasks
+      - **Follow-up System**: Tasks with follow-up dates are grouped in a special "Follow-up Required" section
+        - Follow-up tasks display purple "Follow-up" tags for easy identification
+        - Sorted by follow-up date (nearest first)
+        - Cannot be checked off via checkbox (requires follow-up action)
+        - Edit follow-up dates using the built-in task editor
       - Push tasks with due dates to Google Calendar
       - Statistics and task analysis
       - Responsive, clean UI

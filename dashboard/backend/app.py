@@ -28,6 +28,8 @@ class EditTaskRequest(BaseModel):
     description: str
     priority: Optional[str] = None
     due_date: Optional[str] = None  # Format: YYYY-MM-DD
+    done_date: Optional[str] = None  # Format: YYYY-MM-DD
+    followup_date: Optional[str] = None  # Format: YYYY-MM-DD
     context: Optional[str] = None
     project: Optional[str] = None
     recurring: Optional[str] = None
@@ -656,6 +658,8 @@ def put_edit_task(task_id: str, request: EditTaskRequest):
             self.description = request.description
             self.priority = request.priority
             self.due_date = request.due_date
+            self.done_date = request.done_date
+            self.followup_date = request.followup_date
             self.context = request.context
             self.project = request.project
             self.recurring = request.recurring

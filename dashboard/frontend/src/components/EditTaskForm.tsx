@@ -15,6 +15,8 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
     description: task.description || '',
     priority: task.priority || '',
     due_date: task.due_date || '',
+    done_date: task.done_date || '',
+    followup_date: task.followup_date || '',
     context: task.context || '',
     project: task.project || '',
     recurring: task.recurring || '',
@@ -41,6 +43,8 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
         completed: formData.completed,
         ...(formData.priority && { priority: formData.priority }),
         ...(formData.due_date && { due_date: formData.due_date }),
+        ...(formData.done_date && { done_date: formData.done_date }),
+        ...(formData.followup_date && { followup_date: formData.followup_date }),
         ...(formData.context && { context: formData.context }),
         ...(formData.project && { project: formData.project }),
         ...(formData.recurring && { recurring: formData.recurring })
@@ -213,6 +217,48 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
             />
           </div>
 
+          {/* Done Date */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
+              Done Date
+            </label>
+            <input
+              type="date"
+              value={formData.done_date}
+              onChange={(e) => handleInputChange('done_date', e.target.value)}
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                borderRadius: '4px', 
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: 'white',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Follow-up Date */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
+              Follow-up Date
+            </label>
+            <input
+              type="date"
+              value={formData.followup_date}
+              onChange={(e) => handleInputChange('followup_date', e.target.value)}
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                borderRadius: '4px', 
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: 'white',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
           {/* Context */}
           <div>
             <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
@@ -302,6 +348,40 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
               boxSizing: 'border-box'
             }}
           />
+        </div>
+
+        {/* Completion Status */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            color: 'white',
+            cursor: 'pointer'
+          }}>
+            <input
+              type="checkbox"
+              checked={formData.completed}
+              onChange={(e) => handleInputChange('completed', e.target.checked)}
+              style={{ 
+                width: '16px', 
+                height: '16px',
+                cursor: 'pointer'
+              }}
+            />
+            <span style={{ fontWeight: 'bold' }}>
+              Mark as completed
+            </span>
+            {formData.followup_date && (
+              <span style={{ 
+                fontSize: '12px', 
+                color: '#fbbf24',
+                fontStyle: 'italic'
+              }}>
+                (Note: Tasks with follow-up dates are typically not marked as completed)
+              </span>
+            )}
+          </label>
         </div>
 
         {/* Submit Button */}
