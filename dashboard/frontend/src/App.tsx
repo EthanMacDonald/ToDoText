@@ -17,8 +17,8 @@ function App() {
   const [calendarStatus, setCalendarStatus] = useState<string>(''); // For calendar push status
 
   // Use persistent dashboard state
-  const { state: dashboardState, updateState, updateFilters, updatePanelStates, updateFormStates, isLoaded } = useDashboardState();
-  const { filters, sortBy, taskTypeFilter, recurringFilter, panelStates, formStates } = dashboardState;
+  const { state: dashboardState, updateState, updateFilters, updatePanelStates, updateFormStates, updateListsState, isLoaded } = useDashboardState();
+  const { filters, sortBy, taskTypeFilter, recurringFilter, panelStates, formStates, listsState } = dashboardState;
   const { isCommitExpanded, isStatisticsExpanded, isTimeSeriesExpanded, isListsExpanded } = panelStates;
 
   useEffect(() => {
@@ -241,6 +241,9 @@ function App() {
       <Lists 
         isExpanded={isListsExpanded}
         onToggleExpanded={(expanded: boolean) => updatePanelStates({ isListsExpanded: expanded })}
+        selectedList={listsState.selectedList}
+        onSelectedListChange={(listName: string) => updateListsState({ selectedList: listName })}
+        isStateLoaded={isLoaded}
       />
       
       {/* Git Commit Panel */}

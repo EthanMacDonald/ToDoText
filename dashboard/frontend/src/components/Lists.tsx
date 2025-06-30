@@ -23,11 +23,15 @@ interface ListData {
 interface Props {
   isExpanded?: boolean; // Control expand/collapse state externally
   onToggleExpanded?: (expanded: boolean) => void; // Callback when expand state changes
+  selectedList?: string; // Control selected list externally
+  onSelectedListChange?: (listName: string) => void; // Callback when selected list changes
+  isStateLoaded?: boolean; // Indicates if the dashboard state has been loaded
 }
 
-function Lists({ isExpanded: externalIsExpanded, onToggleExpanded }: Props) {
+function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList: externalSelectedList, onSelectedListChange, isStateLoaded }: Props) {
   const [availableLists, setAvailableLists] = useState<string[]>([]);
-  const [selectedList, setSelectedList] = useState<string>('');
+  const [internalSelectedList, setInternalSelectedList] = useState<string>('');
+  const selectedList = externalSelectedList !== undefined ? externalSelectedList : internalSelectedList;
   const [listData, setListData] = useState<ListData | null>(null);
   const [loading, setLoading] = useState(false);
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
@@ -50,8 +54,24 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded }: Props) {
         const lists = await response.json();
         const listNames = lists.map((list: any) => list.name);
         setAvailableLists(listNames);
-        if (listNames.length > 0 && !selectedList) {
-          setSelectedList(listNames[0]);
+        
+        // Only set default if state is loaded and we need to set a default
+        if (isStateLoaded && listNames.length > 0) {
+          // If there's a saved selection and it exists in available lists, keep it
+          if (selectedList && listNames.includes(selectedList)) {
+            // Selection is valid, no need to change
+            return;
+          }
+          
+          // If no valid selection, set to first available list
+          if (!selectedList || !listNames.includes(selectedList)) {
+            const defaultList = listNames[0];
+            if (onSelectedListChange) {
+              onSelectedListChange(defaultList);
+            } else {
+              setInternalSelectedList(defaultList);
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching lists:', error);
@@ -59,7 +79,7 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded }: Props) {
     };
     
     fetchLists();
-  }, []);
+  }, [isStateLoaded, selectedList, onSelectedListChange]); // Include dependencies
 
   // Fetch list data when selected list changes
   useEffect(() => {
@@ -204,7 +224,14 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded }: Props) {
           }}>
             <select
               value={selectedList}
-              onChange={(e) => setSelectedList(e.target.value)}
+              onChange={(e) => {
+                const newList = e.target.value;
+                if (onSelectedListChange) {
+                  onSelectedListChange(newList);
+                } else {
+                  setInternalSelectedList(newList);
+                }
+              }}
               style={{
                 padding: '8px 12px',
                 borderRadius: '4px',

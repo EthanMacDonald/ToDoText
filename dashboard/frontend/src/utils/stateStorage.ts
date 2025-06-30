@@ -19,6 +19,9 @@ export interface DashboardState {
     isCreateTaskExpanded: boolean;
     editingTaskId: string | null;
   };
+  listsState: {
+    selectedList: string;
+  };
 }
 
 const DEFAULT_STATE: DashboardState = {
@@ -35,6 +38,9 @@ const DEFAULT_STATE: DashboardState = {
   formStates: {
     isCreateTaskExpanded: false,
     editingTaskId: null,
+  },
+  listsState: {
+    selectedList: '',
   },
 };
 
@@ -114,7 +120,10 @@ class StateStorage {
          state.panelStates !== null)) &&
       (state.formStates === undefined ||
         (typeof state.formStates === 'object' &&
-         state.formStates !== null))
+         state.formStates !== null)) &&
+      (state.listsState === undefined ||
+        (typeof state.listsState === 'object' &&
+         state.listsState !== null))
     );
   }
 

@@ -2140,6 +2140,7 @@ class DashboardStateModel(BaseModel):
     recurringFilter: str
     panelStates: dict
     formStates: dict
+    listsState: dict
 
 STATE_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../frontend/dashboard-state.json')
 
@@ -2158,6 +2159,7 @@ async def save_dashboard_state(state: DashboardStateModel):
             "recurringFilter": state.recurringFilter,
             "panelStates": state.panelStates,
             "formStates": state.formStates,
+            "listsState": state.listsState,
             "lastUpdated": datetime.now().isoformat()
         }
         
@@ -2188,11 +2190,45 @@ async def load_dashboard_state():
                 "formStates": {
                     "isCreateTaskExpanded": False,
                     "editingTaskId": None
+                },
+                "listsState": {
+                    "selectedList": ""
                 }
             }
         
         with open(STATE_FILE_PATH, 'r') as f:
             state = json.load(f)
+        
+        # Migrate state to ensure all required fields exist (for backward compatibility)
+        default_state = {
+            "filters": {"area": "", "context": "", "project": ""},
+            "sortBy": "due",
+            "taskTypeFilter": "all",
+            "recurringFilter": "today",
+            "panelStates": {
+                "isCommitExpanded": False,
+                "isStatisticsExpanded": False,
+                "isTimeSeriesExpanded": False,
+                "isListsExpanded": False
+            },
+            "formStates": {
+                "isCreateTaskExpanded": False,
+                "editingTaskId": None
+            },
+            "listsState": {
+                "selectedList": ""
+            }
+        }
+        
+        # Merge loaded state with defaults (loaded state takes precedence)
+        for key, default_value in default_state.items():
+            if key not in state:
+                state[key] = default_value
+            elif isinstance(default_value, dict):
+                # Recursively merge nested objects
+                for nested_key, nested_default in default_value.items():
+                    if nested_key not in state[key]:
+                        state[key][nested_key] = nested_default
         
         # Remove lastUpdated before returning
         state.pop('lastUpdated', None)
@@ -2209,6 +2245,13 @@ async def load_dashboard_state():
                 "isStatisticsExpanded": False,
                 "isTimeSeriesExpanded": False,
                 "isListsExpanded": False
+            },
+            "formStates": {
+                "isCreateTaskExpanded": False,
+                "editingTaskId": None
+            },
+            "listsState": {
+                "selectedList": ""
             }
         }
 
@@ -2448,3 +2491,7 @@ async def reset_list(list_name: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error resetting list: {str(e)}")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)

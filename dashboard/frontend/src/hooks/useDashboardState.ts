@@ -17,6 +17,9 @@ export function useDashboardState() {
       isCreateTaskExpanded: false,
       editingTaskId: null,
     },
+    listsState: {
+      selectedList: '',
+    },
   });
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -79,12 +82,20 @@ export function useDashboardState() {
     }));
   };
 
+  const updateListsState = (listsState: Partial<DashboardState['listsState']>) => {
+    setState(prev => ({
+      ...prev,
+      listsState: { ...prev.listsState, ...listsState }
+    }));
+  };
+
   return {
     state,
     updateState,
     updateFilters,
     updatePanelStates,
     updateFormStates,
+    updateListsState,
     isLoaded,
   };
 }
