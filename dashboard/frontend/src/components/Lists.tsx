@@ -9,6 +9,8 @@ interface ListItem {
   is_area_header?: boolean;
   area?: string;
   indent_level?: number;
+  quantity?: string;
+  metadata?: Record<string, string>;
 }
 
 interface ListData {
@@ -36,6 +38,9 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
   const [loading, setLoading] = useState(false);
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
+  const [editingItem, setEditingItem] = useState<number | null>(null);
+  const [editText, setEditText] = useState('');
+  const [editQuantity, setEditQuantity] = useState('');
 
   const toggleExpanded = () => {
     const newExpanded = !isExpanded;
@@ -124,6 +129,34 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
     } catch (error) {
       console.error('Error toggling item:', error);
     }
+  };
+
+  const updateItem = async (itemIndex: number, text: string, quantity: string) => {
+    if (!selectedList || !listData) return;
+    
+    try {
+      await fetch(`${API_URL}/lists/${selectedList}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          item_index: itemIndex, 
+          text: text,
+          quantity: quantity
+        })
+      });
+      
+      // Refresh list data
+      await fetchListData();
+      setEditingItem(null);
+    } catch (error) {
+      console.error('Error updating item:', error);
+    }
+  };
+
+  const startEditing = (itemIndex: number, item: ListItem) => {
+    setEditingItem(itemIndex);
+    setEditText(item.text);
+    setEditQuantity(item.quantity || '');
   };
 
   const resetList = async () => {
@@ -337,10 +370,96 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
                     const indentLevel = item.indent_level || 1;
                     const leftMargin = 16 + ((indentLevel - 1) * 24); // Base 16px + 24px per additional level
                     
+                    // Check if this item is being edited
+                    if (editingItem === checkboxIndex) {
+                      return (
+                        <div
+                          key={index}
+                          style={{
+                            margin: `4px 0 4px ${leftMargin}px`,
+                            backgroundColor: '#2d3748',
+                            borderRadius: '4px',
+                            padding: '12px',
+                            border: '2px solid #63b3ed'
+                          }}
+                        >
+                          <div style={{ marginBottom: '8px' }}>
+                            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#a0aec0' }}>
+                              Item Text
+                            </label>
+                            <input
+                              type="text"
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                fontSize: '14px',
+                                borderRadius: '4px',
+                                border: '1px solid #4a5568',
+                                backgroundColor: '#1a202c',
+                                color: '#f7fafc'
+                              }}
+                              autoFocus
+                            />
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', color: '#a0aec0' }}>
+                              Quantity (optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={editQuantity}
+                              onChange={(e) => setEditQuantity(e.target.value)}
+                              placeholder="e.g., 2, 1 lb, 3 boxes"
+                              style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                fontSize: '14px',
+                                borderRadius: '4px',
+                                border: '1px solid #4a5568',
+                                backgroundColor: '#1a202c',
+                                color: '#f7fafc'
+                              }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => setEditingItem(null)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                borderRadius: '4px',
+                                border: '1px solid #4a5568',
+                                backgroundColor: '#2d3748',
+                                color: '#a0aec0',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => updateItem(checkboxIndex, editText, editQuantity)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                borderRadius: '4px',
+                                border: 'none',
+                                backgroundColor: '#3182ce',
+                                color: 'white',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
                     return (
                       <div
                         key={index}
-                        onClick={() => toggleItem(checkboxIndex)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -359,18 +478,21 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
                           e.currentTarget.style.borderColor = 'transparent';
                         }}
                       >
-                        <div style={{
-                          width: '16px',
-                          height: '16px',
-                          borderRadius: '3px',
-                          border: '2px solid #63b3ed',
-                          marginRight: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: item.completed ? '#3182ce' : 'transparent',
-                          flexShrink: 0
-                        }}>
+                        <div 
+                          onClick={() => toggleItem(checkboxIndex)}
+                          style={{
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '3px',
+                            border: '2px solid #63b3ed',
+                            marginRight: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: item.completed ? '#3182ce' : 'transparent',
+                            flexShrink: 0
+                          }}
+                        >
                           {item.completed && (
                             <span style={{ 
                               color: 'white', 
@@ -381,14 +503,44 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
                             </span>
                           )}
                         </div>
-                        <span style={{
-                          color: item.completed ? '#a0aec0' : '#f7fafc',
-                          textDecoration: item.completed ? 'line-through' : 'none',
-                          fontSize: '14px',
-                          lineHeight: '1.4'
-                        }}>
-                          {item.text}
-                        </span>
+                        <div style={{ flex: 1 }}>
+                          <span style={{
+                            color: item.completed ? '#a0aec0' : '#f7fafc',
+                            textDecoration: item.completed ? 'line-through' : 'none',
+                            fontSize: '14px',
+                            lineHeight: '1.4'
+                          }}>
+                            {item.text}
+                          </span>
+                          {item.quantity && (
+                            <span style={{
+                              color: '#9ca3af',
+                              fontSize: '12px',
+                              marginLeft: '8px',
+                              fontStyle: 'italic'
+                            }}>
+                              (quantity: {item.quantity})
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditing(checkboxIndex, item);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#63b3ed',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            padding: '4px',
+                            marginLeft: '8px'
+                          }}
+                          title="Edit item"
+                        >
+                          ✏️
+                        </button>
                       </div>
                     );
                   }

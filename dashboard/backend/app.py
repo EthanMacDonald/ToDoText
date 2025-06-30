@@ -2270,6 +2270,11 @@ async def clear_dashboard_state():
 class ListToggleRequest(BaseModel):
     item_index: int
 
+class ListItemUpdateRequest(BaseModel):
+    item_index: int
+    text: str
+    quantity: str = ""
+
 def parse_list_file(filepath: str):
     """Parse a list file and extract items with area headers and indentation levels"""
     items = []
@@ -2308,7 +2313,29 @@ def parse_list_file(filepath: str):
                 if leading_spaces > 0:
                     is_completed = '- [x]' in stripped
                     # Extract the text after the checkbox
-                    text = stripped.replace('- [ ]', '').replace('- [x]', '').strip()
+                    text_with_meta = stripped.replace('- [ ]', '').replace('- [x]', '').strip()
+                    
+                    # Extract metadata from parentheses (similar to task parsing)
+                    import re
+                    all_meta = re.findall(r'\(([^)]*)\)', text_with_meta)
+                    metadata = {}
+                    for meta_str in all_meta:
+                        # Split on spaces and then find key:value pairs
+                        parts = meta_str.split()
+                        i = 0
+                        while i < len(parts):
+                            part = parts[i]
+                            if ':' in part:
+                                key, value = part.split(':', 1)
+                                # If value is empty, might be continued in next parts
+                                while i + 1 < len(parts) and not parts[i + 1].count(':'):
+                                    i += 1
+                                    value += ' ' + parts[i]
+                                metadata[key.strip()] = value.strip()
+                            i += 1
+                    
+                    # Remove metadata parentheses from display text
+                    text = re.sub(r'\([^)]*\)', '', text_with_meta).strip()
                     
                     items.append({
                         'id': line_num,
@@ -2317,7 +2344,9 @@ def parse_list_file(filepath: str):
                         'line_number': line_num,
                         'is_area_header': False,
                         'area': current_area or 'General',
-                        'indent_level': indent_level
+                        'indent_level': indent_level,
+                        'quantity': metadata.get('quantity', ''),
+                        'metadata': metadata
                     })
                 
     except Exception as e:
@@ -2443,7 +2472,7 @@ async def toggle_list_item(list_name: str, request: ListToggleRequest):
         target_line_num = checkbox_line_numbers[request.item_index]
         target_line = lines[target_line_num]
         
-        # Toggle the checkbox
+        # Toggle the checkbox while preserving metadata and formatting
         if '- [ ]' in target_line:
             lines[target_line_num] = target_line.replace('- [ ]', '- [x]')
         elif '- [x]' in target_line:
@@ -2461,6 +2490,70 @@ async def toggle_list_item(list_name: str, request: ListToggleRequest):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error toggling item: {str(e)}")
+
+@app.post("/lists/{list_name}/update")
+async def update_list_item(list_name: str, request: ListItemUpdateRequest):
+    """Update a list item's text and metadata"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, f'../../lists/{list_name}.txt')
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail=f"List '{list_name}' not found")
+            
+        # Read the file
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        # Find checkbox items only (not area headers)
+        checkbox_line_numbers = []
+        for line_num, line in enumerate(lines):
+            stripped = line.strip()
+            # Check for any level of indentation with checkboxes
+            leading_spaces = len(line) - len(line.lstrip(' '))
+            if leading_spaces > 0 and ('- [ ]' in stripped or '- [x]' in stripped):
+                checkbox_line_numbers.append(line_num)
+                
+        # Validate item index
+        if request.item_index < 0 or request.item_index >= len(checkbox_line_numbers):
+            raise HTTPException(status_code=400, detail="Invalid item index")
+            
+        # Get the actual line number to modify
+        target_line_num = checkbox_line_numbers[request.item_index]
+        target_line = lines[target_line_num]
+        
+        # Parse current line to preserve formatting
+        leading_spaces = len(target_line) - len(target_line.lstrip(' '))
+        indent = ' ' * leading_spaces
+        is_completed = '- [x]' in target_line
+        checkbox = '- [x]' if is_completed else '- [ ]'
+        
+        # Build new line with updated text and metadata
+        new_text = request.text.strip()
+        
+        # Build metadata string
+        metadata_parts = []
+        if request.quantity:
+            metadata_parts.append(f"quantity:{request.quantity}")
+        
+        # Construct the new line
+        if metadata_parts:
+            new_line = f"{indent}{checkbox} {new_text} ({' '.join(metadata_parts)})\n"
+        else:
+            new_line = f"{indent}{checkbox} {new_text}\n"
+            
+        lines[target_line_num] = new_line
+        
+        # Write back to file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+            
+        return {"success": True, "message": "Item updated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating item: {str(e)}")
 
 @app.post("/lists/{list_name}/reset")
 async def reset_list(list_name: str):

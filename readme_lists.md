@@ -24,6 +24,23 @@ Another Area:
 - `- [x]` - Checked/completed item (must be indented)
 - `#` - Comments (ignored)
 - Empty lines are ignored
+- **Metadata**: Items can include metadata in parentheses (e.g., `(quantity:2)`)
+
+### Metadata Support
+List items support metadata similar to regular tasks, using the same parentheses format:
+
+**Quantity Field**:
+- Add quantity information to specify amounts, counts, or measurements
+- Format: `(quantity:value)`
+- Examples:
+  - `(quantity:2)` - Simple count
+  - `(quantity:1 lb)` - Weight measurement  
+  - `(quantity:3 boxes)` - Count with units
+  - `(quantity:500ml)` - Volume measurement
+
+**Multiple Metadata**:
+- Can include multiple metadata fields in the same parentheses
+- Separate with spaces: `(quantity:2 priority:high)`
 
 ### Example Lists
 
@@ -33,9 +50,9 @@ Another Area:
 # Updated: 2025-06-27
 
 Dairy & Eggs:
-    - [ ] Milk (2% or whole)
+    - [ ] Milk (2% or whole) (quantity:2)
     - [ ] Eggs (dozen, free range)
-    - [ ] Cheese (sharp cheddar block)
+    - [ ] Cheese (sharp cheddar block) (quantity:1 lb)
     - [ ] Greek yogurt (plain, large container)
 
 Produce:
@@ -48,8 +65,8 @@ Produce:
     - [ ] Avocados (2-3, firm)
 
 Meat & Protein:
-    - [ ] Chicken breast (2 lbs)
-    - [ ] Ground turkey (1 lb)
+    - [ ] Chicken breast (quantity:2 lbs)
+    - [ ] Ground turkey (quantity:1 lb)
 ```
 
 #### Packing List (`lists/packing.txt`)
@@ -72,10 +89,10 @@ Electronics:
     - [ ] Universal adapter (international)
 
 Clothing:
-    - [ ] Underwear (4-5 pairs)
-    - [ ] Socks (4-5 pairs)
-    - [ ] Shirts/tops (3-4)
-    - [ ] Pants/bottoms (2-3)
+    - [ ] Underwear (quantity:5)
+    - [ ] Socks (quantity:5)
+    - [ ] Shirts/tops (quantity:4)
+    - [ ] Pants/bottoms (quantity:3)
     - [ ] Comfortable walking shoes
 ```
 
@@ -89,12 +106,16 @@ Clothing:
 - **Quick Actions**: Check/uncheck items with single click
 - **Auto-save**: Changes are saved automatically
 - **Reset Function**: Clear all checks to start over
+- **Inline Editing**: Edit item text and quantity metadata directly in the dashboard
+- **Quantity Display**: Quantities appear as italic text next to item names
 
 ### Visual Organization
 - **Area Headers**: Bold, colored section headers for organizing items
 - **Indented Items**: Checkbox items are visually indented under their areas
 - **Progress Calculation**: Only checkbox items count toward completion percentage
 - **Hover Effects**: Visual feedback when hovering over clickable items
+- **Quantity Indicators**: Subtle display of quantity information when present
+- **Edit Controls**: Click the edit button (✏️) to modify items
 
 ### Creating New Lists
 1. Create a new `.txt` file in the `lists/` directory
@@ -102,7 +123,8 @@ Clothing:
    ```
    Area Name:
        - [ ] Item name
-       - [ ] Another item
+       - [ ] Another item (quantity:2)
+       - [ ] Item with measurement (quantity:1 lb)
    
    Another Area:
        - [ ] More items
@@ -112,9 +134,12 @@ Clothing:
 ### List Management
 - **Check Items**: Click checkbox items to mark complete (area headers are not clickable)
 - **Uncheck Items**: Click checked items to mark incomplete  
+- **Edit Items**: Click the edit button (✏️) to modify item text and quantity
+- **Quantity Fields**: Add or modify quantity information for precise tracking
 - **Progress Bar**: Visual indicator of completion status for checkbox items only
-- **Reset List**: Button to clear all checkbox items and start over
+- **Reset List**: Button to clear all checkbox items and start over (preserves metadata)
 - **Area Organization**: Items are visually grouped under their area headers
+- **Metadata Preservation**: Quantity and other metadata are preserved when toggling completion
 
 ## API Endpoints
 
@@ -150,11 +175,15 @@ Returns detailed list with items and area headers:
     },
     {
       "id": 4,
-      "text": "Milk (2% or whole)",
+      "text": "Milk",
       "completed": false,
       "line_number": 4,
       "is_area_header": false,
-      "area": "Dairy & Eggs"
+      "area": "Dairy & Eggs",
+      "quantity": "2",
+      "metadata": {
+        "quantity": "2"
+      }
     }
   ],
   "total_items": 15,
@@ -164,15 +193,25 @@ Returns detailed list with items and area headers:
 ```
 
 ### POST /lists/{list_name}/toggle
-Toggle completion status of a checkbox item (area headers cannot be toggled):
+Toggle completion status of a checkbox item (area headers cannot be toggled, metadata preserved):
 ```json
 {
   "item_index": 0
 }
 ```
 
+### POST /lists/{list_name}/update
+Update an item's text and metadata:
+```json
+{
+  "item_index": 0,
+  "text": "Milk (2% or whole)",
+  "quantity": "2 gallons"
+}
+```
+
 ### POST /lists/{list_name}/reset
-Reset all checkbox items to unchecked (preserves area headers):
+Reset all checkbox items to unchecked (preserves area headers and metadata):
 ```json
 {
   "success": true,
@@ -192,8 +231,18 @@ lists/
 
 1. **Create thematic lists**: Separate lists for different purposes (travel, shopping, projects)
 2. **Use descriptive names**: Include details in parentheses for clarity
-3. **Regular maintenance**: Update lists based on your changing needs
-4. **Quick completion**: Use the dashboard for rapid checking during activities
+3. **Add quantity metadata**: Use `(quantity:value)` to specify amounts, weights, or counts
+4. **Regular maintenance**: Update lists based on your changing needs
+5. **Quick completion**: Use the dashboard for rapid checking during activities
+6. **Edit inline**: Use the edit button to modify quantities or descriptions as needed
+7. **Metadata persistence**: Quantities are preserved when checking/unchecking items
+
+**Quantity Examples:**
+- `- [ ] Eggs (quantity:12)` - Count-based
+- `- [ ] Ground beef (quantity:2 lbs)` - Weight-based  
+- `- [ ] Milk (quantity:1 gallon)` - Volume-based
+- `- [ ] Socks (quantity:5 pairs)` - Set-based
+- `- [ ] Batteries (quantity:4 AA)` - Type and count
 
 The Lists feature is perfect for:
 - 🛒 Grocery shopping
