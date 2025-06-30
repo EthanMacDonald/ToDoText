@@ -13,6 +13,10 @@ export function useDashboardState() {
       isTimeSeriesExpanded: false,
       isListsExpanded: false,
     },
+    formStates: {
+      isCreateTaskExpanded: false,
+      editingTaskId: null,
+    },
   });
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -68,11 +72,19 @@ export function useDashboardState() {
     }));
   };
 
+  const updateFormStates = (formStates: Partial<DashboardState['formStates']>) => {
+    setState(prev => ({
+      ...prev,
+      formStates: { ...prev.formStates, ...formStates }
+    }));
+  };
+
   return {
     state,
     updateState,
     updateFilters,
     updatePanelStates,
+    updateFormStates,
     isLoaded,
   };
 }

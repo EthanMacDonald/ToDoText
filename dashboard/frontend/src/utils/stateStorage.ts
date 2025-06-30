@@ -15,6 +15,10 @@ export interface DashboardState {
     isTimeSeriesExpanded: boolean;
     isListsExpanded: boolean;
   };
+  formStates: {
+    isCreateTaskExpanded: boolean;
+    editingTaskId: string | null;
+  };
 }
 
 const DEFAULT_STATE: DashboardState = {
@@ -27,6 +31,10 @@ const DEFAULT_STATE: DashboardState = {
     isStatisticsExpanded: false,
     isTimeSeriesExpanded: false,
     isListsExpanded: false,
+  },
+  formStates: {
+    isCreateTaskExpanded: false,
+    editingTaskId: null,
   },
 };
 
@@ -103,7 +111,10 @@ class StateStorage {
          typeof state.filters.project === 'string')) &&
       (state.panelStates === undefined ||
         (typeof state.panelStates === 'object' &&
-         state.panelStates !== null))
+         state.panelStates !== null)) &&
+      (state.formStates === undefined ||
+        (typeof state.formStates === 'object' &&
+         state.formStates !== null))
     );
   }
 

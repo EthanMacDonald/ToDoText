@@ -2139,6 +2139,7 @@ class DashboardStateModel(BaseModel):
     taskTypeFilter: str
     recurringFilter: str
     panelStates: dict
+    formStates: dict
 
 STATE_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../frontend/dashboard-state.json')
 
@@ -2156,6 +2157,7 @@ async def save_dashboard_state(state: DashboardStateModel):
             "taskTypeFilter": state.taskTypeFilter,
             "recurringFilter": state.recurringFilter,
             "panelStates": state.panelStates,
+            "formStates": state.formStates,
             "lastUpdated": datetime.now().isoformat()
         }
         
@@ -2182,6 +2184,10 @@ async def load_dashboard_state():
                     "isStatisticsExpanded": False,
                     "isTimeSeriesExpanded": False,
                     "isListsExpanded": False
+                },
+                "formStates": {
+                    "isCreateTaskExpanded": False,
+                    "editingTaskId": None
                 }
             }
         

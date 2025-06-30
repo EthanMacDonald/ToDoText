@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { Task, TaskGroup } from '../types/task';
 import EditTaskForm from './EditTaskForm';
 
@@ -11,6 +11,8 @@ type Props = {
   isRecurring?: boolean;
   areas: string[];
   onTaskEdited: () => void;
+  editingTaskId: string | null;
+  onEditingTaskIdChange: (id: string | null) => void;
 };
 
 function filterTask(task: Task, filters: Props['filters']) {
@@ -30,8 +32,8 @@ const TaskItem: React.FC<{
   areas: string[];
   onTaskEdited: () => void;
   editingTaskId: string | null;
-  setEditingTaskId: (id: string | null) => void;
-}> = ({ task, onCheck, onEdit, onRecurringStatus, depth = 0, isRecurring = false, areas, onTaskEdited, editingTaskId, setEditingTaskId }) => {
+  onEditingTaskIdChange: (id: string | null) => void;
+}> = ({ task, onCheck, onEdit, onRecurringStatus, depth = 0, isRecurring = false, areas, onTaskEdited, editingTaskId, onEditingTaskIdChange }) => {
   // Build metadata string in the format: (priority:A due:2025-06-24 progress:50%)
   const buildMetadataString = (task: Task) => {
     const meta: string[] = [];
@@ -204,7 +206,7 @@ const TaskItem: React.FC<{
             <button
               onClick={(e) => {
                 e.preventDefault();
-                setEditingTaskId(editingTaskId === task.id ? null : task.id);
+                onEditingTaskIdChange(editingTaskId === task.id ? null : task.id);
               }}
               style={{
                 background: 'none',
@@ -231,9 +233,9 @@ const TaskItem: React.FC<{
             areas={areas}
             onTaskEdited={() => {
               onTaskEdited();
-              setEditingTaskId(null);
+              onEditingTaskIdChange(null);
             }}
-            onCancel={() => setEditingTaskId(null)}
+            onCancel={() => onEditingTaskIdChange(null)}
           />
         </div>
       )}
@@ -267,15 +269,14 @@ const TaskItem: React.FC<{
           areas={areas}
           onTaskEdited={onTaskEdited}
           editingTaskId={editingTaskId}
-          setEditingTaskId={setEditingTaskId}
+          onEditingTaskIdChange={onEditingTaskIdChange}
         />
       ))}
     </>
   );
 };
 
-const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onRecurringStatus, filters, isRecurring = false, areas, onTaskEdited }) => {
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onRecurringStatus, filters, isRecurring = false, areas, onTaskEdited, editingTaskId, onEditingTaskIdChange }) => {
   // Handle both grouped and flat data structures
   const isGroupedData = (data: TaskGroup[] | Task[]): data is TaskGroup[] => {
     return data.length > 0 && 'type' in data[0] && (data[0].type === 'group' || data[0].type === 'area');
@@ -316,7 +317,7 @@ const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onRecurringStatus, f
                       areas={areas}
                       onTaskEdited={onTaskEdited}
                       editingTaskId={editingTaskId}
-                      setEditingTaskId={setEditingTaskId}
+                      onEditingTaskIdChange={onEditingTaskIdChange}
                     />
                   ))
                 }
@@ -343,7 +344,7 @@ const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onRecurringStatus, f
               areas={areas}
               onTaskEdited={onTaskEdited}
               editingTaskId={editingTaskId}
-              setEditingTaskId={setEditingTaskId}
+              onEditingTaskIdChange={onEditingTaskIdChange}
             />
           ))
         }

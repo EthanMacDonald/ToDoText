@@ -4,10 +4,11 @@ import { API_URL } from '../config/api';
 type Props = {
   onTaskCreated: () => void;
   areas: string[];
+  isExpanded: boolean;
+  onExpandedChange: (expanded: boolean) => void;
 };
 
-const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, isExpanded, onExpandedChange }) => {
   const [formData, setFormData] = useState({
     area: '',
     description: '',
@@ -73,7 +74,7 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
         recurring: ''
       });
       
-      setIsExpanded(false);
+      onExpandedChange(false);
       onTaskCreated();
       
     } catch (error) {
@@ -99,7 +100,7 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
       overflow: 'hidden'
     }}>
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => onExpandedChange(!isExpanded)}
         style={{
           width: '100%',
           padding: '12px 16px',
@@ -323,7 +324,7 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas }) => {
             
             <button
               type="button"
-              onClick={() => setIsExpanded(false)}
+              onClick={() => onExpandedChange(false)}
               style={{
                 padding: '10px 20px',
                 backgroundColor: '#6c757d',

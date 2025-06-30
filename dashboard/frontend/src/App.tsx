@@ -17,8 +17,8 @@ function App() {
   const [calendarStatus, setCalendarStatus] = useState<string>(''); // For calendar push status
 
   // Use persistent dashboard state
-  const { state: dashboardState, updateState, updateFilters, updatePanelStates, isLoaded } = useDashboardState();
-  const { filters, sortBy, taskTypeFilter, recurringFilter, panelStates } = dashboardState;
+  const { state: dashboardState, updateState, updateFilters, updatePanelStates, updateFormStates, isLoaded } = useDashboardState();
+  const { filters, sortBy, taskTypeFilter, recurringFilter, panelStates, formStates } = dashboardState;
   const { isCommitExpanded, isStatisticsExpanded, isTimeSeriesExpanded, isListsExpanded } = panelStates;
 
   useEffect(() => {
@@ -218,6 +218,8 @@ function App() {
       <CreateTaskForm 
         onTaskCreated={handleTaskCreated}
         areas={areas}
+        isExpanded={formStates.isCreateTaskExpanded}
+        onExpandedChange={(expanded: boolean) => updateFormStates({ isCreateTaskExpanded: expanded })}
       />
       
       {/* Statistics Panel */}
@@ -503,6 +505,8 @@ function App() {
             isRecurring={true}
             areas={areas}
             onTaskEdited={handleTaskEdited}
+            editingTaskId={formStates.editingTaskId}
+            onEditingTaskIdChange={(id: string | null) => updateFormStates({ editingTaskId: id })}
           />
         </div>
       )}
@@ -521,6 +525,8 @@ function App() {
             filters={filters}
             areas={areas}
             onTaskEdited={handleTaskEdited}
+            editingTaskId={formStates.editingTaskId}
+            onEditingTaskIdChange={(id: string | null) => updateFormStates({ editingTaskId: id })}
           />
         </div>
       )}
