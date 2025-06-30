@@ -2221,3 +2221,220 @@ async def clear_dashboard_state():
         return {"success": True, "message": "State cleared successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to clear state: {str(e)}")
+
+# Lists Management Endpoints
+
+class ListToggleRequest(BaseModel):
+    item_index: int
+
+def parse_list_file(filepath: str):
+    """Parse a list file and extract items with area headers"""
+    items = []
+    current_area = None
+    
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        for line_num, line in enumerate(lines, 1):
+            stripped = line.strip()
+            
+            # Skip empty lines and comments
+            if not stripped or stripped.startswith('#'):
+                continue
+                
+            # Check if this is an area header (ends with :)
+            if stripped.endswith(':') and not line.startswith('    '):
+                current_area = stripped[:-1]  # Remove the :
+                items.append({
+                    'id': line_num,
+                    'text': current_area,
+                    'completed': False,
+                    'line_number': line_num,
+                    'is_area_header': True,
+                    'area': current_area
+                })
+            # Check if this is a checkbox item (starts with indentation)
+            elif line.startswith('    ') and ('- [ ]' in stripped or '- [x]' in stripped):
+                is_completed = '- [x]' in stripped
+                # Extract the text after the checkbox
+                text = stripped.replace('- [ ]', '').replace('- [x]', '').strip()
+                
+                items.append({
+                    'id': line_num,
+                    'text': text,
+                    'completed': is_completed,
+                    'line_number': line_num,
+                    'is_area_header': False,
+                    'area': current_area or 'General'
+                })
+                
+    except Exception as e:
+        print(f"Error parsing list file {filepath}: {e}")
+        
+    return items
+
+def get_list_title(filepath: str):
+    """Extract title from list file comments"""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        for line in lines[:5]:  # Check first 5 lines for title
+            if line.strip().startswith('# ') and 'List' in line:
+                return line.strip()[2:].strip()  # Remove '# ' prefix
+                
+    except Exception:
+        pass
+        
+    # Default title from filename
+    filename = os.path.basename(filepath)
+    return filename.replace('.txt', '').replace('_', ' ').title() + ' List'
+
+@app.get("/lists")
+async def get_lists():
+    """Get all available lists with metadata"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        lists_dir = os.path.join(current_dir, '../../lists')
+        
+        if not os.path.exists(lists_dir):
+            return []
+            
+        lists = []
+        for filename in os.listdir(lists_dir):
+            if filename.endswith('.txt'):
+                filepath = os.path.join(lists_dir, filename)
+                name = filename[:-4]  # Remove .txt extension
+                
+                items = parse_list_file(filepath)
+                checkbox_items = [item for item in items if not item['is_area_header']]
+                completed_items = [item for item in checkbox_items if item['completed']]
+                
+                completion_percentage = 0
+                if checkbox_items:
+                    completion_percentage = (len(completed_items) / len(checkbox_items)) * 100
+                
+                lists.append({
+                    'name': name,
+                    'title': get_list_title(filepath),
+                    'filename': filename,
+                    'total_items': len(checkbox_items),
+                    'completed_items': len(completed_items),
+                    'completion_percentage': round(completion_percentage, 1)
+                })
+                
+        return lists
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching lists: {str(e)}")
+
+@app.get("/lists/{list_name}")
+async def get_list_details(list_name: str):
+    """Get detailed list with items and area headers"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, f'../../lists/{list_name}.txt')
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail=f"List '{list_name}' not found")
+            
+        items = parse_list_file(filepath)
+        checkbox_items = [item for item in items if not item['is_area_header']]
+        completed_items = [item for item in checkbox_items if item['completed']]
+        
+        completion_percentage = 0
+        if checkbox_items:
+            completion_percentage = (len(completed_items) / len(checkbox_items)) * 100
+            
+        return {
+            'name': list_name,
+            'title': get_list_title(filepath),
+            'items': items,
+            'total_items': len(checkbox_items),
+            'completed_items': len(completed_items),
+            'completion_percentage': round(completion_percentage, 1)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading list: {str(e)}")
+
+@app.post("/lists/{list_name}/toggle")
+async def toggle_list_item(list_name: str, request: ListToggleRequest):
+    """Toggle completion status of a checkbox item"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, f'../../lists/{list_name}.txt')
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail=f"List '{list_name}' not found")
+            
+        # Read the file
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        # Find checkbox items only (not area headers)
+        checkbox_line_numbers = []
+        for line_num, line in enumerate(lines):
+            stripped = line.strip()
+            if line.startswith('    ') and ('- [ ]' in stripped or '- [x]' in stripped):
+                checkbox_line_numbers.append(line_num)
+                
+        # Validate item index
+        if request.item_index < 0 or request.item_index >= len(checkbox_line_numbers):
+            raise HTTPException(status_code=400, detail="Invalid item index")
+            
+        # Get the actual line number to modify
+        target_line_num = checkbox_line_numbers[request.item_index]
+        target_line = lines[target_line_num]
+        
+        # Toggle the checkbox
+        if '- [ ]' in target_line:
+            lines[target_line_num] = target_line.replace('- [ ]', '- [x]')
+        elif '- [x]' in target_line:
+            lines[target_line_num] = target_line.replace('- [x]', '- [ ]')
+        else:
+            raise HTTPException(status_code=400, detail="Line is not a valid checkbox item")
+            
+        # Write back to file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+            
+        return {"success": True, "message": "Item toggled successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error toggling item: {str(e)}")
+
+@app.post("/lists/{list_name}/reset")
+async def reset_list(list_name: str):
+    """Reset all checkbox items to unchecked"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, f'../../lists/{list_name}.txt')
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail=f"List '{list_name}' not found")
+            
+        # Read the file
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        # Reset all checkbox items
+        for i, line in enumerate(lines):
+            if '- [x]' in line:
+                lines[i] = line.replace('- [x]', '- [ ]')
+                
+        # Write back to file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+            
+        return {"success": True, "message": "List reset successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error resetting list: {str(e)}")
