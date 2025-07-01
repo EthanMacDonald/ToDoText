@@ -2,92 +2,357 @@ import React, { useState } from 'react';
 import type { Task, TaskGroup } from '../types/task';
 import EditTaskForm from './EditTaskForm';
 
-// Simple form component for adding subtasks
+// Enhanced form component for adding subtasks with all task fields
 const AddSubtaskForm: React.FC<{
-  onSubmit: (description: string, notes: string[]) => void;
+  onSubmit: (description: string, notes: string[], additionalData: any) => void;
   onCancel: () => void;
-}> = ({ onSubmit, onCancel }) => {
-  const [description, setDescription] = useState('');
-  const [notesText, setNotesText] = useState('');
+  areas: string[];
+}> = ({ onSubmit, onCancel, areas }) => {
+  const [formData, setFormData] = useState({
+    description: '',
+    area: '',
+    priority: '',
+    due_date: '',
+    done_date: '',
+    followup_date: '',
+    context: '',
+    project: '',
+    status: '',
+    notes: ''
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (description.trim()) {
-      const notes = notesText.split('\n').filter(note => note.trim() !== '');
-      onSubmit(description.trim(), notes);
-      setDescription('');
-      setNotesText('');
+    if (formData.description.trim()) {
+      const notes = formData.notes.split('\n').filter(note => note.trim() !== '');
+      const additionalData = {
+        area: formData.area,
+        priority: formData.priority,
+        due_date: formData.due_date,
+        done_date: formData.done_date,
+        followup_date: formData.followup_date,
+        context: formData.context,
+        project: formData.project,
+        status: formData.status
+      };
+      onSubmit(formData.description.trim(), notes, additionalData);
+      setFormData({
+        description: '',
+        area: '',
+        priority: '',
+        due_date: '',
+        done_date: '',
+        followup_date: '',
+        context: '',
+        project: '',
+        status: '',
+        notes: ''
+      });
     }
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Subtask Description:</label>
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Enter subtask description..."
-          style={{
-            padding: '4px 8px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-          autoFocus
-        />
-      </div>
+    <div style={{
+      backgroundColor: '#2d3748',
+      border: '1px solid #4a5568',
+      borderRadius: '8px',
+      padding: '16px',
+      margin: '8px 0'
+    }}>
+      <h4 style={{ 
+        color: '#f7fafc', 
+        margin: '0 0 12px 0', 
+        fontSize: '16px',
+        fontWeight: 'bold'
+      }}>
+        Add Subtask
+      </h4>
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-        <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Notes (optional, one per line):</label>
-        <textarea
-          value={notesText}
-          onChange={(e) => setNotesText(e.target.value)}
-          placeholder="Enter notes, one per line..."
-          rows={3}
-          style={{
-            padding: '4px 8px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            fontSize: '12px',
-            resize: 'vertical'
-          }}
-        />
-      </div>
-      
-      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{
-            padding: '4px 12px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            backgroundColor: '#f5f5f5',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={!description.trim()}
-          style={{
-            padding: '4px 12px',
-            border: 'none',
-            borderRadius: '4px',
-            backgroundColor: description.trim() ? '#059669' : '#ccc',
-            color: 'white',
-            cursor: description.trim() ? 'pointer' : 'not-allowed',
-            fontSize: '12px'
-          }}
-        >
-          Add Subtask
-        </button>
-      </div>
-    </form>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* Grid layout for form fields */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+          gap: '12px'
+        }}>
+          
+          {/* Area */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+              Area
+            </label>
+            <select
+              value={formData.area}
+              onChange={(e) => handleInputChange('area', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '12px',
+                boxSizing: 'border-box'
+              }}
+            >
+              <option value="">Select Area</option>
+              {areas && areas.map(area => (
+                <option key={area} value={area}>{area}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Priority */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+              Priority
+            </label>
+            <input
+              type="text"
+              value={formData.priority}
+              onChange={(e) => handleInputChange('priority', e.target.value)}
+              placeholder="A, B, C, D, E, F"
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '12px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Status */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+              Status
+            </label>
+            <select
+              value={formData.status}
+              onChange={(e) => handleInputChange('status', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '12px',
+                boxSizing: 'border-box'
+              }}
+            >
+              <option value="">Select Status</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="pending">Pending</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          {/* Due Date */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+              Due Date
+            </label>
+            <input
+              type="date"
+              value={formData.due_date}
+              onChange={(e) => handleInputChange('due_date', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '12px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Done Date */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+              Done Date
+            </label>
+            <input
+              type="date"
+              value={formData.done_date}
+              onChange={(e) => handleInputChange('done_date', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '12px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Follow-up Date */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+              Follow-up Date
+            </label>
+            <input
+              type="date"
+              value={formData.followup_date}
+              onChange={(e) => handleInputChange('followup_date', e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '12px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Context */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+              Context
+            </label>
+            <input
+              type="text"
+              value={formData.context}
+              onChange={(e) => handleInputChange('context', e.target.value)}
+              placeholder="e.g., Office, Home, Phone"
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '12px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Project */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+              Project
+            </label>
+            <input
+              type="text"
+              value={formData.project}
+              onChange={(e) => handleInputChange('project', e.target.value)}
+              placeholder="e.g., SecondBrain, Dashboard"
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '12px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Description - Full width */}
+        <div>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+            Subtask Description *
+          </label>
+          <input
+            type="text"
+            value={formData.description}
+            onChange={(e) => handleInputChange('description', e.target.value)}
+            placeholder="Enter subtask description..."
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #4a5568',
+              backgroundColor: '#1a202c',
+              color: '#f7fafc',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+            autoFocus
+          />
+        </div>
+        
+        {/* Notes - Full width */}
+        <div>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+            Notes (optional, one per line)
+          </label>
+          <textarea
+            value={formData.notes}
+            onChange={(e) => handleInputChange('notes', e.target.value)}
+            placeholder="Enter notes, one per line..."
+            rows={3}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #4a5568',
+              backgroundColor: '#1a202c',
+              color: '#f7fafc',
+              fontSize: '12px',
+              resize: 'vertical',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+        
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '8px' }}>
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              padding: '8px 16px',
+              border: '1px solid #4a5568',
+              borderRadius: '4px',
+              backgroundColor: '#2d3748',
+              color: '#a0aec0',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!formData.description.trim()}
+            style={{
+              padding: '8px 16px',
+              border: 'none',
+              borderRadius: '4px',
+              backgroundColor: formData.description.trim() ? '#059669' : '#6b7280',
+              color: 'white',
+              cursor: formData.description.trim() ? 'pointer' : 'not-allowed',
+              fontSize: '12px',
+              fontWeight: 'bold'
+            }}
+          >
+            Add Subtask
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 
@@ -96,7 +361,7 @@ type Props = {
   onCheck: (id: string) => void;
   onEdit?: (task: Task) => void;
   onDelete?: (id: string) => void;
-  onAddSubtask?: (parentId: string, description: string, notes: string[]) => void;
+  onAddSubtask?: (parentId: string, description: string, notes: string[], additionalData?: any) => void;
   onRecurringStatus?: (id: string, status: 'completed' | 'missed' | 'deferred') => void;
   filters: { area: string; context: string; project: string };
   isRecurring?: boolean;
@@ -120,7 +385,7 @@ const TaskItem: React.FC<{
   onCheck: (id: string) => void;
   onEdit?: (task: Task) => void;
   onDelete?: (id: string) => void;
-  onAddSubtask?: (parentId: string, description: string, notes: string[]) => void;
+  onAddSubtask?: (parentId: string, description: string, notes: string[], additionalData?: any) => void;
   onRecurringStatus?: (id: string, status: 'completed' | 'missed' | 'deferred') => void;
   depth?: number;
   isRecurring?: boolean;
@@ -383,13 +648,14 @@ const TaskItem: React.FC<{
       
       {/* Inline Add Subtask Form - allow for all tasks, not just top-level */}
       {addingSubtaskToId === task.id && onAddSubtask && !isRecurring && (
-        <div style={{ marginLeft: `${depth * 20 + 20}px`, marginTop: '8px', marginBottom: '8px', border: '1px solid #ddd', borderRadius: '4px', padding: '8px', backgroundColor: '#f9f9f9' }}>
+        <div style={{ marginLeft: `${depth * 20 + 20}px`, marginTop: '8px', marginBottom: '8px' }}>
           <AddSubtaskForm
-            onSubmit={(description: string, notes: string[]) => {
-              onAddSubtask(task.id, description, notes);
+            onSubmit={(description: string, notes: string[], additionalData: any) => {
+              onAddSubtask(task.id, description, notes, additionalData);
               onAddingSubtaskToIdChange(null);
             }}
             onCancel={() => onAddingSubtaskToIdChange(null)}
+            areas={areas}
           />
         </div>
       )}
