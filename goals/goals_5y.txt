@@ -1,0 +1,34 @@
+Mind:
+- [ ] Learn a new language (priority:A due:2030-06-30) +PersonalDevelopment @Study
+    - [ ] Complete Duolingo Spanish course
+    - [x] Practice speaking with native speakers
+- [ ] Read 50 books per year (priority:B) +Reading @Home
+- [x] Master meditation practice (priority:A) +Mindfulness @Home
+
+Health:
+- [ ] Maintain ideal weight and fitness level (priority:A) +Fitness @Gym
+    - [ ] Exercise 5 times per week consistently
+    - [ ] Complete annual health checkups
+- [ ] Establish sustainable sleep schedule (priority:A) +Sleep @Home
+- [ ] Eliminate processed foods from diet (priority:B) +Nutrition @Home
+
+Wealth:
+- [ ] Achieve financial independence (priority:A due:2030-12-31) +Investment @Office
+    - [ ] Build emergency fund of 12 months expenses
+    - [ ] Invest 25% of income consistently
+    - [ ] Create multiple income streams
+- [ ] Own debt-free home (priority:A) +RealEstate @Home
+
+Career:
+- [ ] Become expert in chosen field (priority:A) +Professional @Office
+    - [ ] Publish thought leadership content
+    - [ ] Speak at industry conferences
+    - [ ] Mentor junior professionals
+- [ ] Lead a high-performing team (priority:B) +Leadership @Office
+
+Relationships:
+- [ ] Maintain strong family relationships (priority:A) +Family @Home
+    - [ ] Weekly family dinner tradition
+    - [ ] Annual family vacation
+- [ ] Build meaningful professional network (priority:B) +Networking @Office
+- [ ] Develop deep friendships (priority:A) +Friendship @Home

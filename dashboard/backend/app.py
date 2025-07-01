@@ -74,6 +74,15 @@ class CreateTaskRequest(BaseModel):
     recurring: Optional[str] = None  # e.g., "daily", "weekly:Mon"
     notes: Optional[List[str]] = None  # List of note strings
 
+class ListToggleRequest(BaseModel):
+    item_index: int
+
+class ListItemUpdateRequest(BaseModel):
+    item_index: int
+    text: str
+    quantity: str = ""
+    notes: str = ""
+
 def log_recurring_task_status(task_id: str, status: str, task_description: str) -> bool:
     """Log recurring task status to tracking file"""
     try:
@@ -1262,321 +1271,200 @@ def post_save_task_statistics():
             "message": f"Error running statistics script: {str(e)}"
         }
 
-# Additional analytics endpoints
+# Goals Management Endpoints
 
-@app.get("/api/statistics/time-series/filtered")
-async def api_get_filtered_time_series(days: int = None):
-    """Get filtered time series statistics"""
+def parse_goals_file(filepath: str):
+    """Parse a goals file and extract items with area headers"""
+    items = []
+    current_area = None
+    item_id = 1
+    
     try:
-        data = get_statistics_time_series_filtered(days)
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
-
-@app.get("/api/analytics/heatmap")
-async def api_get_heatmap(days: int = 365):
-    """Get task performance heatmap data"""
-    try:
-        data = get_task_performance_heatmap(days)
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
-
-@app.get("/api/analytics/day-of-week")
-async def api_get_day_of_week_analysis(days: int = 90):
-    """Get day-of-week performance analysis"""
-    try:
-        data = get_day_of_week_analysis(days)
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
-
-@app.get("/api/analytics/correlation")
-async def api_get_correlation_analysis(days: int = 90):
-    """Get task correlation analysis"""
-    try:
-        data = get_task_correlation_analysis(days)
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
-
-@app.get("/api/analytics/priority-completion")
-async def api_get_priority_analysis():
-    """Get priority vs completion analysis"""
-    try:
-        data = get_priority_vs_completion_analysis()
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
-
-@app.get("/api/analytics/streaks")
-async def api_get_streak_analysis():
-    """Get streak analysis for recurring tasks"""
-    try:
-       
-       
-        data = get_streak_analysis()
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
-
-@app.get("/api/gamification/badges")
-async def api_get_badges():
-    """Get earned performance badges"""
-    try:
-        data = get_performance_badges()
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
-
-@app.get("/api/analytics/comparative")
-async def api_get_comparative_analysis(task_ids: str, days: int = 30):
-    """Compare multiple tasks over time"""
-    try:
-        # Parse comma-separated task IDs
-        task_id_list = [tid.strip() for tid in task_ids.split(',') if tid.strip()]
-        data = get_comparative_time_series(task_id_list, days)
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": {"data": [], "tasks": []}}
-
-@app.get("/api/analytics/behavioral")
-async def api_get_behavioral_metrics(days: int = 30):
-    """Get behavioral metrics and patterns"""
-    try:
-        data = get_behavioral_metrics(days)
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": {}}
-
-@app.get("/api/gamification/leaderboard")
-async def api_get_leaderboard():
-    """Get leaderboard data"""
-    try:
-        data = get_leaderboard_data()
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": {}}
-
-@app.get("/api/gamification/challenges")
-async def api_get_challenges():
-    """Get available challenges and progress"""
-    try:
-        data = get_challenge_modes()
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
-
-@app.get("/api/statistics/time-series/enhanced")
-async def api_get_enhanced_time_series(days: int = None, moving_average: int = 7, include_trend: bool = True):
-    """Get time series with moving averages and trend lines"""
-    try:
-        data = get_statistics_time_series_filtered(days)
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
         
-        if moving_average > 1:
-            data = add_moving_average_to_time_series(data, moving_average, 'completion_pct')
-        
-        if include_trend:
-            data = add_trend_line_to_time_series(data, 'completion_pct')
-        
-        return {"success": True, "data": data}
+        for line_num, line in enumerate(lines, 1):
+            stripped = line.rstrip()
+            if not stripped:
+                continue
+            
+            # Check for area header
+            area_match = re.match(r'^([^:]+):$', stripped)
+            if area_match:
+                current_area = area_match.group(1)
+                items.append({
+                    'id': item_id,
+                    'text': current_area,
+                    'completed': False,
+                    'line_number': line_num,
+                    'is_area_header': True,
+                    'area': current_area,
+                    'indent_level': 0
+                })
+                item_id += 1
+                continue
+            
+            # Check for task/goal item
+            task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
+            if task_match:
+                indent, status, content = task_match.groups()
+                is_completed = status.lower() == 'x'
+                indent_level = len(indent) // 4 + 1  # Convert spaces to indent level
+                
+                # Extract metadata (notes, etc.)
+                metadata = {}
+                notes_match = re.search(r'notes:([^)]*)', content)
+                if notes_match:
+                    metadata['notes'] = notes_match.group(1).strip()
+                
+                # Extract quantity if present
+                quantity_match = re.search(r'quantity:([^)]*)', content)
+                quantity = quantity_match.group(1).strip() if quantity_match else None
+                
+                items.append({
+                    'id': item_id,
+                    'text': content,
+                    'completed': is_completed,
+                    'line_number': line_num,
+                    'is_area_header': False,
+                    'area': current_area,
+                    'indent_level': indent_level,
+                    'quantity': quantity,
+                    'metadata': metadata if metadata else None
+                })
+                item_id += 1
+                
     except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
+        print(f"Error parsing goals file {filepath}: {e}")
+        
+    return items
 
-@app.get("/api/recurring/compliance/enhanced")
-async def api_get_enhanced_compliance(task_id: str = None, days: int = 30, moving_average: int = 7, include_trend: bool = True):
-    """Get compliance data with moving averages and trend lines"""
-    try:
-        if task_id:
-            data = get_individual_recurring_task_compliance(task_id, days)
-        else:
-            data = get_recurring_task_compliance_data()
-            # Filter by days if specified
-            if days and data:
-                cutoff_date = datetime.now() - timedelta(days=days)
-                data = [item for item in data if datetime.strptime(item['date'], '%Y-%m-%d') >= cutoff_date]
-        
-        if moving_average > 1 and data:
-            data = add_moving_average_to_time_series(data, moving_average, 'compliance_pct')
-        
-        if include_trend and data:
-            data = add_trend_line_to_time_series(data, 'compliance_pct')
-        
-        return {"success": True, "data": data}
-    except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
+def get_goals_title(filepath: str):
+    """Get the title for a goals file"""
+    filename = os.path.basename(filepath)
+    if filename == 'goals_5y.txt':
+        return '5 Year Goals'
+    elif filename == 'goals_1y.txt':
+        return 'Annual Goals'
+    elif filename == 'goals_semester.txt':
+        return 'Semester Goals'
+    else:
+        return filename.replace('.txt', '').replace('_', ' ').title()
 
-# Helper endpoint to list available recurring task IDs for comparative analysis
-@app.get("/api/recurring/task-list")
-async def api_get_recurring_task_list():
-    """Get list of all recurring task IDs and descriptions"""
+@app.get("/goals")
+async def get_goals():
+    """Get all available goals files with metadata"""
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        log_file = os.path.join(current_dir, '../../archive_files/recurring_status_log.txt')
+        goals_dir = os.path.join(current_dir, '../../goals')
         
-        task_descriptions = {}
+        if not os.path.exists(goals_dir):
+            return []
+            
+        goals_files = []
+        for filename in ['goals_5y.txt', 'goals_1y.txt', 'goals_semester.txt']:
+            filepath = os.path.join(goals_dir, filename)
+            if os.path.exists(filepath):
+                name = filename[:-4]  # Remove .txt extension
+                
+                items = parse_goals_file(filepath)
+                checkbox_items = [item for item in items if not item['is_area_header']]
+                completed_items = [item for item in checkbox_items if item['completed']]
+                
+                completion_percentage = 0
+                if checkbox_items:
+                    completion_percentage = (len(completed_items) / len(checkbox_items)) * 100
+                
+                goals_files.append({
+                    'name': name,
+                    'title': get_goals_title(filepath),
+                    'filename': filename,
+                    'total_items': len(checkbox_items),
+                    'completed_items': len(completed_items),
+                    'completion_percentage': round(completion_percentage, 1)
+                })
+                
+        return goals_files
         
-        if os.path.exists(log_file):
-            with open(log_file, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    
-                    parts = line.split(' | ')
-                    if len(parts) >= 4:
-                        task_id = parts[2]
-                        task_description = parts[3]
-                        task_descriptions[task_id] = task_description
-        
-        task_list = [{"task_id": tid, "description": desc} for tid, desc in task_descriptions.items()]
-        return {"success": True, "data": task_list}
     except Exception as e:
-        return {"success": False, "error": str(e), "data": []}
+        raise HTTPException(status_code=500, detail=f"Error fetching goals: {str(e)}")
 
-# State management endpoints for dashboard persistence
-class DashboardStateModel(BaseModel):
-    filters: dict
-    sortBy: str
-    taskTypeFilter: str
-    recurringFilter: str
-    panelStates: dict
-    formStates: dict
-    listsState: dict
-
-STATE_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../frontend/dashboard-state.json')
-
-@app.post("/state")
-async def save_dashboard_state(state: DashboardStateModel):
-    """Save dashboard state to a local file"""
+@app.get("/goals/{goals_name}")
+async def get_goals_details(goals_name: str):
+    """Get detailed goals with items and area headers"""
     try:
-        # Ensure the directory exists
-        os.makedirs(os.path.dirname(STATE_FILE_PATH), exist_ok=True)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, f'../../goals/{goals_name}.txt')
         
-        # Convert to dict and save
-        state_dict = {
-            "filters": state.filters,
-            "sortBy": state.sortBy,
-            "taskTypeFilter": state.taskTypeFilter,
-            "recurringFilter": state.recurringFilter,
-            "panelStates": state.panelStates,
-            "formStates": state.formStates,
-            "listsState": state.listsState,
-            "lastUpdated": datetime.now().isoformat()
-        }
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail=f"Goals file '{goals_name}' not found")
+            
+        items = parse_goals_file(filepath)
+        checkbox_items = [item for item in items if not item['is_area_header']]
+        completed_items = [item for item in checkbox_items if item['completed']]
         
-        with open(STATE_FILE_PATH, 'w') as f:
-            json.dump(state_dict, f, indent=2)
-        
-        return {"success": True, "message": "State saved successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save state: {str(e)}")
-
-@app.get("/state")
-async def load_dashboard_state():
-    """Load dashboard state from local file"""
-    try:
-        if not os.path.exists(STATE_FILE_PATH):
-            # Return default state if file doesn't exist
-            return {
-                "filters": {"area": "", "context": "", "project": ""},
-                "sortBy": "due",
-                "taskTypeFilter": "all",
-                "recurringFilter": "today",
-                "panelStates": {
-                    "isCommitExpanded": False,
-                    "isStatisticsExpanded": False,
-                    "isTimeSeriesExpanded": False,
-                    "isListsExpanded": False
-                },
-                "formStates": {
-                    "isCreateTaskExpanded": False,
-                    "editingTaskId": None
-                },
-                "listsState": {
-                    "selectedList": ""
-                }
-            }
-        
-        with open(STATE_FILE_PATH, 'r') as f:
-            state = json.load(f)
-        
-        # Migrate state to ensure all required fields exist (for backward compatibility)
-        default_state = {
-            "filters": {"area": "", "context": "", "project": ""},
-            "sortBy": "due",
-            "taskTypeFilter": "all",
-            "recurringFilter": "today",
-            "panelStates": {
-                "isCommitExpanded": False,
-                "isStatisticsExpanded": False,
-                "isTimeSeriesExpanded": False,
-                "isListsExpanded": False
-            },
-            "formStates": {
-                "isCreateTaskExpanded": False,
-                "editingTaskId": None
-            },
-            "listsState": {
-                "selectedList": ""
-            }
-        }
-        
-        # Merge loaded state with defaults (loaded state takes precedence)
-        for key, default_value in default_state.items():
-            if key not in state:
-                state[key] = default_value
-            elif isinstance(default_value, dict):
-                # Recursively merge nested objects
-                for nested_key, nested_default in default_value.items():
-                    if nested_key not in state[key]:
-                        state[key][nested_key] = nested_default
-        
-        # Remove lastUpdated before returning
-        state.pop('lastUpdated', None)
-        return state
-    except Exception as e:
-        # Return default state if there's an error reading the file
+        completion_percentage = 0
+        if checkbox_items:
+            completion_percentage = (len(completed_items) / len(checkbox_items)) * 100
+            
         return {
-            "filters": {"area": "", "context": "", "project": ""},
-            "sortBy": "due", 
-            "taskTypeFilter": "all",
-            "recurringFilter": "today",
-            "panelStates": {
-                "isCommitExpanded": False,
-                "isStatisticsExpanded": False,
-                "isTimeSeriesExpanded": False,
-                "isListsExpanded": False
-            },
-            "formStates": {
-                "isCreateTaskExpanded": False,
-                "editingTaskId": None
-            },
-            "listsState": {
-                "selectedList": ""
-            }
+            'name': goals_name,
+            'title': get_goals_title(filepath),
+            'items': items,
+            'total_items': len(checkbox_items),
+            'completed_items': len(completed_items),
+            'completion_percentage': round(completion_percentage, 1)
         }
-
-@app.delete("/state")
-async def clear_dashboard_state():
-    """Clear saved dashboard state"""
-    try:
-        if os.path.exists(STATE_FILE_PATH):
-            os.remove(STATE_FILE_PATH)
-        return {"success": True, "message": "State cleared successfully"}
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to clear state: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error reading goals: {str(e)}")
+
+@app.post("/goals/{goals_name}/toggle")
+async def toggle_goals_item(goals_name: str, request: ListToggleRequest):
+    """Toggle completion status of a goals item"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, f'../../goals/{goals_name}.txt')
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail=f"Goals file '{goals_name}' not found")
+        
+        # Read file
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        # Find checkbox items only (not area headers)
+        checkbox_line_numbers = []
+        for line_num, line in enumerate(lines, 1):
+            if re.match(r'^(\s*)- \[( |x)\] ', line):
+                checkbox_line_numbers.append(line_num)
+        
+        if request.item_index >= len(checkbox_line_numbers):
+            raise HTTPException(status_code=404, detail="Item index out of range")
+        
+        target_line_num = checkbox_line_numbers[request.item_index]
+        target_line = lines[target_line_num - 1]  # Convert to 0-based index
+        
+        # Toggle the checkbox
+        if '[ ]' in target_line:
+            lines[target_line_num - 1] = target_line.replace('[ ]', '[x]', 1)
+        elif '[x]' in target_line:
+            lines[target_line_num - 1] = target_line.replace('[x]', '[ ]', 1)
+        
+        # Write back to file
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+        
+        return {"success": True, "message": "Goals item toggled successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error toggling goals item: {str(e)}")
 
 # Lists Management Endpoints
-
-class ListToggleRequest(BaseModel):
-    item_index: int
-
-class ListItemUpdateRequest(BaseModel):
-    item_index: int
-    text: str
-    quantity: str = ""
-    notes: str = ""
 
 def parse_list_file(filepath: str):
     """Parse a list file and extract items with area headers and indentation levels"""
@@ -1620,7 +1508,7 @@ def parse_list_file(filepath: str):
                     
                     # Extract metadata from parentheses (similar to task parsing)
                     import re
-                    all_meta = re.findall(r'\(([^)]*)\)', text_with_meta)
+                    all_meta = re.findall(r'\([^)]*\)', text_with_meta)
                     metadata = {}
                     for meta_str in all_meta:
                         # Split on spaces and then find key:value pairs

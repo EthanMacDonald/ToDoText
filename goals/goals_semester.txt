@@ -1,0 +1,34 @@
+Mind:
+- [ ] Complete current online course module (priority:A due:2025-08-15) +Learning @Study
+    - [ ] Finish 3 remaining chapters
+    - [ ] Submit final project
+- [ ] Read 2 books this semester (priority:B) +Reading @Home
+- [ ] Meditate 20 minutes daily (priority:A) +Mindfulness @Home
+
+Health:
+- [ ] Lose 5 pounds by semester end (priority:A due:2025-08-31) +Fitness @Gym
+    - [ ] Exercise 4x per week minimum
+    - [ ] Track daily nutrition
+- [ ] Complete vision and dental checkup (priority:B due:2025-08-15) +Healthcare @Clinic
+- [ ] Improve sleep consistency (priority:B) +Sleep @Home
+
+Wealth:
+- [ ] Save $2000 this semester (priority:A due:2025-08-31) +Savings @Home
+    - [ ] Automate $400/month savings transfer
+    - [ ] Track all expenses weekly
+- [ ] Research investment options (priority:B) +Investment @Home
+- [ ] Complete budget review and optimization (priority:B due:2025-07-31) +Budgeting @Home
+
+Career:
+- [ ] Complete Q3 performance goals (priority:A due:2025-09-30) +Professional @Office
+    - [ ] Deliver project milestone by July 15
+    - [ ] Improve team efficiency metrics by 10%
+- [ ] Attend summer professional development workshop (priority:B due:2025-08-31) +Learning @Office
+- [ ] Update resume and LinkedIn profile (priority:B due:2025-07-15) +Professional @Home
+
+Relationships:
+- [ ] Plan and execute summer vacation with family (priority:A due:2025-08-15) +Family @Home
+    - [ ] Research destinations by July 5
+    - [ ] Book accommodations by July 10
+- [ ] Organize friends reunion gathering (priority:B due:2025-08-30) +Friendship @Home
+- [ ] Improve workplace relationships (priority:B) +Professional @Office

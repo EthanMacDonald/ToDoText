@@ -14,6 +14,7 @@ export interface DashboardState {
     isStatisticsExpanded: boolean;
     isTimeSeriesExpanded: boolean;
     isListsExpanded: boolean;
+    isGoalsExpanded: boolean;
   };
   formStates: {
     isCreateTaskExpanded: boolean;
@@ -22,6 +23,9 @@ export interface DashboardState {
   };
   listsState: {
     selectedList: string;
+  };
+  goalsState: {
+    selectedGoals: string;
   };
 }
 
@@ -35,6 +39,7 @@ const DEFAULT_STATE: DashboardState = {
     isStatisticsExpanded: false,
     isTimeSeriesExpanded: false,
     isListsExpanded: false,
+    isGoalsExpanded: false,
   },
   formStates: {
     isCreateTaskExpanded: false,
@@ -43,6 +48,9 @@ const DEFAULT_STATE: DashboardState = {
   },
   listsState: {
     selectedList: '',
+  },
+  goalsState: {
+    selectedGoals: '',
   },
 };
 

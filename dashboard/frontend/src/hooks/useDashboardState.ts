@@ -12,6 +12,7 @@ export function useDashboardState() {
       isStatisticsExpanded: false,
       isTimeSeriesExpanded: false,
       isListsExpanded: false,
+      isGoalsExpanded: false,
     },
     formStates: {
       isCreateTaskExpanded: false,
@@ -20,6 +21,9 @@ export function useDashboardState() {
     },
     listsState: {
       selectedList: '',
+    },
+    goalsState: {
+      selectedGoals: '',
     },
   });
 
@@ -90,6 +94,13 @@ export function useDashboardState() {
     }));
   };
 
+  const updateGoalsState = (goalsState: Partial<DashboardState['goalsState']>) => {
+    setState(prev => ({
+      ...prev,
+      goalsState: { ...prev.goalsState, ...goalsState }
+    }));
+  };
+
   return {
     state,
     updateState,
@@ -97,6 +108,7 @@ export function useDashboardState() {
     updatePanelStates,
     updateFormStates,
     updateListsState,
+    updateGoalsState,
     isLoaded,
   };
 }

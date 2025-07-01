@@ -1,0 +1,34 @@
+Mind:
+- [ ] Complete online course in AI/ML (priority:A due:2025-12-31) +Learning @Study
+    - [ ] Finish coursework by October
+    - [ ] Build portfolio project
+- [ ] Read 12 books this year (priority:B) +Reading @Home
+- [ ] Establish daily meditation habit (priority:A) +Mindfulness @Home
+
+Health:
+- [ ] Lose 15 pounds and maintain (priority:A due:2025-08-31) +Fitness @Gym
+    - [ ] Track calories and exercise daily
+    - [ ] Get monthly body composition scans
+- [ ] Complete annual physical and dental checkup (priority:A due:2025-12-31) +Healthcare @Clinic
+- [ ] Sleep 7-8 hours consistently (priority:B) +Sleep @Home
+
+Wealth:
+- [ ] Increase net worth by 20% (priority:A due:2025-12-31) +Investment @Office
+    - [ ] Max out 401k contributions
+    - [ ] Build $10k emergency fund
+- [ ] Create side income stream generating $500/month (priority:B due:2025-09-30) +SideHustle @Home
+- [ ] Reduce monthly expenses by 15% (priority:B) +Budgeting @Home
+
+Career:
+- [ ] Get promoted to senior role (priority:A due:2025-10-31) +Professional @Office
+    - [ ] Complete leadership training program
+    - [ ] Deliver high-impact project
+- [ ] Attend 3 industry conferences (priority:B) +Networking @Office
+- [ ] Publish 6 technical articles (priority:B) +Writing @Home
+
+Relationships:
+- [ ] Strengthen relationship with spouse/partner (priority:A) +Family @Home
+    - [ ] Weekly date nights
+    - [ ] Take relationship course together
+- [ ] Reconnect with old friends (priority:B) +Friendship @Home
+- [ ] Mentor someone in my field (priority:B) +Mentoring @Office

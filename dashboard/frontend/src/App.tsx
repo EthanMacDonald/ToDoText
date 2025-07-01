@@ -4,6 +4,7 @@ import CreateTaskForm from './components/CreateTaskForm';
 import Statistics from './components/Statistics';
 import TimeSeries from './components/TimeSeries';
 import Lists from './components/Lists';
+import Goals from './components/Goals';
 import type { Task, TaskGroup } from './types/task';
 import { API_URL } from './config/api';
 import { useDashboardState } from './hooks/useDashboardState';
@@ -18,9 +19,9 @@ function App() {
   const [statisticsStatus, setStatisticsStatus] = useState<string>(''); // For statistics save status
 
   // Use persistent dashboard state
-  const { state: dashboardState, updateState, updateFilters, updatePanelStates, updateFormStates, updateListsState, isLoaded } = useDashboardState();
-  const { filters, sortBy, taskTypeFilter, recurringFilter, panelStates, formStates, listsState } = dashboardState;
-  const { isCommitExpanded, isStatisticsExpanded, isTimeSeriesExpanded, isListsExpanded } = panelStates;
+  const { state: dashboardState, updateState, updateFilters, updatePanelStates, updateFormStates, updateListsState, updateGoalsState, isLoaded } = useDashboardState();
+  const { filters, sortBy, taskTypeFilter, recurringFilter, panelStates, formStates, listsState, goalsState } = dashboardState;
+  const { isCommitExpanded, isStatisticsExpanded, isTimeSeriesExpanded, isListsExpanded, isGoalsExpanded } = panelStates;
 
   useEffect(() => {
     // Only fetch tasks once the dashboard state is loaded
@@ -309,6 +310,15 @@ function App() {
         onToggleExpanded={(expanded: boolean) => updatePanelStates({ isListsExpanded: expanded })}
         selectedList={listsState.selectedList}
         onSelectedListChange={(listName: string) => updateListsState({ selectedList: listName })}
+        isStateLoaded={isLoaded}
+      />
+      
+      {/* Goals */}
+      <Goals 
+        isExpanded={isGoalsExpanded}
+        onToggleExpanded={(expanded: boolean) => updatePanelStates({ isGoalsExpanded: expanded })}
+        selectedGoals={goalsState.selectedGoals}
+        onSelectedGoalsChange={(goalsName: string) => updateGoalsState({ selectedGoals: goalsName })}
         isStateLoaded={isLoaded}
       />
       
