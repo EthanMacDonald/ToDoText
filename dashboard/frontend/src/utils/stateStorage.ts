@@ -18,6 +18,7 @@ export interface DashboardState {
   formStates: {
     isCreateTaskExpanded: boolean;
     editingTaskId: string | null;
+    addingSubtaskToId: string | null;
   };
   listsState: {
     selectedList: string;
@@ -38,6 +39,7 @@ const DEFAULT_STATE: DashboardState = {
   formStates: {
     isCreateTaskExpanded: false,
     editingTaskId: null,
+    addingSubtaskToId: null,
   },
   listsState: {
     selectedList: '',

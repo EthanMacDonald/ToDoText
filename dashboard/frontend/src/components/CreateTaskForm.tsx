@@ -16,7 +16,8 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, isExpanded, onE
     due_date: '',
     context: '',
     project: '',
-    recurring: ''
+    recurring: '',
+    notes: ''  // Add notes field
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,8 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, isExpanded, onE
         ...(formData.due_date && { due_date: formData.due_date }),
         ...(formData.context && { context: formData.context }),
         ...(formData.project && { project: formData.project }),
-        ...(formData.recurring && { recurring: formData.recurring })
+        ...(formData.recurring && { recurring: formData.recurring }),
+        ...(formData.notes && { notes: formData.notes.split('\n').filter(note => note.trim()) })
       };
 
       console.log('Sending payload:', payload);
@@ -71,7 +73,8 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, isExpanded, onE
         due_date: '',
         context: '',
         project: '',
-        recurring: ''
+        recurring: '',
+        notes: ''
       });
       
       onExpandedChange(false);
@@ -302,6 +305,34 @@ const CreateTaskForm: React.FC<Props> = ({ onTaskCreated, areas, isExpanded, onE
                 boxSizing: 'border-box'
               }}
             />
+          </div>
+
+          {/* Notes - Full width */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
+              Notes (optional)
+            </label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Enter notes for this task (one per line)..."
+              rows={3}
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                borderRadius: '4px', 
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: 'white',
+                fontSize: '14px',
+                boxSizing: 'border-box',
+                resize: 'vertical',
+                fontFamily: 'inherit'
+              }}
+            />
+            <div style={{ fontSize: '12px', color: '#a0aec0', marginTop: '4px' }}>
+              Each line will become a separate note
+            </div>
           </div>
 
           {/* Submit Button */}

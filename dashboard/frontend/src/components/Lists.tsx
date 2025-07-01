@@ -41,6 +41,11 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
   const [editingItem, setEditingItem] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
+  const [newItemText, setNewItemText] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [addingSubItemTo, setAddingSubItemTo] = useState<number | null>(null);
+  const [newSubItemText, setNewSubItemText] = useState('');
+  const [newSubItemQuantity, setNewSubItemQuantity] = useState('');
 
   const toggleExpanded = () => {
     const newExpanded = !isExpanded;
@@ -174,6 +179,74 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
     }
   };
 
+  const addItem = async () => {
+    if (!selectedList || !newItemText.trim()) return;
+    
+    try {
+      await fetch(`${API_URL}/lists/${selectedList}/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text: newItemText.trim(),
+          quantity: newItemQuantity.trim() || undefined
+        })
+      });
+      
+      // Refresh list data and clear form
+      await fetchListData();
+      setNewItemText('');
+      setNewItemQuantity('');
+    } catch (error) {
+      console.error('Error adding item:', error);
+    }
+  };
+
+  const deleteItem = async (itemIndex: number) => {
+    if (!selectedList || !listData) return;
+    
+    const item = listData.items.filter(item => !item.is_area_header)[itemIndex];
+    if (!item) return;
+    
+    if (!window.confirm(`Are you sure you want to delete "${item.text}"?`)) return;
+    
+    try {
+      await fetch(`${API_URL}/lists/${selectedList}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_index: itemIndex })
+      });
+      
+      // Refresh list data
+      await fetchListData();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    }
+  };
+
+  const addSubItem = async (parentIndex: number) => {
+    if (!selectedList || !newSubItemText.trim()) return;
+    
+    try {
+      await fetch(`${API_URL}/lists/${selectedList}/add-subitem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          parent_index: parentIndex,
+          text: newSubItemText.trim(),
+          quantity: newSubItemQuantity.trim() || undefined
+        })
+      });
+      
+      // Refresh list data and clear form
+      await fetchListData();
+      setNewSubItemText('');
+      setNewSubItemQuantity('');
+      setAddingSubItemTo(null);
+    } catch (error) {
+      console.error('Error adding sub-item:', error);
+    }
+  };
+
   if (availableLists.length === 0) {
     return (
       <div style={{ 
@@ -299,6 +372,81 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
               </button>
             )}
           </div>
+
+          {/* Add New Item Form */}
+          {listData && !loading && (
+            <div style={{ 
+              marginTop: '16px', 
+              marginBottom: '16px',
+              padding: '12px',
+              backgroundColor: '#374151',
+              borderRadius: '6px',
+              border: '1px solid #4a5568'
+            }}>
+              <h4 style={{ 
+                color: '#f7fafc', 
+                margin: '0 0 8px 0', 
+                fontSize: '14px',
+                fontWeight: 'bold'
+              }}>
+                Add New Item
+              </h4>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  value={newItemText}
+                  onChange={(e) => setNewItemText(e.target.value)}
+                  placeholder="Item description..."
+                  style={{
+                    flex: '1',
+                    minWidth: '200px',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    borderRadius: '4px',
+                    border: '1px solid #4a5568',
+                    backgroundColor: '#1a202c',
+                    color: '#f7fafc'
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && newItemText.trim()) {
+                      addItem();
+                    }
+                  }}
+                />
+                <input
+                  type="text"
+                  value={newItemQuantity}
+                  onChange={(e) => setNewItemQuantity(e.target.value)}
+                  placeholder="Quantity (optional)"
+                  style={{
+                    width: '140px',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    borderRadius: '4px',
+                    border: '1px solid #4a5568',
+                    backgroundColor: '#1a202c',
+                    color: '#f7fafc'
+                  }}
+                />
+                <button
+                  onClick={addItem}
+                  disabled={!newItemText.trim()}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: newItemText.trim() ? '#059669' : '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: newItemText.trim() ? 'pointer' : 'not-allowed',
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Add Item
+                </button>
+              </div>
+            </div>
+          )}
 
           {loading && (
             <div style={{ 
@@ -523,29 +671,154 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
                             </span>
                           )}
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startEditing(checkboxIndex, item);
-                          }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#63b3ed',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            padding: '4px',
-                            marginLeft: '8px'
-                          }}
-                          title="Edit item"
-                        >
-                          ✏️
-                        </button>
+                        <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditing(checkboxIndex, item);
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#63b3ed',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              padding: '4px'
+                            }}
+                            title="Edit item"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAddingSubItemTo(addingSubItemTo === checkboxIndex ? null : checkboxIndex);
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#059669',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              padding: '4px'
+                            }}
+                            title="Add sub-item"
+                          >
+                            ➕
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteItem(checkboxIndex);
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              padding: '4px'
+                            }}
+                            title="Delete item"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </div>
                     );
                   }
                 })}
               </div>
+
+              {/* Add Sub-Item Form */}
+              {addingSubItemTo !== null && (
+                <div style={{ 
+                  marginTop: '12px',
+                  marginBottom: '12px',
+                  padding: '12px',
+                  backgroundColor: '#374151',
+                  borderRadius: '6px',
+                  border: '1px solid #4a5568'
+                }}>
+                  <h4 style={{ 
+                    color: '#f7fafc', 
+                    margin: '0 0 8px 0', 
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}>
+                    Add Sub-Item
+                  </h4>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                    <input
+                      type="text"
+                      value={newSubItemText}
+                      onChange={(e) => setNewSubItemText(e.target.value)}
+                      placeholder="Sub-item description..."
+                      style={{
+                        flex: '1',
+                        minWidth: '200px',
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        border: '1px solid #4a5568',
+                        backgroundColor: '#1a202c',
+                        color: '#f7fafc'
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && newSubItemText.trim()) {
+                          addSubItem(addingSubItemTo);
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <input
+                      type="text"
+                      value={newSubItemQuantity}
+                      onChange={(e) => setNewSubItemQuantity(e.target.value)}
+                      placeholder="Quantity (optional)"
+                      style={{
+                        width: '140px',
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        border: '1px solid #4a5568',
+                        backgroundColor: '#1a202c',
+                        color: '#f7fafc'
+                      }}
+                    />
+                    <button
+                      onClick={() => addSubItem(addingSubItemTo)}
+                      disabled={!newSubItemText.trim()}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: newSubItemText.trim() ? '#059669' : '#6b7280',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: newSubItemText.trim() ? 'pointer' : 'not-allowed',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      Add Sub-Item
+                    </button>
+                    <button
+                      onClick={() => setAddingSubItemTo(null)}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#6b7280',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '14px'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {listData.items.length === 0 && (
                 <div style={{ 

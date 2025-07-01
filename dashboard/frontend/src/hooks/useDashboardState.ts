@@ -16,6 +16,7 @@ export function useDashboardState() {
     formStates: {
       isCreateTaskExpanded: false,
       editingTaskId: null,
+      addingSubtaskToId: null,
     },
     listsState: {
       selectedList: '',

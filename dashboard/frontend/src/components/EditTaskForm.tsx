@@ -7,9 +7,12 @@ type Props = {
   areas: string[];
   onTaskEdited: () => void;
   onCancel: () => void;
+  onDelete?: (id: string) => void;
+  onAddSubtask?: (parentId: string, description: string, notes: string[]) => void;
+  onAddingSubtaskToIdChange?: (id: string | null) => void;
 };
 
-const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) => {
+const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel, onDelete, onAddSubtask, onAddingSubtaskToIdChange }) => {
   const [formData, setFormData] = useState({
     area: task.area || '',
     description: task.description || '',
@@ -20,7 +23,8 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
     context: task.context || '',
     project: task.project || '',
     recurring: task.recurring || '',
-    completed: task.completed || false
+    completed: task.completed || false,
+    notes: task.notes ? task.notes.map(note => note.content).join('\n') : ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +51,8 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
         ...(formData.followup_date && { followup_date: formData.followup_date }),
         ...(formData.context && { context: formData.context }),
         ...(formData.project && { project: formData.project }),
-        ...(formData.recurring && { recurring: formData.recurring })
+        ...(formData.recurring && { recurring: formData.recurring }),
+        ...(formData.notes && { notes: formData.notes.split('\n').filter(note => note.trim()) })
       };
 
       console.log('Sending edit payload:', payload);
@@ -350,6 +355,34 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
           />
         </div>
 
+        {/* Notes - Full width */}
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
+            Notes (optional)
+          </label>
+          <textarea
+            value={formData.notes}
+            onChange={(e) => handleInputChange('notes', e.target.value)}
+            placeholder="Enter notes for this task (one per line)..."
+            rows={3}
+            style={{ 
+              width: '100%', 
+              padding: '8px', 
+              borderRadius: '4px', 
+              border: '1px solid #4a5568',
+              backgroundColor: '#1a202c',
+              color: 'white',
+              fontSize: '14px',
+              boxSizing: 'border-box',
+              resize: 'vertical',
+              fontFamily: 'inherit'
+            }}
+          />
+          <div style={{ fontSize: '12px', color: '#a0aec0', marginTop: '4px' }}>
+            Each line will become a separate note
+          </div>
+        </div>
+
         {/* Completion Status */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ 
@@ -384,8 +417,8 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
           </label>
         </div>
 
-        {/* Submit Button */}
-        <div style={{ display: 'flex', gap: '8px' }}>
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
             type="submit"
             disabled={isSubmitting || !formData.area.trim() || !formData.description.trim()}
@@ -416,6 +449,54 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel }) 
           >
             Cancel
           </button>
+          
+          {/* Add Subtask button */}
+          {onAddSubtask && onAddingSubtaskToIdChange && (
+            <button
+              type="button"
+              onClick={() => {
+                onAddingSubtaskToIdChange(task.id);
+                onCancel(); // Close the edit form
+              }}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#059669',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+              title="Add subtask"
+            >
+              ➕ Add Subtask
+            </button>
+          )}
+          
+          {/* Delete button */}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to delete "${task.description}"? This action cannot be undone.`)) {
+                  onDelete(task.id);
+                  onCancel(); // Close the edit form
+                }
+              }}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#dc2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+              title="Delete task"
+            >
+              🗑️ Delete Task
+            </button>
+          )}
         </div>
       </form>
     </div>

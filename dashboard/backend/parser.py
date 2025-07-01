@@ -932,9 +932,18 @@ def create_task(task_request) -> bool:
                 lines.append('\n')
             lines.append(f"\n{task_request.area}:\n")
             lines.append(task_line)
+            insert_index = len(lines) - 1  # Set insert_index for notes
         else:
             # Insert the task in the found area
             lines.insert(insert_index, task_line)
+        
+        # Add notes if provided
+        if hasattr(task_request, 'notes') and task_request.notes:
+            for note in task_request.notes:
+                if note.strip():  # Only add non-empty notes
+                    note_line = f"        {note.strip()}\n"
+                    insert_index += 1
+                    lines.insert(insert_index, note_line)
         
         # Write back to file
         with open(tasks_file, 'w') as f:
@@ -1048,8 +1057,33 @@ def edit_task(task_request) -> bool:
                                 new_task_line = '    ' + new_task_line.lstrip()
                             lines.insert(insert_index, new_task_line)
                     else:
-                        # Same area, just replace the line
+                        # Same area, just replace the line and handle notes
                         lines[i] = new_task_line
+                        
+                        # Remove existing notes for this task (lines that follow with more indentation)
+                        notes_to_remove = []
+                        j = i + 1
+                        while j < len(lines):
+                            next_line = lines[j]
+                            # If next line has more indentation and is not a subtask, it's likely a note
+                            if next_line.startswith('        ') and not re.match(r'^\s*- \[[ x%]\]', next_line):
+                                notes_to_remove.append(j)
+                                j += 1
+                            else:
+                                break
+                        
+                        # Remove notes in reverse order to maintain indices
+                        for note_idx in reversed(notes_to_remove):
+                            lines.pop(note_idx)
+                        
+                        # Add new notes if provided
+                        if hasattr(task_request, 'notes') and task_request.notes:
+                            insert_pos = i + 1
+                            for note in task_request.notes:
+                                if note.strip():  # Only add non-empty notes
+                                    note_line = f"        {note.strip()}\n"
+                                    lines.insert(insert_pos, note_line)
+                                    insert_pos += 1
                     
                     break
         
@@ -1274,3 +1308,216 @@ def verify_followup_in_lines(lines, task_info):
                 return True
     
     return False
+
+def delete_task(task_id: str) -> bool:
+    """Delete a task and all its subtasks and notes from the tasks.txt file"""
+    try:
+        # Read the current file
+        with open(tasks_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Find the task by ID
+        task_found = False
+        current_area = None
+        lines_to_remove = []
+        
+        for i, line in enumerate(lines):
+            stripped = line.rstrip()
+            
+            # Track current area
+            area_match = re.match(r'^(\S.+):$', stripped)
+            if area_match:
+                current_area = area_match.group(1)
+                continue
+            
+            # Check if this is a task line
+            task_match = re.match(r'^(\s*)- \[( |x|%)\] (.+)', line)
+            if task_match:
+                indent, completed, content = task_match.groups()
+                indent_level = len(indent) // 4
+                
+                # Extract metadata and clean content to generate ID
+                all_meta = re.findall(r'\(([^)]*)\)', content)
+                content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
+                project_tags = list(dict.fromkeys(re.findall(r'\+(\w+)', content_no_meta)))
+                context_tags = list(dict.fromkeys(re.findall(r'@(\w+)', content_no_meta)))
+                clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
+                
+                # Generate ID to match
+                test_task_id = generate_stable_task_id(current_area, clean_content, indent_level, i + 1)
+                
+                if test_task_id == task_id:
+                    task_found = True
+                    lines_to_remove.append(i)
+                    
+                    # Find and mark all notes and subtasks for deletion
+                    j = i + 1
+                    while j < len(lines):
+                        next_line = lines[j]
+                        next_stripped = next_line.rstrip()
+                        
+                        # If it's an area header, stop
+                        if next_stripped and not next_stripped.startswith(' ') and next_stripped.endswith(':'):
+                            break
+                        
+                        # If it's a task at the same or higher level, stop
+                        if next_stripped.startswith('    - ['):
+                            next_task_match = re.match(r'^(\s*)- \[', next_line)
+                            if next_task_match:
+                                next_indent_level = len(next_task_match.group(1)) // 4
+                                if next_indent_level <= indent_level:
+                                    break
+                        
+                        # If it's indented more than the task, it's a subtask or note - mark for deletion
+                        if next_line.startswith(' ' * ((indent_level + 1) * 4)):
+                            lines_to_remove.append(j)
+                        elif next_stripped == '':
+                            # Empty line - check if next line is still part of this task's content
+                            if j + 1 < len(lines) and lines[j + 1].startswith(' ' * ((indent_level + 1) * 4)):
+                                lines_to_remove.append(j)
+                            else:
+                                break
+                        else:
+                            break
+                        
+                        j += 1
+                    
+                    break
+        
+        if not task_found:
+            print(f"Task with ID {task_id} not found")
+            return False
+        
+        # Remove lines in reverse order to maintain indices
+        for line_idx in reversed(sorted(lines_to_remove)):
+            lines.pop(line_idx)
+        
+        # Write back to file
+        with open(tasks_file, 'w') as f:
+            f.writelines(lines)
+        
+        print(f"Successfully deleted task with ID: {task_id}")
+        return True
+        
+    except Exception as e:
+        print(f"Error deleting task: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def create_subtask_for_task(parent_task_id: str, subtask_request) -> bool:
+    """Create a new subtask under an existing task"""
+    try:
+        # Read the current file
+        with open(tasks_file, 'r') as f:
+            lines = f.readlines()
+        
+        # Find the parent task by ID
+        parent_found = False
+        current_area = None
+        
+        for i, line in enumerate(lines):
+            stripped = line.rstrip()
+            
+            # Track current area
+            area_match = re.match(r'^(\S.+):$', stripped)
+            if area_match:
+                current_area = area_match.group(1)
+                continue
+            
+            # Check if this is a task line
+            task_match = re.match(r'^(\s*)- \[( |x|%)\] (.+)', line)
+            if task_match:
+                indent, completed, content = task_match.groups()
+                indent_level = len(indent) // 4
+                
+                # Extract metadata and clean content to generate ID
+                all_meta = re.findall(r'\(([^)]*)\)', content)
+                content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
+                project_tags = list(dict.fromkeys(re.findall(r'\+(\w+)', content_no_meta)))
+                context_tags = list(dict.fromkeys(re.findall(r'@(\w+)', content_no_meta)))
+                clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
+                
+                # Generate ID to match
+                test_task_id = generate_stable_task_id(current_area, clean_content, indent_level, i + 1)
+                
+                if test_task_id == parent_task_id:
+                    parent_found = True
+                    
+                    # Build the subtask line with one more level of indentation
+                    subtask_indent = '    ' * (indent_level + 1)
+                    subtask_line = f"{subtask_indent}- [ ] {subtask_request.description}"
+                    
+                    # Build metadata string
+                    metadata_parts = []
+                    if subtask_request.priority:
+                        metadata_parts.append(f"priority:{subtask_request.priority}")
+                    if subtask_request.due_date:
+                        metadata_parts.append(f"due:{subtask_request.due_date}")
+                    if subtask_request.recurring:
+                        metadata_parts.append(f"every:{subtask_request.recurring}")
+                    
+                    if metadata_parts:
+                        subtask_line += f" ({' '.join(metadata_parts)})"
+                    
+                    # Add context and project tags
+                    if subtask_request.project:
+                        subtask_line += f" +{subtask_request.project}"
+                    if subtask_request.context:
+                        subtask_line += f" @{subtask_request.context}"
+                    
+                    subtask_line += "\n"
+                    
+                    # Find the end of this task's content (after notes and existing subtasks)
+                    insert_index = i + 1
+                    while insert_index < len(lines):
+                        next_line = lines[insert_index]
+                        next_stripped = next_line.rstrip()
+                        
+                        # If it's an area header, stop
+                        if next_stripped and not next_stripped.startswith(' ') and next_stripped.endswith(':'):
+                            break
+                        
+                        # If it's a task at the same or higher level, stop
+                        if next_stripped.startswith('    - ['):
+                            next_task_match = re.match(r'^(\s*)- \[', next_line)
+                            if next_task_match:
+                                next_indent_level = len(next_task_match.group(1)) // 4
+                                if next_indent_level <= indent_level:
+                                    break
+                        
+                        # If it's still part of this task's content, continue
+                        if next_line.startswith(' ' * ((indent_level + 1) * 4)) or next_stripped == '':
+                            insert_index += 1
+                        else:
+                            break
+                    
+                    # Insert the subtask
+                    lines.insert(insert_index, subtask_line)
+                    
+                    # Add notes if provided
+                    if hasattr(subtask_request, 'notes') and subtask_request.notes:
+                        for note in subtask_request.notes:
+                            if note.strip():  # Only add non-empty notes
+                                note_line = f"{subtask_indent}    {note.strip()}\n"
+                                insert_index += 1
+                                lines.insert(insert_index, note_line)
+                    
+                    break
+        
+        if not parent_found:
+            print(f"Parent task with ID {parent_task_id} not found")
+            return False
+        
+        # Write back to file
+        with open(tasks_file, 'w') as f:
+            f.writelines(lines)
+        
+        print(f"Successfully created subtask: {subtask_request.description} under parent: {parent_task_id}")
+        return True
+        
+    except Exception as e:
+        print(f"Error creating subtask: {e}")
+        import traceback
+        traceback.print_exc()
+        return False

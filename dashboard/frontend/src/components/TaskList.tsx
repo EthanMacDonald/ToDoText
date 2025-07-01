@@ -1,11 +1,102 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Task, TaskGroup } from '../types/task';
 import EditTaskForm from './EditTaskForm';
+
+// Simple form component for adding subtasks
+const AddSubtaskForm: React.FC<{
+  onSubmit: (description: string, notes: string[]) => void;
+  onCancel: () => void;
+}> = ({ onSubmit, onCancel }) => {
+  const [description, setDescription] = useState('');
+  const [notesText, setNotesText] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (description.trim()) {
+      const notes = notesText.split('\n').filter(note => note.trim() !== '');
+      onSubmit(description.trim(), notes);
+      setDescription('');
+      setNotesText('');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Subtask Description:</label>
+        <input
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Enter subtask description..."
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}
+          autoFocus
+        />
+      </div>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Notes (optional, one per line):</label>
+        <textarea
+          value={notesText}
+          onChange={(e) => setNotesText(e.target.value)}
+          placeholder="Enter notes, one per line..."
+          rows={3}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            fontSize: '12px',
+            resize: 'vertical'
+          }}
+        />
+      </div>
+      
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          onClick={onCancel}
+          style={{
+            padding: '4px 12px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            backgroundColor: '#f5f5f5',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={!description.trim()}
+          style={{
+            padding: '4px 12px',
+            border: 'none',
+            borderRadius: '4px',
+            backgroundColor: description.trim() ? '#059669' : '#ccc',
+            color: 'white',
+            cursor: description.trim() ? 'pointer' : 'not-allowed',
+            fontSize: '12px'
+          }}
+        >
+          Add Subtask
+        </button>
+      </div>
+    </form>
+  );
+};
 
 type Props = {
   data: TaskGroup[] | Task[];
   onCheck: (id: string) => void;
   onEdit?: (task: Task) => void;
+  onDelete?: (id: string) => void;
+  onAddSubtask?: (parentId: string, description: string, notes: string[]) => void;
   onRecurringStatus?: (id: string, status: 'completed' | 'missed' | 'deferred') => void;
   filters: { area: string; context: string; project: string };
   isRecurring?: boolean;
@@ -13,6 +104,8 @@ type Props = {
   onTaskEdited: () => void;
   editingTaskId: string | null;
   onEditingTaskIdChange: (id: string | null) => void;
+  addingSubtaskToId: string | null;
+  onAddingSubtaskToIdChange: (id: string | null) => void;
 };
 
 function filterTask(task: Task, filters: Props['filters']) {
@@ -26,6 +119,8 @@ const TaskItem: React.FC<{
   task: Task;
   onCheck: (id: string) => void;
   onEdit?: (task: Task) => void;
+  onDelete?: (id: string) => void;
+  onAddSubtask?: (parentId: string, description: string, notes: string[]) => void;
   onRecurringStatus?: (id: string, status: 'completed' | 'missed' | 'deferred') => void;
   depth?: number;
   isRecurring?: boolean;
@@ -33,7 +128,9 @@ const TaskItem: React.FC<{
   onTaskEdited: () => void;
   editingTaskId: string | null;
   onEditingTaskIdChange: (id: string | null) => void;
-}> = ({ task, onCheck, onEdit, onRecurringStatus, depth = 0, isRecurring = false, areas, onTaskEdited, editingTaskId, onEditingTaskIdChange }) => {
+  addingSubtaskToId: string | null;
+  onAddingSubtaskToIdChange: (id: string | null) => void;
+}> = ({ task, onCheck, onEdit, onDelete, onAddSubtask, onRecurringStatus, depth = 0, isRecurring = false, areas, onTaskEdited, editingTaskId, onEditingTaskIdChange, addingSubtaskToId, onAddingSubtaskToIdChange }) => {
   // Build metadata string in the format: (priority:A due:2025-06-24 progress:50%)
   const buildMetadataString = (task: Task) => {
     const meta: string[] = [];
@@ -224,7 +321,8 @@ const TaskItem: React.FC<{
             )}
           </span>
           
-          {onEdit && (
+          {/* Only show edit button for non-recurring tasks */}
+          {onEdit && !isRecurring && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               {/* Purple tag for follow-up tasks */}
               {task.followup_date && (
@@ -265,8 +363,8 @@ const TaskItem: React.FC<{
         </div>
       </li>
       
-      {/* Inline Edit Form */}
-      {editingTaskId === task.id && (
+      {/* Inline Edit Form - only for non-recurring tasks */}
+      {editingTaskId === task.id && !isRecurring && (
         <div style={{ marginLeft: `${depth * 20}px`, marginTop: '8px', marginBottom: '8px' }}>
           <EditTaskForm
             task={task}
@@ -276,6 +374,22 @@ const TaskItem: React.FC<{
               onEditingTaskIdChange(null);
             }}
             onCancel={() => onEditingTaskIdChange(null)}
+            onDelete={onDelete}
+            onAddSubtask={onAddSubtask}
+            onAddingSubtaskToIdChange={onAddingSubtaskToIdChange}
+          />
+        </div>
+      )}
+      
+      {/* Inline Add Subtask Form - allow for all tasks, not just top-level */}
+      {addingSubtaskToId === task.id && onAddSubtask && !isRecurring && (
+        <div style={{ marginLeft: `${depth * 20 + 20}px`, marginTop: '8px', marginBottom: '8px', border: '1px solid #ddd', borderRadius: '4px', padding: '8px', backgroundColor: '#f9f9f9' }}>
+          <AddSubtaskForm
+            onSubmit={(description: string, notes: string[]) => {
+              onAddSubtask(task.id, description, notes);
+              onAddingSubtaskToIdChange(null);
+            }}
+            onCancel={() => onAddingSubtaskToIdChange(null)}
           />
         </div>
       )}
@@ -303,6 +417,8 @@ const TaskItem: React.FC<{
           task={subtask}
           onCheck={onCheck}
           onEdit={onEdit}
+          onDelete={onDelete}
+          onAddSubtask={onAddSubtask}
           onRecurringStatus={onRecurringStatus}
           isRecurring={isRecurring}
           depth={depth + 1}
@@ -310,13 +426,15 @@ const TaskItem: React.FC<{
           onTaskEdited={onTaskEdited}
           editingTaskId={editingTaskId}
           onEditingTaskIdChange={onEditingTaskIdChange}
+          addingSubtaskToId={addingSubtaskToId}
+          onAddingSubtaskToIdChange={onAddingSubtaskToIdChange}
         />
       ))}
     </>
   );
 };
 
-const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onRecurringStatus, filters, isRecurring = false, areas, onTaskEdited, editingTaskId, onEditingTaskIdChange }) => {
+const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onDelete, onAddSubtask, onRecurringStatus, filters, isRecurring = false, areas, onTaskEdited, editingTaskId, onEditingTaskIdChange, addingSubtaskToId, onAddingSubtaskToIdChange }) => {
   // Handle both grouped and flat data structures
   const isGroupedData = (data: TaskGroup[] | Task[]): data is TaskGroup[] => {
     return data.length > 0 && 'type' in data[0] && (data[0].type === 'group' || data[0].type === 'area');
@@ -352,12 +470,16 @@ const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onRecurringStatus, f
                       task={task}
                       onCheck={onCheck}
                       onEdit={onEdit}
+                      onDelete={onDelete}
+                      onAddSubtask={onAddSubtask}
                       onRecurringStatus={onRecurringStatus}
                       isRecurring={isRecurring}
                       areas={areas}
                       onTaskEdited={onTaskEdited}
                       editingTaskId={editingTaskId}
                       onEditingTaskIdChange={onEditingTaskIdChange}
+                      addingSubtaskToId={addingSubtaskToId}
+                      onAddingSubtaskToIdChange={onAddingSubtaskToIdChange}
                     />
                   ))
                 }
@@ -379,12 +501,16 @@ const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onRecurringStatus, f
               task={task}
               onCheck={onCheck}
               onEdit={onEdit}
+              onDelete={onDelete}
+              onAddSubtask={onAddSubtask}
               onRecurringStatus={onRecurringStatus}
               isRecurring={isRecurring}
               areas={areas}
               onTaskEdited={onTaskEdited}
               editingTaskId={editingTaskId}
               onEditingTaskIdChange={onEditingTaskIdChange}
+              addingSubtaskToId={addingSubtaskToId}
+              onAddingSubtaskToIdChange={onAddingSubtaskToIdChange}
             />
           ))
         }

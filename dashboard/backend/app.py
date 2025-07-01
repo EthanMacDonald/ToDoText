@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
-from parser import parse_tasks, parse_recurring_tasks, check_off_task, check_off_recurring_task, parse_tasks_by_priority, parse_tasks_no_sort, create_task, edit_task
+from parser import parse_tasks, parse_recurring_tasks, check_off_task, check_off_recurring_task, parse_tasks_by_priority, parse_tasks_no_sort, create_task, edit_task, delete_task, create_subtask_for_task
 import re
 import datetime
 import subprocess
@@ -34,6 +34,7 @@ class EditTaskRequest(BaseModel):
     project: Optional[str] = None
     recurring: Optional[str] = None
     completed: Optional[bool] = None
+    notes: Optional[List[str]] = None  # List of note strings
 
 class CreateTaskRequest(BaseModel):
     area: str
@@ -43,6 +44,7 @@ class CreateTaskRequest(BaseModel):
     context: Optional[str] = None
     project: Optional[str] = None
     recurring: Optional[str] = None  # e.g., "daily", "weekly:Mon"
+    notes: Optional[List[str]] = None  # List of note strings
 
 def log_recurring_task_status(task_id: str, status: str, task_description: str) -> bool:
     """Log recurring task status to tracking file"""
@@ -664,6 +666,7 @@ def put_edit_task(task_id: str, request: EditTaskRequest):
             self.project = request.project
             self.recurring = request.recurring
             self.completed = request.completed
+            self.notes = request.notes
     
     edit_request_with_id = EditTaskRequestWithId(task_id, request)
     success = edit_task(edit_request_with_id)
@@ -671,6 +674,36 @@ def put_edit_task(task_id: str, request: EditTaskRequest):
         raise HTTPException(status_code=404, detail="Task not found or failed to edit")
     return {"success": True}
 
+@app.delete("/tasks/{task_id}")
+def delete_task_endpoint(task_id: str):
+    """Delete an existing task
+    
+    Args:
+        task_id: The ID of the task to delete
+    
+    Returns:
+        A success message
+    """
+    success = delete_task(task_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Task not found or failed to delete")
+    return {"success": True}
+
+@app.post("/tasks/{task_id}/subtasks")
+def create_subtask(task_id: str, request: CreateTaskRequest):
+    """Create a new subtask under an existing task
+    
+    Args:
+        task_id: The ID of the parent task
+        request: Subtask details
+    
+    Returns:
+        A success message
+    """
+    success = create_subtask_for_task(task_id, request)
+    if not success:
+        raise HTTPException(status_code=404, detail="Parent task not found or failed to create subtask")
+    return {"success": True}
 @app.post("/recurring/status")
 def post_recurring_status(request: RecurringTaskStatusRequest):
     """Set status for a recurring task and log it"""
@@ -1821,6 +1854,145 @@ async def reset_list(list_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error resetting list: {str(e)}")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+@app.post("/lists/{list_name}/add")
+def add_list_item(list_name: str, request: dict):
+    """Add a new item to a list"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, f'../../lists/{list_name}.txt')
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail="List not found")
+        
+        # Read the file
+        with open(filepath, 'r') as f:
+            lines = f.readlines()
+        
+        # Prepare new item line
+        text = request.get('text', '').strip()
+        quantity = request.get('quantity', '').strip()
+        
+        if not text:
+            raise HTTPException(status_code=400, detail="Item text is required")
+        
+        new_line = f"- [ ] {text}"
+        if quantity:
+            new_line += f" (quantity: {quantity})"
+        new_line += "\n"
+        
+        # Add to the end of the file
+        lines.append(new_line)
+        
+        # Write back to file
+        with open(filepath, 'w') as f:
+            f.writelines(lines)
+        
+        return {"success": True, "message": "Item added successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error adding item: {str(e)}")
+
+@app.post("/lists/{list_name}/delete")
+def delete_list_item(list_name: str, request: dict):
+    """Delete an item from a list"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, f'../../lists/{list_name}.txt')
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail="List not found")
+        
+        item_index = request.get('item_index')
+        if item_index is None:
+            raise HTTPException(status_code=400, detail="Item index is required")
+        
+        # Read the file
+        with open(filepath, 'r') as f:
+            lines = f.readlines()
+        
+        # Find checkbox items (not area headers)
+        checkbox_lines = []
+        checkbox_line_indices = []
+        
+        for i, line in enumerate(lines):
+            stripped_line = line.strip()
+            if stripped_line.startswith('- [') and (']' in stripped_line):
+                checkbox_lines.append(line)
+                checkbox_line_indices.append(i)
+        
+        if item_index >= len(checkbox_lines):
+            raise HTTPException(status_code=400, detail="Invalid item index")
+        
+        # Remove the line at the specified index
+        line_to_remove = checkbox_line_indices[item_index]
+        lines.pop(line_to_remove)
+        
+        # Write back to file
+        with open(filepath, 'w') as f:
+            f.writelines(lines)
+        
+        return {"success": True, "message": "Item deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting item: {str(e)}")
+
+@app.post("/lists/{list_name}/add-subitem")
+def add_list_subitem(list_name: str, request: dict):
+    """Add a sub-item under an existing item in a list"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(current_dir, f'../../lists/{list_name}.txt')
+        
+        if not os.path.exists(filepath):
+            raise HTTPException(status_code=404, detail="List not found")
+        
+        parent_index = request.get('parent_index')
+        text = request.get('text', '').strip()
+        quantity = request.get('quantity', '').strip()
+        
+        if parent_index is None:
+            raise HTTPException(status_code=400, detail="Parent index is required")
+        if not text:
+            raise HTTPException(status_code=400, detail="Sub-item text is required")
+        
+        # Read the file
+        with open(filepath, 'r') as f:
+            lines = f.readlines()
+        
+        # Find checkbox items (not area headers)
+        checkbox_lines = []
+        checkbox_line_indices = []
+        
+        for i, line in enumerate(lines):
+            stripped_line = line.strip()
+            if stripped_line.startswith('- [') and (']' in stripped_line):
+                checkbox_lines.append(line)
+                checkbox_line_indices.append(i)
+        
+        if parent_index >= len(checkbox_lines):
+            raise HTTPException(status_code=400, detail="Invalid parent index")
+        
+        # Prepare new sub-item line with indentation
+        new_subitem = f"    - [ ] {text}"
+        if quantity:
+            new_subitem += f" (quantity: {quantity})"
+        new_subitem += "\n"
+        
+        # Insert after the parent item
+        parent_line_index = checkbox_line_indices[parent_index]
+        lines.insert(parent_line_index + 1, new_subitem)
+        
+        # Write back to file
+        with open(filepath, 'w') as f:
+            f.writelines(lines)
+        
+        return {"success": True, "message": "Sub-item added successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error adding sub-item: {str(e)}")

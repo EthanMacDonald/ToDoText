@@ -99,6 +99,47 @@ function App() {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  const handleDeleteTask = async (id: string) => {
+    try {
+      const response = await fetch(`${API_URL}/tasks/${id}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        // Refresh tasks after deletion and trigger statistics refresh
+        refreshTasks();
+        setRefreshTrigger(prev => prev + 1);
+      } else {
+        console.error('Error deleting task:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
+
+  const handleAddSubtask = async (parentId: string, description: string, notes: string[]) => {
+    try {
+      const response = await fetch(`${API_URL}/tasks/${parentId}/subtasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          description,
+          notes 
+        })
+      });
+      
+      if (response.ok) {
+        // Refresh tasks after adding subtask and trigger statistics refresh
+        refreshTasks();
+        setRefreshTrigger(prev => prev + 1);
+      } else {
+        console.error('Error adding subtask:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error adding subtask:', error);
+    }
+  };
+
   const handleEditTask = (task: Task) => {
     // This function is kept for compatibility but inline editing handles it now
     console.log('Edit task requested for:', task.id);
@@ -580,6 +621,8 @@ function App() {
             data={recurring} 
             onCheck={(id) => handleCheck(id, true)} 
             onEdit={handleEditTask}
+            onDelete={handleDeleteTask}
+            onAddSubtask={handleAddSubtask}
             onRecurringStatus={handleRecurringStatus}
             filters={filters} 
             isRecurring={true}
@@ -587,6 +630,8 @@ function App() {
             onTaskEdited={handleTaskEdited}
             editingTaskId={formStates.editingTaskId}
             onEditingTaskIdChange={(id: string | null) => updateFormStates({ editingTaskId: id })}
+            addingSubtaskToId={formStates.addingSubtaskToId}
+            onAddingSubtaskToIdChange={(id: string | null) => updateFormStates({ addingSubtaskToId: id })}
           />
         </div>
       )}
@@ -602,11 +647,15 @@ function App() {
             data={tasks} 
             onCheck={(id) => handleCheck(id, false)} 
             onEdit={handleEditTask}
+            onDelete={handleDeleteTask}
+            onAddSubtask={handleAddSubtask}
             filters={filters}
             areas={areas}
             onTaskEdited={handleTaskEdited}
             editingTaskId={formStates.editingTaskId}
             onEditingTaskIdChange={(id: string | null) => updateFormStates({ editingTaskId: id })}
+            addingSubtaskToId={formStates.addingSubtaskToId}
+            onAddingSubtaskToIdChange={(id: string | null) => updateFormStates({ addingSubtaskToId: id })}
           />
         </div>
       )}
