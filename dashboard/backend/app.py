@@ -1543,6 +1543,7 @@ class ListItemUpdateRequest(BaseModel):
     item_index: int
     text: str
     quantity: str = ""
+    notes: str = ""
 
 def parse_list_file(filepath: str):
     """Parse a list file and extract items with area headers and indentation levels"""
@@ -1803,11 +1804,13 @@ async def update_list_item(list_name: str, request: ListItemUpdateRequest):
         # Build metadata string
         metadata_parts = []
         if request.quantity:
-            metadata_parts.append(f"quantity:{request.quantity}")
+            metadata_parts.append(f"quantity: {request.quantity}")
+        if request.notes:
+            metadata_parts.append(f"notes: {request.notes}")
         
         # Construct the new line
         if metadata_parts:
-            new_line = f"{indent}{checkbox} {new_text} ({' '.join(metadata_parts)})\n"
+            new_line = f"{indent}{checkbox} {new_text} ({', '.join(metadata_parts)})\n"
         else:
             new_line = f"{indent}{checkbox} {new_text}\n"
             
@@ -1872,13 +1875,22 @@ def add_list_item(list_name: str, request: dict):
         text = request.get('text', '').strip()
         quantity = request.get('quantity', '').strip()
         area = request.get('area', '').strip()
+        notes = request.get('notes', '').strip()
         
         if not text:
             raise HTTPException(status_code=400, detail="Item text is required")
         
-        new_line = f"- [ ] {text}"
+        # Build metadata string
+        metadata_parts = []
         if quantity:
-            new_line += f" (quantity: {quantity})"
+            metadata_parts.append(f"quantity: {quantity}")
+        if notes:
+            metadata_parts.append(f"notes: {notes}")
+        
+        # Build the new line with proper indentation
+        new_line = f"    - [ ] {text}"  # Add 4 spaces for proper indentation
+        if metadata_parts:
+            new_line += f" ({', '.join(metadata_parts)})"
         if area:
             new_line += f" @{area}"
         new_line += "\n"
@@ -1956,6 +1968,7 @@ def add_list_subitem(list_name: str, request: dict):
         parent_index = request.get('parent_index')
         text = request.get('text', '').strip()
         quantity = request.get('quantity', '').strip()
+        notes = request.get('notes', '').strip()
         
         if parent_index is None:
             raise HTTPException(status_code=400, detail="Parent index is required")
@@ -1979,14 +1992,30 @@ def add_list_subitem(list_name: str, request: dict):
         if parent_index >= len(checkbox_lines):
             raise HTTPException(status_code=400, detail="Invalid parent index")
         
-        # Prepare new sub-item line with indentation
-        new_subitem = f"    - [ ] {text}"
+        # Get the parent line to determine its indentation
+        parent_line_index = checkbox_line_indices[parent_index]
+        parent_line = lines[parent_line_index]
+        
+        # Calculate parent's indentation level
+        parent_leading_spaces = len(parent_line) - len(parent_line.lstrip(' '))
+        # Sub-item should be indented 4 spaces more than parent
+        sub_item_indent = parent_leading_spaces + 4
+        sub_item_prefix = ' ' * sub_item_indent
+        
+        # Build metadata string
+        metadata_parts = []
         if quantity:
-            new_subitem += f" (quantity: {quantity})"
+            metadata_parts.append(f"quantity: {quantity}")
+        if notes:
+            metadata_parts.append(f"notes: {notes}")
+        
+        # Prepare new sub-item line with proper indentation
+        new_subitem = f"{sub_item_prefix}- [ ] {text}"
+        if metadata_parts:
+            new_subitem += f" ({', '.join(metadata_parts)})"
         new_subitem += "\n"
         
         # Insert after the parent item
-        parent_line_index = checkbox_line_indices[parent_index]
         lines.insert(parent_line_index + 1, new_subitem)
         
         # Write back to file
