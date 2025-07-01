@@ -10,6 +10,16 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 tasks_file = os.path.join(current_dir, '../../tasks.txt')
 recurring_file = os.path.join(current_dir, '../../recurring_tasks.txt')
 
+def get_adjusted_date(dt: datetime) -> date:
+    """Get the adjusted date for 3 AM boundary (tasks completed before 3 AM count for previous day)"""
+    if dt.hour < 3:
+        return (dt - timedelta(days=1)).date()
+    return dt.date()
+
+def get_adjusted_today() -> date:
+    """Get today's date adjusted for 3 AM boundary"""
+    return get_adjusted_date(datetime.now())
+
 def generate_stable_task_id(area, description, indent_level, line_number):
     """Generate a stable task ID based on task content and position"""
     import hashlib
@@ -607,8 +617,8 @@ def toggle_task_in_lines(lines, task_info):
                         # Clean up any extra spaces that might be left
                         new_line = re.sub(r'\s+', ' ', new_line)
                     
-                    # Add done date if not present
-                    done_date = date.today().strftime('%Y-%m-%d')
+                    # Add done date if not present (use adjusted date for 3 AM boundary)
+                    done_date = get_adjusted_today().strftime('%Y-%m-%d')
                     if 'done:' not in new_line:
                         if re.search(r'\([^)]*\)', new_line):
                             # Add to existing metadata

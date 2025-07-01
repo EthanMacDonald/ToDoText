@@ -8,13 +8,41 @@ import datetime
 import subprocess
 import sys
 import random
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, time
 from collections import Counter, defaultdict
 import os
 import subprocess
 import csv
 import json
 from pathlib import Path
+
+# Configuration: Hour when the "day" starts (3 AM = 3)
+DAY_START_HOUR = 3
+
+def get_adjusted_date(dt: datetime = None) -> date:
+    """
+    Get the adjusted date considering 3 AM as the day boundary.
+    Times between midnight and 3 AM are considered part of the previous day.
+    """
+    if dt is None:
+        dt = datetime.now()
+    
+    # If it's before 3 AM, subtract one day
+    if dt.hour < DAY_START_HOUR:
+        return (dt - timedelta(days=1)).date()
+    else:
+        return dt.date()
+
+def get_adjusted_today() -> date:
+    """Get today's date using the adjusted day boundary"""
+    return get_adjusted_date()
+
+def get_adjusted_datetime_for_date(target_date: date) -> datetime:
+    """
+    Get the datetime when the adjusted day starts for a given date.
+    For example, for 2025-07-01, this returns 2025-07-01 03:00:00
+    """
+    return datetime.combine(target_date, time(DAY_START_HOUR, 0, 0))
 
 class CheckTaskRequest(BaseModel):
     task_id: str
@@ -92,7 +120,8 @@ def parse_recurring_status_log():
                     # Parse timestamp
                     try:
                         timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
-                        log_date = timestamp.date()
+                        # Use adjusted date for 3 AM boundary
+                        log_date = get_adjusted_date(timestamp)
                         
                         if task_id not in status_data:
                             status_data[task_id] = []
@@ -181,7 +210,8 @@ def get_recurring_tasks_by_filter(filter_type: str = "today"):
         if filter_type == "all":
             return all_recurring
         
-        today = date.today()
+        # Use adjusted today for 3 AM boundary
+        today = get_adjusted_today()
         
         # Parse status log
         status_data = parse_recurring_status_log()
@@ -480,7 +510,8 @@ def compute_task_statistics():
             tasks.append(task)
     
     # Compute statistics
-    today = datetime.now().date()
+    # Use adjusted today for 3 AM boundary
+    today = get_adjusted_today()
     stats = {}
     stats['total'] = len(tasks)
     stats['completed'] = sum(t['completed'] for t in tasks)
@@ -895,7 +926,9 @@ def get_recurring_task_compliance_data():
                     
                     try:
                         timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
-                        date_str = timestamp.strftime('%Y-%m-%d')
+                        # Use adjusted date for 3 AM boundary
+                        adjusted_date = get_adjusted_date(timestamp)
+                        date_str = adjusted_date.strftime('%Y-%m-%d')
                         
                         daily_stats[date_str]['total'] += 1
                         if status == 'COMPLETED':
