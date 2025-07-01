@@ -51,6 +51,7 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
   const [newSubItemQuantity, setNewSubItemQuantity] = useState('');
   const [newSubItemNotes, setNewSubItemNotes] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [showCompleted, setShowCompleted] = useState(true); // Filter state for showing completed items
 
   const toggleExpanded = () => {
     const newExpanded = !isExpanded;
@@ -341,33 +342,54 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
-            marginBottom: '16px'
+            marginBottom: '16px',
+            gap: '12px',
+            flexWrap: 'wrap'
           }}>
-            <select
-              value={selectedList}
-              onChange={(e) => {
-                const newList = e.target.value;
-                if (onSelectedListChange) {
-                  onSelectedListChange(newList);
-                } else {
-                  setInternalSelectedList(newList);
-                }
-              }}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '4px',
-                border: '1px solid #4a5568',
-                backgroundColor: '#1a202c',
-                color: '#f7fafc',
-                fontSize: '14px'
-              }}
-            >
-              {availableLists.map(list => (
-                <option key={list} value={list}>
-                  {list.replace('.txt', '')}
-                </option>
-              ))}
-            </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <select
+                value={selectedList}
+                onChange={(e) => {
+                  const newList = e.target.value;
+                  if (onSelectedListChange) {
+                    onSelectedListChange(newList);
+                  } else {
+                    setInternalSelectedList(newList);
+                  }
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  border: '1px solid #4a5568',
+                  backgroundColor: '#1a202c',
+                  color: '#f7fafc',
+                  fontSize: '14px'
+                }}
+              >
+                {availableLists.map(list => (
+                  <option key={list} value={list}>
+                    {list.replace('.txt', '')}
+                  </option>
+                ))}
+              </select>
+              
+              {/* View Filter */}
+              <select
+                value={showCompleted ? 'all' : 'incomplete'}
+                onChange={(e) => setShowCompleted(e.target.value === 'all')}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  border: '1px solid #4a5568',
+                  backgroundColor: '#1a202c',
+                  color: '#f7fafc',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="all">Show All Items</option>
+                <option value="incomplete">Show Incomplete Only</option>
+              </select>
+            </div>
             
             {listData && (
               <button
@@ -563,7 +585,14 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
 
               {/* List Items */}
               <div>
-                {listData.items.map((item, index) => {
+                {listData.items
+                  .filter((item) => {
+                    // Always show area headers
+                    if (item.is_area_header) return true;
+                    // Apply completion filter only to actual items
+                    return showCompleted || !item.completed;
+                  })
+                  .map((item, index) => {
                   if (item.is_area_header) {
                     // Render area header
                     return (
