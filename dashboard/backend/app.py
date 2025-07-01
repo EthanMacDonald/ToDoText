@@ -1871,6 +1871,7 @@ def add_list_item(list_name: str, request: dict):
         # Prepare new item line
         text = request.get('text', '').strip()
         quantity = request.get('quantity', '').strip()
+        area = request.get('area', '').strip()
         
         if not text:
             raise HTTPException(status_code=400, detail="Item text is required")
@@ -1878,6 +1879,8 @@ def add_list_item(list_name: str, request: dict):
         new_line = f"- [ ] {text}"
         if quantity:
             new_line += f" (quantity: {quantity})"
+        if area:
+            new_line += f" @{area}"
         new_line += "\n"
         
         # Add to the end of the file

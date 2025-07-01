@@ -43,6 +43,8 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
   const [editQuantity, setEditQuantity] = useState('');
   const [newItemText, setNewItemText] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [newItemArea, setNewItemArea] = useState('');
+  const [isAddFormExpanded, setIsAddFormExpanded] = useState(false);
   const [addingSubItemTo, setAddingSubItemTo] = useState<number | null>(null);
   const [newSubItemText, setNewSubItemText] = useState('');
   const [newSubItemQuantity, setNewSubItemQuantity] = useState('');
@@ -188,7 +190,8 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           text: newItemText.trim(),
-          quantity: newItemQuantity.trim() || undefined
+          quantity: newItemQuantity.trim() || undefined,
+          area: newItemArea.trim() || undefined
         })
       });
       
@@ -196,6 +199,8 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
       await fetchListData();
       setNewItemText('');
       setNewItemQuantity('');
+      setNewItemArea('');
+      setIsAddFormExpanded(false); // Auto-collapse form after adding
     } catch (error) {
       console.error('Error adding item:', error);
     }
@@ -378,73 +383,107 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
             <div style={{ 
               marginTop: '16px', 
               marginBottom: '16px',
-              padding: '12px',
               backgroundColor: '#374151',
               borderRadius: '6px',
-              border: '1px solid #4a5568'
+              border: '1px solid #4a5568',
+              overflow: 'hidden'
             }}>
-              <h4 style={{ 
-                color: '#f7fafc', 
-                margin: '0 0 8px 0', 
-                fontSize: '14px',
-                fontWeight: 'bold'
-              }}>
-                Add New Item
-              </h4>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                <input
-                  type="text"
-                  value={newItemText}
-                  onChange={(e) => setNewItemText(e.target.value)}
-                  placeholder="Item description..."
-                  style={{
-                    flex: '1',
-                    minWidth: '200px',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    borderRadius: '4px',
-                    border: '1px solid #4a5568',
-                    backgroundColor: '#1a202c',
-                    color: '#f7fafc'
-                  }}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && newItemText.trim()) {
-                      addItem();
-                    }
-                  }}
-                />
-                <input
-                  type="text"
-                  value={newItemQuantity}
-                  onChange={(e) => setNewItemQuantity(e.target.value)}
-                  placeholder="Quantity (optional)"
-                  style={{
-                    width: '140px',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    borderRadius: '4px',
-                    border: '1px solid #4a5568',
-                    backgroundColor: '#1a202c',
-                    color: '#f7fafc'
-                  }}
-                />
-                <button
-                  onClick={addItem}
-                  disabled={!newItemText.trim()}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: newItemText.trim() ? '#059669' : '#6b7280',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: newItemText.trim() ? 'pointer' : 'not-allowed',
-                    fontSize: '14px',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Add Item
-                </button>
-              </div>
+              <button
+                onClick={() => setIsAddFormExpanded(!isAddFormExpanded)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  backgroundColor: '#4b5563',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  color: '#f7fafc',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderBottom: isAddFormExpanded ? '1px solid #4a5568' : 'none'
+                }}
+              >
+                <span>➕ Add New Item</span>
+                <span style={{ fontSize: '12px' }}>
+                  {isAddFormExpanded ? '▲' : '▼'}
+                </span>
+              </button>
+              
+              {isAddFormExpanded && (
+                <div style={{ padding: '12px' }}>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                    <input
+                      type="text"
+                      value={newItemText}
+                      onChange={(e) => setNewItemText(e.target.value)}
+                      placeholder="Item description..."
+                      style={{
+                        flex: '1',
+                        minWidth: '200px',
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        border: '1px solid #4a5568',
+                        backgroundColor: '#1a202c',
+                        color: '#f7fafc'
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && newItemText.trim()) {
+                          addItem();
+                        }
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={newItemQuantity}
+                      onChange={(e) => setNewItemQuantity(e.target.value)}
+                      placeholder="Quantity (optional)"
+                      style={{
+                        width: '140px',
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        border: '1px solid #4a5568',
+                        backgroundColor: '#1a202c',
+                        color: '#f7fafc'
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={newItemArea}
+                      onChange={(e) => setNewItemArea(e.target.value)}
+                      placeholder="Area (optional)"
+                      style={{
+                        width: '140px',
+                        padding: '8px 12px',
+                        fontSize: '14px',
+                        borderRadius: '4px',
+                        border: '1px solid #4a5568',
+                        backgroundColor: '#1a202c',
+                        color: '#f7fafc'
+                      }}
+                    />
+                    <button
+                      onClick={addItem}
+                      disabled={!newItemText.trim()}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: newItemText.trim() ? '#059669' : '#6b7280',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: newItemText.trim() ? 'pointer' : 'not-allowed',
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      Add Item
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -571,35 +610,75 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
                               }}
                             />
                           </div>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                            <button
-                              onClick={() => setEditingItem(null)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '12px',
-                                borderRadius: '4px',
-                                border: '1px solid #4a5568',
-                                backgroundColor: '#2d3748',
-                                color: '#a0aec0',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              onClick={() => updateItem(checkboxIndex, editText, editQuantity)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '12px',
-                                borderRadius: '4px',
-                                border: 'none',
-                                backgroundColor: '#3182ce',
-                                color: 'white',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              Save
-                            </button>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button
+                                onClick={() => {
+                                  setAddingSubItemTo(addingSubItemTo === checkboxIndex ? null : checkboxIndex);
+                                }}
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: '12px',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  backgroundColor: '#059669',
+                                  color: 'white',
+                                  cursor: 'pointer'
+                                }}
+                                title="Add sub-item"
+                              >
+                                ➕ Add Sub-Item
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Are you sure you want to delete "${item.text}"?`)) {
+                                    deleteItem(checkboxIndex);
+                                  }
+                                }}
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: '12px',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  backgroundColor: '#ef4444',
+                                  color: 'white',
+                                  cursor: 'pointer'
+                                }}
+                                title="Delete item"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button
+                                onClick={() => setEditingItem(null)}
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: '12px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #4a5568',
+                                  backgroundColor: '#2d3748',
+                                  color: '#a0aec0',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => updateItem(checkboxIndex, editText, editQuantity)}
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: '12px',
+                                  borderRadius: '4px',
+                                  border: 'none',
+                                  backgroundColor: '#3182ce',
+                                  color: 'white',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Save
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -688,40 +767,6 @@ function Lists({ isExpanded: externalIsExpanded, onToggleExpanded, selectedList:
                             title="Edit item"
                           >
                             ✏️
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAddingSubItemTo(addingSubItemTo === checkboxIndex ? null : checkboxIndex);
-                            }}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#059669',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              padding: '4px'
-                            }}
-                            title="Add sub-item"
-                          >
-                            ➕
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteItem(checkboxIndex);
-                            }}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#ef4444',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              padding: '4px'
-                            }}
-                            title="Delete item"
-                          >
-                            🗑️
                           </button>
                         </div>
                       </div>
