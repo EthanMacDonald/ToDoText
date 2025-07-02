@@ -1511,19 +1511,15 @@ def parse_list_file(filepath: str):
                     all_meta = re.findall(r'\([^)]*\)', text_with_meta)
                     metadata = {}
                     for meta_str in all_meta:
-                        # Split on spaces and then find key:value pairs
-                        parts = meta_str.split()
-                        i = 0
-                        while i < len(parts):
-                            part = parts[i]
+                        # Remove parentheses and parse content
+                        content = meta_str.strip('()')
+                        # Split on commas first, then on spaces for key:value pairs
+                        parts = content.split(',')
+                        for part in parts:
+                            part = part.strip()
                             if ':' in part:
                                 key, value = part.split(':', 1)
-                                # If value is empty, might be continued in next parts
-                                while i + 1 < len(parts) and not parts[i + 1].count(':'):
-                                    i += 1
-                                    value += ' ' + parts[i]
                                 metadata[key.strip()] = value.strip()
-                            i += 1
                     
                     # Remove metadata parentheses from display text
                     text = re.sub(r'\([^)]*\)', '', text_with_meta).strip()
