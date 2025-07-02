@@ -1,34 +1,75 @@
 Mind:
-- [ ] Complete online course in AI/ML (priority:A due:2025-12-31) +Learning @Study
-    - [ ] Finish coursework by October
-    - [ ] Build portfolio project
-- [ ] Read 12 books this year (priority:B) +Reading @Home
-- [ ] Establish daily meditation habit (priority:A) +Mindfulness @Home
+- [ ] Complete advanced technical certification (priority:A due:2025-12-31) +Learning @Computer
+    - [ ] Enroll in certification program by August
+    - [ ] Complete coursework by November
+    - [ ] Pass certification exam
+    - [ ] Apply knowledge to work projects
+- [ ] Read 24 books this year (priority:B) +Reading @Home
+    - [ ] Set monthly reading goal of 2 books
+    - [ ] Mix of fiction and non-fiction
+    - [ ] Join local book club
+- [ ] Learn new language basics (priority:B) +Language @Computer
+    - [ ] Choose Spanish or French
+    - [ ] Complete beginner course online
+    - [ ] Practice with native speakers
 
 Health:
-- [ ] Lose 15 pounds and maintain (priority:A due:2025-08-31) +Fitness @Gym
-    - [ ] Track calories and exercise daily
-    - [ ] Get monthly body composition scans
-- [ ] Complete annual physical and dental checkup (priority:A due:2025-12-31) +Healthcare @Clinic
-- [ ] Sleep 7-8 hours consistently (priority:B) +Sleep @Home
+- [ ] Lose 20 pounds and build muscle (priority:A due:2025-12-31) +Fitness @Gym
+    - [ ] Join gym and create workout schedule
+    - [ ] Track calories and macros daily
+    - [ ] Work with personal trainer monthly
+    - [ ] Get quarterly body composition scans
+- [ ] Establish daily wellness routine (priority:A) +Wellness @Home
+    - [ ] Meditate 15 minutes every morning
+    - [ ] Sleep 7-8 hours consistently
+    - [ ] Take vitamins and supplements daily
+- [ ] Complete preventive health screenings (priority:A due:2025-12-31) +Healthcare @Clinic
+    - [ ] Annual physical exam
+    - [ ] Dental cleaning and checkup
+    - [ ] Eye exam and vision screening
 
 Wealth:
-- [ ] Increase net worth by 20% (priority:A due:2025-12-31) +Investment @Office
+- [ ] Increase net worth by 25% (priority:A due:2025-12-31) +Investment @Computer
     - [ ] Max out 401k contributions
-    - [ ] Build $10k emergency fund
-- [ ] Create side income stream generating $500/month (priority:B due:2025-09-30) +SideHustle @Home
-- [ ] Reduce monthly expenses by 15% (priority:B) +Budgeting @Home
+    - [ ] Build emergency fund to $15,000
+    - [ ] Invest additional $500/month in index funds
+    - [ ] Track net worth monthly
+- [ ] Launch side business generating $1000/month (priority:A due:2025-09-30) +Business @Home
+    - [ ] Research market opportunities
+    - [ ] Develop business plan
+    - [ ] Launch minimum viable product
+    - [ ] Acquire first 10 customers
+- [ ] Improve financial literacy (priority:B) +Education @Computer
+    - [ ] Read 6 personal finance books
+    - [ ] Complete online investing course
+    - [ ] Attend financial planning workshop
 
 Career:
-- [ ] Get promoted to senior role (priority:A due:2025-10-31) +Professional @Office
-    - [ ] Complete leadership training program
-    - [ ] Deliver high-impact project
-- [ ] Attend 3 industry conferences (priority:B) +Networking @Office
-- [ ] Publish 6 technical articles (priority:B) +Writing @Home
+- [ ] Advance to senior role or get promotion (priority:A due:2025-12-31) +Professional @Office
+    - [ ] Discuss career path with manager
+    - [ ] Complete leadership development program
+    - [ ] Take on high-visibility project
+    - [ ] Negotiate salary increase
+- [ ] Build professional network (priority:B) +Networking @Events
+    - [ ] Attend 6 industry conferences/meetups
+    - [ ] Connect with 50 new professionals
+    - [ ] Schedule quarterly coffee meetings
+- [ ] Develop new professional skills (priority:B) +Skills @Computer
+    - [ ] Learn project management methodology
+    - [ ] Improve public speaking abilities
+    - [ ] Take business writing course
 
 Relationships:
-- [ ] Strengthen relationship with spouse/partner (priority:A) +Family @Home
-    - [ ] Weekly date nights
-    - [ ] Take relationship course together
-- [ ] Reconnect with old friends (priority:B) +Friendship @Home
-- [ ] Mentor someone in my field (priority:B) +Mentoring @Office
+- [ ] Strengthen family relationships (priority:A) +Family @Home
+    - [ ] Call parents weekly
+    - [ ] Plan monthly family activities
+    - [ ] Organize annual family reunion
+    - [ ] Create family photo album
+- [ ] Expand social circle (priority:B) +Social @Community
+    - [ ] Join hobby club or sports league
+    - [ ] Host dinner parties quarterly
+    - [ ] Reconnect with old friends
+- [ ] Give back to community (priority:B) +Service @Community
+    - [ ] Volunteer 50 hours this year
+    - [ ] Participate in local charity events
+    - [ ] Mentor someone in my field

@@ -1,0 +1,44 @@
+# Grocery Shopping List
+## Fresh Produce
+- [ ] Bananas (6-8 pieces)
+- [ ] Apples (2 lbs)
+- [ ] Spinach (1 bag)
+- [ ] Carrots (2 lbs)
+- [ ] Bell peppers (3 pieces - red, yellow, green)
+- [ ] Onions (3 lbs)
+- [ ] Garlic (1 bulb)
+- [ ] Lemons (4 pieces)
+- [ ] Avocados (3 pieces)
+- [ ] Broccoli (2 heads)
+
+## Protein
+- [ ] Chicken breast (2 lbs)
+- [ ] Ground turkey (1 lb)
+- [ ] Salmon fillets (4 pieces)
+- [ ] Eggs (1 dozen)
+- [ ] Greek yogurt (32 oz)
+- [ ] Almonds (1 bag)
+- [ ] Black beans (2 cans)
+
+## Pantry Staples
+- [ ] Olive oil (1 bottle)
+- [ ] Brown rice (2 lbs)
+- [ ] Quinoa (1 bag)
+- [ ] Whole wheat pasta (2 boxes)
+- [ ] Oatmeal (1 container)
+- [ ] Peanut butter (1 jar)
+- [ ] Honey (1 bottle)
+- [ ] Canned tomatoes (3 cans)
+
+## Dairy & Refrigerated
+- [ ] Milk (1/2 gallon)
+- [ ] Cheese (cheddar and mozzarella)
+- [ ] Butter (1 stick pack)
+- [ ] Yogurt (variety pack)
+
+## Household Items
+- [ ] Toilet paper (12 pack)
+- [ ] Paper towels (6 pack)
+- [ ] Dish soap (1 bottle)
+- [ ] Laundry detergent (1 container)
+- [ ] Trash bags (1 box)

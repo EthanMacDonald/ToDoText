@@ -1,32 +1,45 @@
 # Grocery Shopping List
-# Updated: 2025-06-27
 
-Dairy & Eggs:
-    - [x] Milk (2% or whole)
-    - [x] Eggs (dozen, free range)
-    - [ ] Cheese (sharp cheddar block)
-    - [ ] Greek yogurt (plain, large container)
+Fresh Produce:
+    - [ ] Bananas (quantity: 6-8 pieces)
+    - [ ] Apples (quantity: 2 lbs)
+    - [ ] Spinach (quantity: 1 bag)
+    - [ ] Carrots (quantity: 2 lbs)
+    - [ ] Bell peppers (quantity: 3 pieces, notes: red, yellow, green)
+    - [ ] Onions (quantity: 3 lbs)
+    - [ ] Garlic (quantity: 1 bulb)
+    - [ ] Lemons (quantity: 4 pieces)
+    - [ ] Avocados (quantity: 3 pieces)
+    - [ ] Broccoli (quantity: 2 heads)
 
-Bakery:
-    - [x] Bread (whole wheat)
+Protein:
+    - [ ] Chicken breast (quantity: 2 lbs)
+    - [ ] Ground turkey (quantity: 1 lb)
+    - [ ] Salmon fillets (quantity: 4 pieces)
+    - [ ] Eggs (quantity: 1 dozen)
+    - [ ] Greek yogurt (quantity: 32 oz)
+    - [ ] Almonds (quantity: 1 bag)
+    - [ ] Black beans (quantity: 2 cans)
 
-Produce:
-    - [x] Bananas (ripe)
-    - [ ] Onions (yellow, 2-3 medium)
-    - [ ] Tomatoes (Roma, 4-5)
-    - [ ] Spinach (fresh bag)
-    - [ ] Bell peppers (red/yellow)
-    - [ ] Garlic (1 bulb)
-    - [ ] Avocados (2-3, firm)
-    - [ ] Lemons (3-4)
+Pantry Staples:
+    - [ ] Olive oil (quantity: 1 bottle)
+    - [ ] Brown rice (quantity: 2 lbs)
+    - [ ] Quinoa (quantity: 1 bag)
+    - [ ] Whole wheat pasta (quantity: 2 boxes)
+    - [ ] Oatmeal (quantity: 1 container)
+    - [ ] Peanut butter (quantity: 1 jar)
+    - [ ] Honey (quantity: 1 bottle)
+    - [ ] Canned tomatoes (quantity: 3 cans)
 
-Meat & Protein:
-    - [ ] Chicken breast (2 lbs)
-    - [ ] Ground turkey (1 lb)
+Dairy & Refrigerated:
+    - [ ] Milk (quantity: 1/2 gallon)
+    - [ ] Cheese (quantity: cheddar and mozzarella)
+    - [ ] Butter (quantity: 1 stick pack)
+    - [ ] Yogurt (quantity: variety pack)
 
-Pantry & Dry Goods:
-    - [ ] Rice (jasmine or basmati)
-    - [ ] Olive oil (extra virgin)
-    - [ ] Black beans (canned, 2 cans)
-    - [ ] Pasta (whole wheat)
-    - [ ] Almonds (raw, unsalted)
+Household Items:
+    - [ ] Toilet paper (quantity: 12 pack)
+    - [ ] Paper towels (quantity: 6 pack)
+    - [ ] Dish soap (quantity: 1 bottle)
+    - [ ] Laundry detergent (quantity: 1 container)
+    - [ ] Trash bags (quantity: 1 box)

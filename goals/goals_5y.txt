@@ -1,34 +1,74 @@
 Mind:
-- [ ] Learn a new language (priority:A due:2030-06-30) +PersonalDevelopment @Study
-    - [ ] Complete Duolingo Spanish course
-    - [x] Practice speaking with native speakers
-- [ ] Read 50 books per year (priority:B) +Reading @Home
-- [x] Master meditation practice (priority:A) +Mindfulness @Home
+- [ ] Master a new technical skill (priority:A due:2030-12-31) +Learning @Computer
+    - [ ] Complete advanced certification program
+    - [ ] Build three portfolio projects
+    - [ ] Mentor others in the skill
+- [ ] Read 50 books per year consistently (priority:B) +Reading @Home
+    - [ ] Set up dedicated reading space
+    - [ ] Join book club for accountability
+    - [ ] Track progress with reading journal
+- [ ] Develop creative writing ability (priority:B) +Writing @Home
+    - [ ] Complete creative writing course
+    - [ ] Write and publish 5 short stories
+    - [ ] Start work on novel
 
 Health:
-- [ ] Maintain ideal weight and fitness level (priority:A) +Fitness @Gym
-    - [ ] Exercise 5 times per week consistently
-    - [ ] Complete annual health checkups
-- [ ] Establish sustainable sleep schedule (priority:A) +Sleep @Home
-- [ ] Eliminate processed foods from diet (priority:B) +Nutrition @Home
+- [ ] Achieve and maintain optimal fitness (priority:A due:2030-06-30) +Fitness @Gym
+    - [ ] Run a sub-4-hour marathon
+    - [ ] Bench press 1.5x body weight
+    - [ ] Maintain 12% body fat
+    - [ ] Complete annual health screenings
+- [ ] Establish sustainable wellness habits (priority:A) +Wellness @Home
+    - [ ] Meditate 20 minutes daily for 5 years
+    - [ ] Sleep 7-8 hours consistently
+    - [ ] Maintain stress levels below 4/10
+- [ ] Learn advanced nutrition and cooking (priority:B) +Nutrition @Home
+    - [ ] Complete nutrition certification
+    - [ ] Master 50 healthy recipes
+    - [ ] Grow own vegetable garden
 
 Wealth:
-- [ ] Achieve financial independence (priority:A due:2030-12-31) +Investment @Office
-    - [ ] Build emergency fund of 12 months expenses
-    - [ ] Invest 25% of income consistently
-    - [ ] Create multiple income streams
-- [ ] Own debt-free home (priority:A) +RealEstate @Home
+- [ ] Achieve financial independence (priority:A due:2030-12-31) +Investment @Computer
+    - [ ] Build investment portfolio worth $1M+
+    - [ ] Generate $50K+ annual passive income
+    - [ ] Own rental property generating positive cash flow
+    - [ ] Establish emergency fund of 12 months expenses
+- [ ] Create multiple income streams (priority:A) +Business @Office
+    - [ ] Launch successful side business
+    - [ ] Develop expertise-based consulting practice
+    - [ ] Create passive income from digital products
+- [ ] Master personal finance and investing (priority:B) +Education @Computer
+    - [ ] Complete advanced investing course
+    - [ ] Read 20 finance/investing books
+    - [ ] Attend investment conferences
 
 Career:
-- [ ] Become expert in chosen field (priority:A) +Professional @Office
-    - [ ] Publish thought leadership content
-    - [ ] Speak at industry conferences
-    - [ ] Mentor junior professionals
-- [ ] Lead a high-performing team (priority:B) +Leadership @Office
+- [ ] Become recognized expert in field (priority:A due:2029-12-31) +Professional @Office
+    - [ ] Speak at 10+ major industry conferences
+    - [ ] Publish thought leadership articles
+    - [ ] Build professional network of 500+ contacts
+    - [ ] Mentor 20+ junior professionals
+- [ ] Lead significant organizational change (priority:A) +Leadership @Office
+    - [ ] Manage team of 15+ people
+    - [ ] Drive strategic initiatives worth $1M+
+    - [ ] Implement process improvements
+- [ ] Establish thought leadership platform (priority:B) +Content @Computer
+    - [ ] Start industry podcast with 1000+ subscribers
+    - [ ] Write book on area of expertise
+    - [ ] Build social media following
 
 Relationships:
-- [ ] Maintain strong family relationships (priority:A) +Family @Home
-    - [ ] Weekly family dinner tradition
-    - [ ] Annual family vacation
-- [ ] Build meaningful professional network (priority:B) +Networking @Office
-- [ ] Develop deep friendships (priority:A) +Friendship @Home
+- [ ] Build and maintain strong family bonds (priority:A) +Family @Home
+    - [ ] Weekly family dinners for 5 years
+    - [ ] Annual family vacation traditions
+    - [ ] Regular one-on-one time with each family member
+    - [ ] Create family legacy projects
+- [ ] Cultivate meaningful friendships (priority:A) +Friendship @Home
+    - [ ] Maintain 5+ close friendships
+    - [ ] Host monthly social gatherings
+    - [ ] Be available for friends in need
+- [ ] Give back to community (priority:B) +Service @Community
+    - [ ] Volunteer 200+ hours annually
+    - [ ] Mentor disadvantaged youth
+    - [ ] Support local charitable organizations
+    - [ ] Organize community improvement projects

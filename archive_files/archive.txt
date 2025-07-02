@@ -1,0 +1,99 @@
+# Completed Tasks Archive
+
+## June 2025 Completed Tasks
+[2025-06-30] Complete monthly financial review (priority:A) +Finance @Computer
+    - Reviewed all bank statements and credit card bills
+    - Updated budget spreadsheet with June expenses
+    - Identified $200 in potential monthly savings
+
+[2025-06-28] Organize home office workspace (priority:B) +Organization @Home
+    - Decluttered desk and filing system
+    - Installed new shelving for books and supplies
+    - Set up proper cable management
+
+[2025-06-25] Complete project milestone presentation (priority:A) +Work @Office
+    - Prepared comprehensive slide deck
+    - Delivered presentation to stakeholders
+    - Received approval for next phase
+
+[2025-06-22] Plan and host dinner party (priority:C) +Social @Home
+    - Invited 6 friends for Saturday dinner
+    - Prepared 3-course meal from scratch
+    - Everyone had a great time
+
+[2025-06-20] Research and book summer vacation (priority:B) +Travel @Computer
+    - Compared destinations and prices
+    - Booked flights and hotel for August trip
+    - Created packing and planning checklist
+
+[2025-06-18] Complete quarterly health checkup (priority:A) +Healthcare @Clinic
+    - Annual physical exam completed
+    - Blood work results all normal
+    - Updated vaccinations
+
+[2025-06-15] Finish online photography course (priority:B) +Learning @Computer
+    - Completed all 12 modules
+    - Submitted portfolio project
+    - Received certificate of completion
+
+[2025-06-12] Deep clean and organize garage (priority:C) +Cleaning @Home
+    - Sorted items into keep, donate, discard
+    - Installed storage shelves and hooks
+    - Donated 3 boxes of unused items
+
+[2025-06-10] Update resume and LinkedIn profile (priority:B) +Career @Computer
+    - Added recent accomplishments and skills
+    - Updated job descriptions and achievements
+    - Received 2 new connection requests
+
+[2025-06-08] Complete tax document organization (priority:A) +Finance @Computer
+    - Filed all 2024 tax documents
+    - Organized receipts and records
+    - Set up system for 2025 tracking
+
+## May 2025 Completed Tasks
+[2025-05-31] Launch personal blog (priority:B) +Writing @Computer
+    - Set up WordPress site with custom domain
+    - Wrote and published first 3 posts
+    - Shared on social media platforms
+
+[2025-05-28] Complete emergency fund goal (priority:A) +Savings @Computer
+    - Reached $10,000 emergency fund target
+    - Opened high-yield savings account
+    - Set up automatic monthly contributions
+
+[2025-05-25] Organize family photo collection (priority:C) +Organization @Computer
+    - Scanned 200+ physical photos
+    - Organized digital photos by year and event
+    - Created backup on cloud storage
+
+[2025-05-22] Complete first aid and CPR certification (priority:B) +Safety @Community
+    - Attended 8-hour certification course
+    - Passed practical and written exams
+    - Certificate valid for 2 years
+
+[2025-05-20] Plan and execute garden planting (priority:B) +Gardening @Home
+    - Prepared soil and garden beds
+    - Planted vegetables and herbs
+    - Set up irrigation system
+
+## April 2025 Completed Tasks
+[2025-04-30] Submit annual performance review (priority:A) +Career @Office
+    - Completed comprehensive self-evaluation
+    - Documented key achievements and metrics
+    - Met with manager for review discussion
+
+[2025-04-25] Organize spring cleaning weekend (priority:B) +Cleaning @Home
+    - Deep cleaned all rooms in house
+    - Decluttered closets and storage areas
+    - Donated 5 bags of clothing and items
+
+[2025-04-20] Complete investment portfolio rebalancing (priority:A) +Investment @Computer
+    - Reviewed asset allocation and performance
+    - Rebalanced to target allocations
+    - Increased monthly contribution amount
+
+[2025-04-15] File 2024 tax returns (priority:A due:2025-04-15) +Finance @Computer
+    - Completed federal and state tax returns
+    - Filed electronically and paid taxes owed
+    - Organized documents for future reference

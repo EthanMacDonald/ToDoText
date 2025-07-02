@@ -1,0 +1,55 @@
+# Travel Packing Checklist
+## Clothing
+- [ ] Underwear (7 pairs)
+- [ ] Socks (7 pairs)
+- [ ] T-shirts (5 pieces)
+- [ ] Pants/jeans (3 pairs)
+- [ ] Shorts (2 pairs)
+- [ ] Sweater/jacket (1 piece)
+- [ ] Pajamas (2 sets)
+- [ ] Swimwear (2 pieces)
+- [ ] Comfortable walking shoes
+- [ ] Dress shoes (1 pair)
+- [ ] Sandals/flip-flops
+
+## Toiletries
+- [ ] Toothbrush and toothpaste
+- [ ] Shampoo and conditioner
+- [ ] Body wash/soap
+- [ ] Deodorant
+- [ ] Razor and shaving cream
+- [ ] Sunscreen (SPF 30+)
+- [ ] Moisturizer
+- [ ] Prescription medications
+- [ ] Contact lenses and solution
+- [ ] Hair styling products
+
+## Electronics
+- [ ] Phone and charger
+- [ ] Laptop and charger
+- [ ] Camera and extra batteries
+- [ ] Portable power bank
+- [ ] Headphones
+- [ ] Travel adapter/converters
+- [ ] E-reader or tablet
+
+## Documents
+- [ ] Passport/ID
+- [ ] Flight tickets/boarding passes
+- [ ] Hotel confirmations
+- [ ] Travel insurance documents
+- [ ] Driver's license
+- [ ] Credit cards and cash
+- [ ] Emergency contact information
+- [ ] Copies of important documents
+
+## Miscellaneous
+- [ ] Travel pillow
+- [ ] Eye mask and earplugs
+- [ ] Reusable water bottle
+- [ ] Snacks for travel
+- [ ] First aid kit
+- [ ] Umbrella
+- [ ] Laundry bag
+- [ ] Entertainment (books, games)
+- [ ] Travel-sized laundry detergent

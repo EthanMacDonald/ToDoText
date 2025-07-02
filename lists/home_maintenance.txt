@@ -1,0 +1,42 @@
+# Home Maintenance Checklist
+
+Monthly Tasks:
+    - [ ] Test smoke and carbon monoxide detectors
+    - [ ] Clean garbage disposal with ice and lemon
+    - [ ] Check and replace HVAC filters
+    - [ ] Inspect plumbing for leaks
+    - [ ] Clean dryer lint trap and exhaust
+    - [ ] Test garage door safety features
+    - [ ] Inspect exterior doors and windows
+    - [ ] Clean kitchen exhaust fan filter
+
+Seasonal Tasks:
+    - [ ] Clean gutters and downspouts
+    - [ ] Inspect roof for damage
+    - [ ] Service lawn mower and garden tools
+    - [ ] Fertilize lawn and garden
+    - [ ] Trim trees and shrubs
+    - [ ] Power wash exterior surfaces
+    - [ ] Inspect deck/patio for safety
+    - [ ] Check outdoor lighting
+
+Annual Tasks:
+    - [ ] Service HVAC system
+    - [ ] Inspect electrical panels and outlets
+    - [ ] Check water heater and flush tank
+    - [ ] Inspect foundation for cracks
+    - [ ] Test and maintain sump pump
+    - [ ] Seal driveway and walkways
+    - [ ] Update home inventory for insurance
+    - [ ] Check attic and basement for pests
+
+Emergency Preparedness:
+    - [ ] First aid kit (notes: check expiration dates)
+    - [ ] Emergency water supply (notes: 1 gallon per person per day)
+    - [ ] Non-perishable food (notes: 3-day supply)
+    - [ ] Flashlights and batteries
+    - [ ] Battery-powered or hand-crank radio
+    - [ ] Emergency contact list
+    - [ ] Cash in small bills
+    - [ ] Medications and medical supplies
+    - [ ] Important documents in waterproof container

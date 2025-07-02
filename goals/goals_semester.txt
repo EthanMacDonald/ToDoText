@@ -1,34 +1,75 @@
 Mind:
-- [ ] Complete current online course module (priority:A due:2025-08-15) +Learning @Study
-    - [ ] Finish 3 remaining chapters
-    - [ ] Submit final project
-- [ ] Read 2 books this semester (priority:B) +Reading @Home
-- [ ] Meditate 20 minutes daily (priority:A) +Mindfulness @Home
+- [ ] Complete online course in data science (priority:A due:2025-08-31) +Learning @Computer
+    - [ ] Finish modules 1-3 by July 15
+    - [ ] Complete practice projects
+    - [ ] Submit final capstone project
+- [ ] Read 4 books this semester (priority:B) +Reading @Home
+    - [ ] 2 technical books on current field
+    - [ ] 1 biography of successful person
+    - [ ] 1 fiction book for enjoyment
+- [ ] Start daily journaling habit (priority:B) +Mindfulness @Home
+    - [ ] Write for 10 minutes each morning
+    - [ ] Reflect on daily lessons learned
+    - [ ] Track mood and energy levels
 
 Health:
-- [ ] Lose 5 pounds by semester end (priority:A due:2025-08-31) +Fitness @Gym
-    - [ ] Exercise 4x per week minimum
-    - [ ] Track daily nutrition
-- [ ] Complete vision and dental checkup (priority:B due:2025-08-15) +Healthcare @Clinic
-- [ ] Improve sleep consistency (priority:B) +Sleep @Home
+- [ ] Lose 8 pounds by semester end (priority:A due:2025-08-31) +Fitness @Gym
+    - [ ] Exercise 4 times per week minimum
+    - [ ] Track daily nutrition and calories
+    - [ ] Meal prep every Sunday
+    - [ ] Get mid-semester progress check
+- [ ] Establish morning routine (priority:A) +Wellness @Home
+    - [ ] Wake up at 6:30 AM consistently
+    - [ ] Drink water immediately upon waking
+    - [ ] Do 10 minutes of stretching
+    - [ ] Meditate for 10 minutes
+- [ ] Complete health checkups (priority:B due:2025-08-15) +Healthcare @Clinic
+    - [ ] Schedule and complete eye exam
+    - [ ] Get dental cleaning
+    - [ ] Annual blood work and physical
 
 Wealth:
-- [ ] Save $2000 this semester (priority:A due:2025-08-31) +Savings @Home
-    - [ ] Automate $400/month savings transfer
+- [ ] Save $4,000 this semester (priority:A due:2025-08-31) +Savings @Computer
+    - [ ] Automate $800/month savings transfer
     - [ ] Track all expenses weekly
-- [ ] Research investment options (priority:B) +Investment @Home
-- [ ] Complete budget review and optimization (priority:B due:2025-07-31) +Budgeting @Home
+    - [ ] Reduce dining out by 50%
+    - [ ] Find ways to earn extra $200/month
+- [ ] Learn about investing basics (priority:B) +Investment @Computer
+    - [ ] Read "The Intelligent Investor"
+    - [ ] Open investment account
+    - [ ] Start with small monthly investment
+    - [ ] Understand different investment types
+- [ ] Complete financial audit (priority:B due:2025-07-31) +Budget @Computer
+    - [ ] Review all subscriptions and cancel unused
+    - [ ] Negotiate better rates on utilities
+    - [ ] Set up proper budget categories
 
 Career:
-- [ ] Complete Q3 performance goals (priority:A due:2025-09-30) +Professional @Office
-    - [ ] Deliver project milestone by July 15
-    - [ ] Improve team efficiency metrics by 10%
-- [ ] Attend summer professional development workshop (priority:B due:2025-08-31) +Learning @Office
-- [ ] Update resume and LinkedIn profile (priority:B due:2025-07-15) +Professional @Home
+- [ ] Complete leadership training program (priority:A due:2025-08-15) +Professional @Office
+    - [ ] Attend all training sessions
+    - [ ] Complete assignments and projects
+    - [ ] Apply learning to current role
+    - [ ] Get feedback from supervisor
+- [ ] Network with 20 new professionals (priority:B) +Networking @Events
+    - [ ] Attend 3 industry events
+    - [ ] Connect on LinkedIn with new contacts
+    - [ ] Schedule follow-up conversations
+- [ ] Launch professional blog (priority:C) +Content @Computer
+    - [ ] Choose blogging platform
+    - [ ] Write 8 posts (1 per week)
+    - [ ] Share on professional networks
 
 Relationships:
-- [ ] Plan and execute summer vacation with family (priority:A due:2025-08-15) +Family @Home
-    - [ ] Research destinations by July 5
-    - [ ] Book accommodations by July 10
-- [ ] Organize friends reunion gathering (priority:B due:2025-08-30) +Friendship @Home
-- [ ] Improve workplace relationships (priority:B) +Professional @Office
+- [ ] Strengthen relationship with spouse (priority:A) +Family @Home
+    - [ ] Plan weekly date nights
+    - [ ] Take weekend trip together
+    - [ ] Practice active listening daily
+    - [ ] Express gratitude regularly
+- [ ] Connect with friends regularly (priority:B) +Social @Community
+    - [ ] Schedule monthly friend meetups
+    - [ ] Plan group activities or outings
+    - [ ] Be proactive in reaching out
+- [ ] Volunteer for local cause (priority:B) +Service @Community
+    - [ ] Research local volunteer opportunities
+    - [ ] Commit to 20 hours this semester
+    - [ ] Find cause aligned with values
