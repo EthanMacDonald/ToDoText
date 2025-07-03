@@ -1,0 +1,114 @@
+Mind:
+- [ ] Become a recognized expert in chosen field (priority:A due:2045-12-31) +Expertise @Work
+    - [ ] Publish authoritative book or research
+    - [ ] Give keynote speeches at major conferences
+    - [ ] Build influential thought leadership platform
+    - [ ] Establish industry standards or methodologies
+- [ ] Master multiple languages fluently (priority:B) +Languages @Home
+    - [ ] Achieve native-level proficiency in 3 languages
+    - [ ] Live in countries where languages are spoken
+    - [ ] Use languages professionally
+    - [ ] Teach others language learning strategies
+- [ ] Develop deep philosophical understanding (priority:B) +Philosophy @Home
+    - [ ] Study major philosophical traditions
+    - [ ] Develop personal philosophical framework
+    - [ ] Write philosophical essays or book
+    - [ ] Engage in philosophical discussions and debates
+- [ ] Create lasting intellectual contributions (priority:A) +Legacy @Work
+    - [ ] Mentor 50+ people in career development
+    - [ ] Establish scholarship or educational program
+    - [ ] Contribute to open source projects with impact
+    - [ ] Document and share knowledge for future generations
+
+Health:
+- [ ] Maintain vitality and health through aging (priority:A due:2070-12-31) +Longevity @Home
+    - [ ] Stay physically active into 80s and beyond
+    - [ ] Maintain cognitive sharpness and memory
+    - [ ] Prevent chronic diseases through lifestyle
+    - [ ] Regularly update health strategies with latest research
+- [ ] Achieve peak human performance (priority:A) +Performance @Gym
+    - [ ] Compete in age-group athletic competitions
+    - [ ] Maintain flexibility and mobility throughout life
+    - [ ] Optimize biomarkers for longevity
+    - [ ] Master advanced movement patterns and skills
+- [ ] Develop holistic wellness practices (priority:B) +Wellness @Home
+    - [ ] Integrate mind-body-spirit practices
+    - [ ] Master stress management and emotional regulation
+    - [ ] Maintain deep, restorative sleep throughout life
+    - [ ] Cultivate inner peace and contentment
+- [ ] Contribute to health and wellness knowledge (priority:B) +Contribution @Community
+    - [ ] Volunteer for health-related causes
+    - [ ] Share wellness knowledge with others
+    - [ ] Support research in longevity and health
+    - [ ] Advocate for public health initiatives
+
+Wealth:
+- [ ] Achieve complete financial independence (priority:A due:2040-12-31) +FIRE @Finance
+    - [ ] Build investment portfolio worth $2M+
+    - [ ] Generate passive income exceeding expenses
+    - [ ] Diversify income streams across multiple sources
+    - [ ] Eliminate all debt permanently
+- [ ] Create generational wealth (priority:A) +Legacy @Finance
+    - [ ] Build estate to pass to next generation
+    - [ ] Establish family trust or foundation
+    - [ ] Teach financial literacy to family members
+    - [ ] Create businesses that outlast lifetime
+- [ ] Master wealth building and investing (priority:B) +Investing @Finance
+    - [ ] Understand all major asset classes deeply
+    - [ ] Achieve consistent 10%+ annual returns
+    - [ ] Build expertise in alternative investments
+    - [ ] Become accredited investor with access to exclusive deals
+- [ ] Use wealth for positive impact (priority:A) +Impact @Community
+    - [ ] Donate significantly to causes that matter
+    - [ ] Invest in startups solving important problems
+    - [ ] Support education and opportunity for others
+    - [ ] Create jobs and economic opportunities
+
+Career:
+- [ ] Build a career that creates lasting impact (priority:A due:2050-12-31) +Impact @Work
+    - [ ] Lead organizations that solve important problems
+    - [ ] Develop products or services used by millions
+    - [ ] Create positive change in industry or society
+    - [ ] Be remembered for meaningful contributions
+- [ ] Achieve senior leadership positions (priority:A) +Leadership @Work
+    - [ ] Lead teams of 100+ people effectively
+    - [ ] Drive major strategic initiatives
+    - [ ] Develop reputation as transformational leader
+    - [ ] Mentor next generation of leaders
+- [ ] Build professional network and influence (priority:B) +Network @Work
+    - [ ] Maintain relationships with 500+ professionals
+    - [ ] Serve on boards of meaningful organizations
+    - [ ] Speak at major industry events regularly
+    - [ ] Be sought after for advice and consultation
+- [ ] Create entrepreneurial ventures (priority:B) +Entrepreneurship @Work
+    - [ ] Build and successfully exit multiple businesses
+    - [ ] Create innovative products or services
+    - [ ] Generate significant value for stakeholders
+    - [ ] Establish reputation as successful entrepreneur
+
+Relationships:
+- [ ] Build and maintain deep, lasting relationships (priority:A due:2080-12-31) +Connection @Home
+    - [ ] Nurture lifelong friendships with 10+ people
+    - [ ] Maintain strong family bonds across generations
+    - [ ] Be known as reliable, trustworthy person
+    - [ ] Create traditions and memories that endure
+- [ ] Develop a loving, supportive partnership (priority:A) +Partnership @Home
+    - [ ] Find and marry compatible life partner
+    - [ ] Build relationship that grows stronger over decades
+    - [ ] Support each other through all life phases
+    - [ ] Create shared vision and goals for life
+- [ ] Raise and guide next generation (priority:A) +Parenting @Home
+    - [ ] Raise children who are confident and capable
+    - [ ] Teach values and life skills effectively
+    - [ ] Support children's individual dreams and goals
+    - [ ] Maintain close relationships as they become adults
+- [ ] Contribute to community and society (priority:B) +Community @Community
+    - [ ] Volunteer regularly for causes that matter
+    - [ ] Be active in local community organizations
+    - [ ] Help solve problems in community
+    - [ ] Leave community better than found it
+- [ ] Build social influence and positive impact (priority:B) +Influence @Community
+    - [ ] Inspire others to pursue their goals
+    - [ ] Use platform to advocate for important causes
+    - [ ] Bring people together around shared values
+    - [ ] Create movements for positive change

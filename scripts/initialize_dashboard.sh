@@ -13,6 +13,33 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BACKEND_DIR="$PROJECT_ROOT/dashboard/backend"
 FRONTEND_DIR="$PROJECT_ROOT/dashboard/frontend"
 
+# Initialize virtual environment for this script
+initialize_virtual_env() {
+    print_status "Initializing virtual environment..."
+    
+    # Check if .todo_env exists
+    if [ ! -d "$PROJECT_ROOT/.todo_env" ]; then
+        print_error "Virtual environment '.todo_env' not found"
+        print_status "Please create the virtual environment first:"
+        print_status "  python3 -m venv .todo_env"
+        print_status "  source .todo_env/bin/activate"
+        print_status "  pip install -r requirements.txt"
+        exit 1
+    fi
+    
+    # Activate the virtual environment
+    print_status "Activating virtual environment: .todo_env"
+    source "$PROJECT_ROOT/.todo_env/bin/activate"
+    
+    if [ $? -eq 0 ]; then
+        print_success "Successfully activated .todo_env"
+        print_status "Using Python: $(which python)"
+    else
+        print_error "Failed to activate .todo_env"
+        exit 1
+    fi
+}
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -62,16 +89,11 @@ setup_backend() {
         exit 1
     fi
     
-    # Check if project virtual environment exists
-    if [ ! -d "$PROJECT_ROOT/.todo_env" ]; then
-        print_warning "Project virtual environment '.todo_env' not found"
-        print_status "Please run the setup script first: ./scripts/setup_environment.sh"
+    # Ensure virtual environment is activated
+    if [ -z "$VIRTUAL_ENV" ]; then
+        print_error "Virtual environment not properly activated"
         exit 1
     fi
-    
-    # Activate project virtual environment
-    print_status "Activating project virtual environment (.todo_env)..."
-    source "$PROJECT_ROOT/.todo_env/bin/activate"
     
     cd "$BACKEND_DIR"
     
@@ -148,6 +170,9 @@ wait_for_servers() {
 main() {
     cd "$PROJECT_ROOT"
     
+    # Initialize virtual environment first
+    initialize_virtual_env
+    
     # Check dependencies
     if ! command -v python3 &> /dev/null; then
         print_error "python3 is required but not installed"
@@ -164,13 +189,13 @@ main() {
         exit 1
     fi
     
-    # Check if project environment is set up
-    if [ ! -d "$PROJECT_ROOT/.todo_env" ]; then
-        print_error "Project virtual environment not found!"
-        print_status "Please run the environment setup script first:"
-        print_status "  ./scripts/setup_environment.sh"
+    # Check if virtual environment is properly activated
+    if [ -z "$VIRTUAL_ENV" ]; then
+        print_error "Virtual environment '.todo_env' not properly activated!"
         exit 1
     fi
+    
+    print_success "Using virtual environment: $VIRTUAL_ENV"
     
     # Setup process
     check_required_files

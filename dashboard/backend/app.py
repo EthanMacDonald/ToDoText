@@ -1348,6 +1348,8 @@ def get_goals_title(filepath: str):
         return 'Annual Goals'
     elif filename == 'goals_semester.txt':
         return 'Semester Goals'
+    elif filename == 'goals_life.txt':
+        return 'Life Goals'
     else:
         return filename.replace('.txt', '').replace('_', ' ').title()
 
@@ -1362,7 +1364,7 @@ async def get_goals():
             return []
             
         goals_files = []
-        for filename in ['goals_5y.txt', 'goals_1y.txt', 'goals_semester.txt']:
+        for filename in ['goals_life.txt', 'goals_5y.txt', 'goals_1y.txt', 'goals_semester.txt']:
             filepath = os.path.join(goals_dir, filename)
             if os.path.exists(filepath):
                 name = filename[:-4]  # Remove .txt extension
