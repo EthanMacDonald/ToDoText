@@ -76,10 +76,7 @@ cat > "$PLIST_PATH" << EOF
     <true/>
     
     <key>KeepAlive</key>
-    <dict>
-        <key>SuccessfulExit</key>
-        <false/>
-    </dict>
+    <true/>
     
     <key>StandardOutPath</key>
     <string>$PROJECT_ROOT/log_files/autostart.log</string>
@@ -98,9 +95,6 @@ cat > "$PLIST_PATH" << EOF
     
     <key>ProcessType</key>
     <string>Background</string>
-    
-    <key>ThrottleInterval</key>
-    <integer>10</integer>
 </dict>
 </plist>
 EOF
