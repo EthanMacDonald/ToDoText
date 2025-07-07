@@ -108,10 +108,10 @@ setup_backend() {
     # Start backend server in background
     if [ "$REMOTE_ACCESS" = true ]; then
         print_status "Starting FastAPI backend server with remote access..."
-        nohup uvicorn app:app --reload --host 0.0.0.0 --port 8000 > "$PROJECT_ROOT/log_files/backend.log" 2>&1 &
+        nohup uvicorn app:app --host 0.0.0.0 --port 8000 > "$PROJECT_ROOT/log_files/backend.log" 2>&1 &
     else
         print_status "Starting FastAPI backend server (local only)..."
-        nohup uvicorn app:app --reload --host 127.0.0.1 --port 8000 > "$PROJECT_ROOT/log_files/backend.log" 2>&1 &
+        nohup uvicorn app:app --host 127.0.0.1 --port 8000 > "$PROJECT_ROOT/log_files/backend.log" 2>&1 &
     fi
     
     BACKEND_PID=$!
@@ -307,6 +307,32 @@ main() {
     echo "🔍 To monitor logs:"
     echo "   tail -f log_files/backend.log"
     echo "   tail -f log_files/frontend.log"
+    
+    # Keep the script alive for LaunchAgent
+    # This prevents LaunchAgent from killing child processes
+    print_status "Dashboard initialized. Keeping processes alive..."
+    while true; do
+        # Check if backend is still running
+        if [ -f "$PROJECT_ROOT/log_files/backend.pid" ]; then
+            BACKEND_PID=$(cat "$PROJECT_ROOT/log_files/backend.pid")
+            if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+                print_warning "Backend process died, restarting..."
+                setup_backend
+            fi
+        fi
+        
+        # Check if frontend is still running
+        if [ -f "$PROJECT_ROOT/log_files/frontend.pid" ]; then
+            FRONTEND_PID=$(cat "$PROJECT_ROOT/log_files/frontend.pid")
+            if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+                print_warning "Frontend process died, restarting..."
+                setup_frontend
+            fi
+        fi
+        
+        # Wait 30 seconds before next check
+        sleep 30
+    done
 }
 
 # Trap to cleanup on script exit

@@ -48,6 +48,13 @@ fi
 
 print_status "Found virtual environment: $PROJECT_ROOT/.todo_env"
 
+# Get Python version for PYTHONPATH
+PYTHON_VERSION=$(cd "$PROJECT_ROOT" && source .todo_env/bin/activate && python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+PYTHON_SITE_PACKAGES="$PROJECT_ROOT/.todo_env/lib/python${PYTHON_VERSION}/site-packages"
+
+print_status "Detected Python version: $PYTHON_VERSION"
+print_status "Using site-packages: $PYTHON_SITE_PACKAGES"
+
 # Create LaunchAgents directory if it doesn't exist
 mkdir -p "$LAUNCH_AGENTS_DIR"
 
@@ -90,7 +97,13 @@ cat > "$PLIST_PATH" << EOF
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:/usr/local/sbin</string>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:/usr/local/sbin:$PROJECT_ROOT/.todo_env/bin</string>
+        <key>VIRTUAL_ENV</key>
+        <string>$PROJECT_ROOT/.todo_env</string>
+        <key>PYTHONPATH</key>
+        <string>$PYTHON_SITE_PACKAGES</string>
+        <key>HOME</key>
+        <string>$HOME</string>
     </dict>
     
     <key>ProcessType</key>
@@ -105,6 +118,17 @@ chmod +x "$PROJECT_ROOT/scripts/initialize_dashboard.sh"
 # Load the LaunchAgent
 print_status "Loading LaunchAgent..."
 launchctl load "$PLIST_PATH"
+
+# Test the LaunchAgent environment
+print_status "Testing LaunchAgent setup..."
+sleep 5
+
+# Check if the service is loaded
+if launchctl list | grep -q "com.taskmanager.dashboard"; then
+    print_success "LaunchAgent loaded successfully"
+else
+    print_warning "LaunchAgent may not have loaded correctly"
+fi
 
 print_success "✅ Task Dashboard auto-start is now configured!"
 print_status "The dashboard will automatically start when you log in."
