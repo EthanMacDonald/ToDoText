@@ -44,12 +44,15 @@ README:
       Due Date: "(due:YYYY-MM-DD)"
       Done Date: "(done:YYYY-MM-DD)"
       Follow-up Date: "(followup:YYYY-MM-DD)"
+      On Hold Until: "(onhold:YYYY-MM-DD|text_condition)"
       Frequency: "(freq:daily|weekly:Mon,Wed|monthly:15|monthly:3rd Tue|yearly:06-24|custom:14d)"
       Last Done: "(lastdone:YYYY-MM-DD) (optional, for recurring tasks)"
       Example: |
         - [ ] Prepare quarterly report (priority:A due:2025-07-15)
         - [x] Submit expense report (done:2025-06-20 priority:B)
         - [ ] Follow up with client (priority:B followup:2025-07-10)
+        - [ ] Review contract proposal (priority:A onhold:2025-07-20)
+        - [ ] Wait for client approval (onhold:waiting for email from jalil)
         - [ ] Pay rent (freq:monthly:1 lastdone:2025-06-01)
         - [ ] Take medication (freq:daily lastdone:2025-06-24)
         - [ ] Team meeting (freq:weekly:Mon,Thu lastdone:2025-06-23)
@@ -81,6 +84,35 @@ README:
         - Time-delayed actions after task completion
         - Reminders to follow up on delegated work
       
+      On Hold System:
+        The on hold feature helps manage tasks that cannot be worked on until a specific date or condition is met. Tasks marked with `onhold:YYYY-MM-DD` or `onhold:text_condition` are temporarily suspended and grouped separately from active tasks.
+        
+        How it works:
+        - Add an `onhold:YYYY-MM-DD` tag to put a task on hold until a specific date
+        - Add an `onhold:text_condition` tag to put a task on hold until a condition is met (e.g., "waiting for email from john")
+        - Date-based holds are automatically released when the date passes
+        - Text-based holds remain active until manually removed
+        - Tasks on hold appear in a special "On Hold" section between active and completed tasks
+        - If a subtask is on hold, a copy of the parent task (showing only the on-hold subtask) appears in the "On Hold" section
+        - On-hold tasks are sorted by onhold date (earliest release date first), with text conditions at the end
+        - In the dashboard, onhold tasks display a special "On Hold" tag for easy identification
+        - Use the edit form to modify or remove onhold dates/conditions when circumstances change
+        
+        Examples:
+        - [ ] Review contract proposal (priority:A onhold:2025-07-20) @Office
+        - [ ] Start new project (onhold:waiting for budget approval) +ProjectBeta
+        - [ ] Schedule team retreat (priority:B onhold:2025-07-15) +TeamEvents
+        - [ ] Update documentation (priority:C) +Docs @Computer
+            - [ ] Review current docs
+            - [ ] Add new API endpoints (onhold:waiting for dev team input)
+        
+        Use cases:
+        - Tasks waiting for external dependencies (e.g., "Review proposal" → on hold until client responds)
+        - Seasonal or time-sensitive tasks (e.g., "Plan holiday party" → on hold until November)
+        - Tasks blocked by other work that must be completed first
+        - Personal tasks that can't be started until a specific life event or date
+        - Subtasks that are blocked while the main task can proceed
+      
       Recurring Tasks:
         - Use the `freq:` tag to specify recurrence:
             - `daily` (every day)
@@ -100,6 +132,7 @@ README:
         - [ ] Prepare quarterly report (priority:A due:2025-07-15)
         - [x] Submit expense report (done:2025-06-20 priority:B)
         - [ ] Follow up on proposal (priority:A followup:2025-07-10)
+        - [ ] Review contract proposal (priority:A onhold:2025-07-20)
         - [ ] Plan event (priority:C freq:monthly:1)
         - [ ] Water plants (freq:daily lastdone:2025-06-24)
         - [ ] Test smoke alarms (freq:yearly:06-24 lastdone:2024-06-24)
@@ -107,12 +140,12 @@ README:
         - [ ] Complete project (done:2025-06-25 followup:2025-07-08) +ProjectAlpha
 
       Notes:
-        - All metadata tags must be inside one set of parentheses, e.g. (priority:A due:2025-07-15 followup:2025-07-22).
+        - All metadata tags must be inside one set of parentheses, e.g. (priority:A due:2025-07-15 onhold:2025-07-22).
         - Tags can appear in any order within the parentheses.
         - The parser will extract all key:value pairs from the parentheses, so you can include as many as needed.
         - If you include multiple sets of parentheses, only the first will be parsed for metadata.
         - Avoid using spaces within values (e.g., use freq:monthly:3rd Tue not freq:monthly:3rd  Tue).
-        - Follow-up dates should be in YYYY-MM-DD format for proper sorting and display.
+        - Follow-up dates and onhold dates should be in YYYY-MM-DD format for proper sorting and display.
 
     Context, Area, and Project Tags
 

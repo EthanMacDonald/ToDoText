@@ -102,6 +102,19 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                     clean_content = re.sub(r'([+@&]\w+)', '', content_no_meta).strip()
                     
                     # Determine task status
+                    onhold_value = metadata.get('onhold', '')
+                    is_onhold_active = False
+                    
+                    if onhold_value:
+                        # Check if onhold is a date that has passed
+                        try:
+                            onhold_date = datetime.strptime(onhold_value, '%Y-%m-%d').date()
+                            today = get_adjusted_today()
+                            is_onhold_active = onhold_date > today
+                        except ValueError:
+                            # Not a date, treat as text condition - always active
+                            is_onhold_active = True
+                    
                     if completed == '%':
                         task_status = 'followup'
                         is_completed = False  # Follow-up tasks are not truly completed
@@ -115,6 +128,10 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                     elif metadata.get('followup') or metadata.get('followup_date'):
                         # Task has follow-up date but is not checked - it's in follow-up state
                         task_status = 'followup'
+                        is_completed = False
+                    elif is_onhold_active:
+                        # Task is on hold (either future date or text condition)
+                        task_status = 'onhold'
                         is_completed = False
                     else:
                         task_status = 'incomplete'
@@ -134,6 +151,7 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                         'priority': metadata.get('priority', ''),
                         'recurring': metadata.get('every', ''),
                         'followup_date': metadata.get('followup_date', metadata.get('followup', '')),
+                        'onhold_date': metadata.get('onhold', ''),
                         'indent_level': indent_level,
                         'subtasks': [],
                         'notes': [],
@@ -200,10 +218,11 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
     
     all_tasks = extract_all_tasks(parsed_data)
     
-    # Separate tasks by status: incomplete, follow-up, and completed
-    incomplete_tasks = [t for t in all_tasks if not t.get('followup_date') and not t['completed']]
-    followup_tasks = [t for t in all_tasks if t.get('followup_date')]  # Any task with follow-up date
-    completed_tasks = [t for t in all_tasks if t['completed'] and not t.get('followup_date')]  # Only truly completed tasks
+    # Separate tasks by status: incomplete, onhold, follow-up, and completed
+    incomplete_tasks = [t for t in all_tasks if t['status'] == 'incomplete']
+    onhold_tasks = [t for t in all_tasks if t['status'] == 'onhold']
+    followup_tasks = [t for t in all_tasks if t['status'] == 'followup']
+    completed_tasks = [t for t in all_tasks if t['status'] == 'done']
     
     # Also include parent tasks that have completed subtasks in the Done group
     def find_completed_subtask_hierarchies(items):
@@ -255,6 +274,56 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
     
     parent_tasks_with_completed_subtasks = find_completed_subtask_hierarchies(parsed_data)
     
+    # Find parent tasks that have onhold subtasks and create copies
+    def find_onhold_subtask_hierarchies(items):
+        """Find all parent tasks that have onhold subtasks and create copies with only onhold subtasks"""
+        hierarchies = []
+        
+        def has_onhold_subtasks_recursively(task):
+            """Check if task has any onhold subtasks at any depth"""
+            if task.get('subtasks'):
+                for subtask in task['subtasks']:
+                    if subtask['status'] == 'onhold' or has_onhold_subtasks_recursively(subtask):
+                        return True
+            return False
+        
+        def create_onhold_only_copy(task):
+            """Create a copy of task containing only onhold subtasks (recursively)"""
+            import copy
+            task_copy = copy.deepcopy(task)
+            
+            if task_copy.get('subtasks'):
+                onhold_subtasks = []
+                for subtask in task_copy['subtasks']:
+                    if subtask['status'] == 'onhold':
+                        # Include the onhold subtask
+                        onhold_subtasks.append(subtask)
+                    elif has_onhold_subtasks_recursively(subtask):
+                        # Include incomplete subtask but filter its children
+                        filtered_subtask = create_onhold_only_copy(subtask)
+                        if filtered_subtask['subtasks']:  # Only add if it has onhold children
+                            onhold_subtasks.append(filtered_subtask)
+                
+                task_copy['subtasks'] = onhold_subtasks
+            
+            return task_copy
+        
+        for item in items:
+            if item['type'] == 'area':
+                for task in item['tasks']:
+                    if task['status'] != 'onhold' and has_onhold_subtasks_recursively(task):
+                        filtered_task = create_onhold_only_copy(task)
+                        if filtered_task['subtasks']:  # Only add if it actually has onhold subtasks
+                            hierarchies.append(filtered_task)
+            elif item['type'] == 'task' and task['status'] != 'onhold' and has_onhold_subtasks_recursively(item):
+                filtered_task = create_onhold_only_copy(item)
+                if filtered_task['subtasks']:
+                    hierarchies.append(filtered_task)
+        
+        return hierarchies
+    
+    parent_tasks_with_onhold_subtasks = find_onhold_subtask_hierarchies(parsed_data)
+    
     # Sort completed tasks by done date
     completed_tasks.sort(key=lambda x: x.get('done_date_obj') or date.max)
     
@@ -284,15 +353,46 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
             'title': due_date,
             'tasks': add_hierarchy_to_tasks(due_groups[due_date], include_completed_subtasks=False)
         })
-    
-    # Add no due date group
+     # Add no due date group
     if no_due_tasks:
         result.append({
             'type': 'group',
             'title': 'No Due Date',
             'tasks': add_hierarchy_to_tasks(no_due_tasks, include_completed_subtasks=False)
         })
-    
+
+    # Add on hold tasks group (sorted by onhold date, upcoming first)
+    if onhold_tasks or parent_tasks_with_onhold_subtasks:
+        # Combine onhold tasks and parent tasks with onhold subtasks
+        all_onhold_tasks = onhold_tasks + parent_tasks_with_onhold_subtasks
+        
+        # Parse onhold dates and sort - prioritize upcoming dates over past ones
+        def parse_onhold_date(task):
+            onhold_str = task.get('onhold_date', '')
+            if onhold_str:
+                try:
+                    onhold_date = datetime.strptime(onhold_str, '%Y-%m-%d').date()
+                    today = date.today()
+                    
+                    # Prioritize upcoming dates: put them first, then past dates
+                    if onhold_date >= today:
+                        # Future/today dates: sort normally (earliest first)
+                        return (0, onhold_date)
+                    else:
+                        # Past dates: sort by reverse date (most recent past first)
+                        return (1, -onhold_date.toordinal())
+                except ValueError:
+                    pass
+            return (2, 0)  # Put tasks with invalid dates at the end
+        
+        all_onhold_tasks.sort(key=parse_onhold_date)
+        
+        result.append({
+            'type': 'group',
+            'title': 'On Hold',
+            'tasks': add_hierarchy_to_tasks(all_onhold_tasks, include_completed_subtasks=False, preserve_order=True, include_onhold_subtasks=True)
+        })
+
     # Add follow-up tasks group (sorted by follow-up date, upcoming first)
     if followup_tasks:
         # Parse follow-up dates and sort - prioritize upcoming dates over past ones
@@ -334,7 +434,7 @@ def build_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[str, 
     
     return result
 
-def add_hierarchy_to_tasks(task_list: List[Dict[str, Any]], include_completed_subtasks: bool = False, preserve_order: bool = False) -> List[Dict[str, Any]]:
+def add_hierarchy_to_tasks(task_list: List[Dict[str, Any]], include_completed_subtasks: bool = False, preserve_order: bool = False, include_onhold_subtasks: bool = False) -> List[Dict[str, Any]]:
     """Add subtasks back to their parent tasks and return only top-level tasks"""
     # Find all top-level tasks (indent_level 0 or 1, since our top-level tasks are at level 1)
     top_level_tasks = [t for t in task_list if t['indent_level'] <= 1]
@@ -347,7 +447,11 @@ def add_hierarchy_to_tasks(task_list: List[Dict[str, Any]], include_completed_su
         """Recursively filter subtasks based on completion status"""
         filtered = []
         for subtask in subtasks:
-            if include_completed or not subtask['completed']:
+            # For active tasks, exclude onhold subtasks (they appear in onhold group)
+            # For onhold group, include onhold subtasks
+            if subtask['status'] == 'onhold' and not include_completed and not include_onhold_subtasks:
+                continue  # Skip onhold subtasks in active task groups
+            elif include_completed or not subtask['completed'] or (include_onhold_subtasks and subtask['status'] == 'onhold'):
                 subtask_copy = copy.deepcopy(subtask)
                 if subtask_copy.get('subtasks'):
                     subtask_copy['subtasks'] = filter_subtasks_recursively(subtask_copy['subtasks'], include_completed)

@@ -10,8 +10,16 @@ Work:
         - [ ] Prepare development plans for underperformers
     - [ ] Update project documentation (priority:C) +Documentation @Computer
         - [ ] Review existing API documentation
-        - [ ] Add missing endpoint descriptions
+        - [ ] Add missing endpoint descriptions (onhold:2025-07-15)
             Include examples and error codes
+        - [ ] Create user guide (onhold:waiting for product manager approval)
+            Need final feature specifications first
+    - [ ] Review Q3 budget proposals (priority:A onhold:2025-07-15) +Budget @Office
+        Waiting for finance team to complete preliminary analysis
+    - [ ] Plan office renovation project (priority:B onhold:2025-08-01) +Facilities @Office
+        - [ ] Get quotes from contractors
+        - [ ] Schedule tenant meetings
+        On hold until lease renewal is finalized
 
 Personal:
     - [x] Schedule annual medical checkup (priority:A due:2025-07-10) +Healthcare @Phone
@@ -21,10 +29,14 @@ Personal:
             Consider budget, weather, and activities
         - [ ] Book flights and accommodation
         - [ ] Create packing checklist
+        - [ ] Apply for passport renewal (onhold:waiting for birth certificate copy)
+            Need certified copy from vital records office
     - [ ] Learn new programming language (priority:B) +Learning @Computer
         - [ ] Choose between Rust, Go, or TypeScript
         - [ ] Complete online course or tutorial
         - [ ] Build practice project
+    - [ ] Start meditation practice (priority:C onhold:2025-07-20) +Wellness @Home
+        Waiting until vacation stress reduces
 
 Home:
     - [x] Fix kitchen faucet leak (priority:A due:2025-07-05 done:2025-07-06) +Maintenance @Home 
@@ -33,10 +45,12 @@ Home:
         - [x] Sort items into keep, donate, discard piles (done:2025-07-06)
         - [ ] Install shelving system
         - [ ] Label storage containers
-- [ ] Plan garden for next season (priority:B) +Gardening @Home
-    - [ ] Research plants suitable for local climate
-    - [ ] Prepare soil and remove weeds
-    - [ ] Purchase seeds and supplies
+    - [ ] Plan garden for next season (priority:B) +Gardening @Home
+        - [ ] Research plants suitable for local climate
+        - [ ] Prepare soil and remove weeds
+        - [ ] Purchase seeds and supplies
+    - [ ] Install new smart thermostat (priority:C onhold:2025-07-25) +HomeImprovement @Home
+        Waiting for electrician consultation scheduled for July 25th
 
 Shopping:
     - [ ] Buy birthday gift for spouse (priority:A due:2025-07-12) +Gifts @Mall
@@ -56,3 +70,7 @@ Finance:
         - [ ] Compare mutual fund performance
         - [ ] Read articles on market trends
         - [ ] Schedule meeting with financial advisor
+        - [ ] Review 401k allocation (onhold:2025-07-01)
+            Should be active now since date has passed
+    - [ ] Refinance mortgage (priority:A onhold:waiting for email from jalil) +Mortgage @Phone
+        Waiting for interest rates to stabilize before proceeding

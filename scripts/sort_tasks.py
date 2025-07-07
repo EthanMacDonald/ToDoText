@@ -52,6 +52,19 @@ def parse_tasks(file_path):
                     raise
                 progress = metadata.get('progress')
                 rec = metadata.get('rec')
+                onhold = metadata.get('onhold')
+                # Determine if onhold is active (future date or text condition)
+                is_onhold_active = False
+                if onhold:
+                    try:
+                        # Try to parse as date
+                        onhold_date = datetime.datetime.strptime(onhold, '%Y-%m-%d').date()
+                        today = datetime.date.today()
+                        is_onhold_active = onhold_date > today
+                        onhold = onhold_date if is_onhold_active else None  # Set to None if date has passed
+                    except ValueError:
+                        # Not a date, treat as text condition - always active
+                        is_onhold_active = True
                 # Extract all unique project and context tags from content
                 project_tags = list(dict.fromkeys(re.findall(r'\+(\w+)', content_no_meta)))
                 context_tags = list(dict.fromkeys(re.findall(r'@(\w+)', content_no_meta)))
@@ -70,6 +83,8 @@ def parse_tasks(file_path):
                     'done_date': done_date,
                     'progress': progress,
                     'rec': rec,
+                    'onhold': onhold if is_onhold_active else None,
+                    'is_onhold_active': is_onhold_active,
                     'project': project,
                     'context': context,
                     'extra_projects': extra_projects,
@@ -112,6 +127,8 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
             meta.append(f"progress:{task['progress']}")
         if task.get('rec'):
             meta.append(f"rec:{task['rec']}")
+        if task.get('onhold'):
+            meta.append(f"onhold:{task['onhold']}")
         return f" ({' '.join(meta)})" if meta else ''
 
     def build_tags_str(task, primary_task=False):
@@ -168,49 +185,114 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                 tasks_to_sort = grouped_tasks[key]
 
                 if secondary_key in ['priority', 'due']:
-                    sorted_tasks = sorted(tasks_to_sort, key=lambda x: (
-                        (priority_order.get(x['priority'], 99), x['content']) if secondary_key == 'priority' else (
-                            not x['completed'], x['due'] is None, x['due'] or datetime.date.max)
-                    ))
-                    current_group = None
-                    for task in sorted_tasks:
-                        group = 'Done' if task['completed'] and secondary_key == 'due' else (
-                            task['priority'] or 'No Priority' if secondary_key == 'priority' else task['due'] or 'No Due Date')
-                        if group != current_group:
-                            current_group = group
-                            group_str = group.strftime('%Y-%m-%d') if isinstance(group, datetime.date) else group
-                            f.write(f"  {group_str}:\n")
-                        status = '[x]' if task['completed'] else '[ ]'
+                    # Group tasks by completion status and onhold status
+                    incomplete_tasks = [x for x in tasks_to_sort if not x['completed'] and not x.get('is_onhold_active')]
+                    onhold_tasks = [x for x in tasks_to_sort if x.get('is_onhold_active')]
+                    completed_tasks = [x for x in tasks_to_sort if x['completed']]
+                    
+                    # Sort each group separately
+                    if secondary_key == 'priority':
+                        incomplete_sorted = sorted(incomplete_tasks, key=lambda x: (priority_order.get(x['priority'], 99), x['content']))
+                        # Sort onhold tasks: dates first (by date), then text conditions (alphabetically)
+                        def onhold_sort_key(task):
+                            onhold_val = task.get('onhold')
+                            if onhold_val is None:
+                                return (2, '', priority_order.get(task['priority'], 99), task['content'])
+                            elif isinstance(onhold_val, datetime.date):
+                                return (0, onhold_val, priority_order.get(task['priority'], 99), task['content'])
+                            else:
+                                return (1, str(onhold_val), priority_order.get(task['priority'], 99), task['content'])
+                        onhold_sorted = sorted(onhold_tasks, key=onhold_sort_key)
+                        completed_sorted = sorted(completed_tasks, key=lambda x: (priority_order.get(x['priority'], 99), x['content']))
+                    else:  # due
+                        incomplete_sorted = sorted(incomplete_tasks, key=lambda x: (x['due'] is None, x['due'] or datetime.date.max, x['content']))
+                        # Sort onhold tasks: dates first (by date), then text conditions (alphabetically)
+                        def onhold_sort_key(task):
+                            onhold_val = task.get('onhold')
+                            if onhold_val is None:
+                                return (2, '', task['due'] is None, task['due'] or datetime.date.max, task['content'])
+                            elif isinstance(onhold_val, datetime.date):
+                                return (0, onhold_val, task['due'] is None, task['due'] or datetime.date.max, task['content'])
+                            else:
+                                return (1, str(onhold_val), task['due'] is None, task['due'] or datetime.date.max, task['content'])
+                        onhold_sorted = sorted(onhold_tasks, key=onhold_sort_key)
+                        completed_sorted = sorted(completed_tasks, key=lambda x: (x['due'] is None, x['due'] or datetime.date.max, x['content']))
+                    
+                    # Write incomplete tasks first
+                    for task in incomplete_sorted:
+                        status = '[ ]'
                         meta_str = build_metadata_str(task)
                         tags_str = build_tags_str(task, primary_task=True)
                         content = task['content']
-                        # Sort subtasks for secondary sort
-                        if secondary_key == 'due':
-                            subtasks_sorted = sorted(task['subtasks'], key=lambda x: (not x['completed'], x.get('due') is None, x.get('due') or datetime.date.max, x['content']))
-                        elif secondary_key == 'priority':
-                            subtasks_sorted = sorted(task['subtasks'], key=lambda x: (priority_order.get(x.get('priority'), 99), x['content']))
-                        else:
-                            subtasks_sorted = task['subtasks']
                         f.write(f"{task['indent']}- {status} {content}{meta_str}{tags_str}\n")
                         for note in task.get('notes', []):
                             f.write(f"{note['indent']}{note['content']}\n")
-                        for subtask in subtasks_sorted:
+                        for subtask in task['subtasks']:
                             sub_status = '[x]' if subtask['completed'] else '[ ]'
                             sub_meta_str = build_metadata_str(subtask)
                             sub_tags_str = build_tags_str(subtask, primary_task=False)
                             f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
+                    
+                    # Write onhold tasks with header
+                    if onhold_tasks:
+                        f.write(f"  On Hold:\n")
+                        for task in onhold_sorted:
+                            status = '[ ]'
+                            meta_str = build_metadata_str(task)
+                            tags_str = build_tags_str(task, primary_task=True)
+                            content = task['content']
+                            f.write(f"{task['indent']}- {status} {content}{meta_str}{tags_str}\n")
+                            for note in task.get('notes', []):
+                                f.write(f"{note['indent']}{note['content']}\n")
+                            for subtask in task['subtasks']:
+                                sub_status = '[x]' if subtask['completed'] else '[ ]'
+                                sub_meta_str = build_metadata_str(subtask)
+                                sub_tags_str = build_tags_str(subtask, primary_task=False)
+                                f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
+                    
+                    # Write completed tasks with header
+                    if completed_tasks:
+                        f.write(f"  Done:\n")
+                        for task in completed_sorted:
+                            status = '[x]'
+                            meta_str = build_metadata_str(task)
+                            tags_str = build_tags_str(task, primary_task=True)
+                            content = task['content']
+                            f.write(f"{task['indent']}- {status} {content}{meta_str}{tags_str}\n")
+                            for note in task.get('notes', []):
+                                f.write(f"{note['indent']}{note['content']}\n")
+                            for subtask in task['subtasks']:
+                                sub_status = '[x]' if subtask['completed'] else '[ ]'
+                                sub_meta_str = build_metadata_str(subtask)
+                                sub_tags_str = build_tags_str(subtask, primary_task=False)
+                                f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
                 else:
-                    sorted_area_tasks = sorted(tasks_to_sort, key=sorting_fn)
-                    for task in sorted_area_tasks:
-                        status = '[x]' if task['completed'] else '[ ]'
+                    # Group tasks by completion status and onhold status for primary sorts too
+                    incomplete_tasks = [x for x in tasks_to_sort if not x['completed'] and not x.get('is_onhold_active')]
+                    onhold_tasks = [x for x in tasks_to_sort if x.get('is_onhold_active')]
+                    completed_tasks = [x for x in tasks_to_sort if x['completed']]
+                    
+                    # Sort each group
+                    incomplete_sorted = sorted(incomplete_tasks, key=sorting_fn)
+                    # Sort onhold tasks: dates first (by date), then text conditions (alphabetically)
+                    def onhold_sort_key(task):
+                        onhold_val = task.get('onhold')
+                        if onhold_val is None:
+                            return (2, '', sorting_fn(task))  # No onhold value
+                        elif isinstance(onhold_val, datetime.date):
+                            return (0, onhold_val, sorting_fn(task))  # Date-based onhold
+                        else:
+                            return (1, str(onhold_val), sorting_fn(task))  # Text-based onhold
+                    onhold_sorted = sorted(onhold_tasks, key=onhold_sort_key)
+                    completed_sorted = sorted(completed_tasks, key=sorting_fn)
+                    
+                    # Write incomplete tasks first
+                    for task in incomplete_sorted:
+                        status = '[ ]'
                         meta_str = build_metadata_str(task)
                         tags_str = build_tags_str(task, primary_task=True)
                         content = task['content']
-                        # Sort subtasks for area/priority sorts
-                        if secondary_key == 'priority':
-                            subtasks_sorted = sorted(task['subtasks'], key=lambda x: (priority_order.get(x.get('priority'), 99), x['content']))
-                        else:
-                            subtasks_sorted = sorted(task['subtasks'], key=sorting_fn)
+                        subtasks_sorted = sorted(task['subtasks'], key=sorting_fn)
                         f.write(f"{task['indent']}- {status} {content}{meta_str}{tags_str}\n")
                         for note in task.get('notes', []):
                             f.write(f"{note['indent']}{note['content']}\n")
@@ -219,11 +301,47 @@ def sort_and_write(tasks, sort_key, secondary_key=None):
                             sub_meta_str = build_metadata_str(subtask)
                             sub_tags_str = build_tags_str(subtask, primary_task=False)
                             f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
+                    
+                    # Write onhold tasks with header
+                    if onhold_tasks:
+                        f.write(f"  On Hold:\n")
+                        for task in onhold_sorted:
+                            status = '[ ]'
+                            meta_str = build_metadata_str(task)
+                            tags_str = build_tags_str(task, primary_task=True)
+                            content = task['content']
+                            subtasks_sorted = sorted(task['subtasks'], key=sorting_fn)
+                            f.write(f"{task['indent']}- {status} {content}{meta_str}{tags_str}\n")
+                            for note in task.get('notes', []):
+                                f.write(f"{note['indent']}{note['content']}\n")
+                            for subtask in subtasks_sorted:
+                                sub_status = '[x]' if subtask['completed'] else '[ ]'
+                                sub_meta_str = build_metadata_str(subtask)
+                                sub_tags_str = build_tags_str(subtask, primary_task=False)
+                                f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
+                    
+                    # Write completed tasks with header
+                    if completed_tasks:
+                        f.write(f"  Done:\n")
+                        for task in completed_sorted:
+                            status = '[x]'
+                            meta_str = build_metadata_str(task)
+                            tags_str = build_tags_str(task, primary_task=True)
+                            content = task['content']
+                            subtasks_sorted = sorted(task['subtasks'], key=sorting_fn)
+                            f.write(f"{task['indent']}- {status} {content}{meta_str}{tags_str}\n")
+                            for note in task.get('notes', []):
+                                f.write(f"{note['indent']}{note['content']}\n")
+                            for subtask in subtasks_sorted:
+                                sub_status = '[x]' if subtask['completed'] else '[ ]'
+                                sub_meta_str = build_metadata_str(subtask)
+                                sub_tags_str = build_tags_str(subtask, primary_task=False)
+                                f.write(f"{subtask['indent']}- {sub_status} {subtask['content']}{sub_meta_str}{sub_tags_str}\n")
                 f.write("\n")
 
 
 if __name__ == '__main__':
-    tasks = parse_tasks('../tasks.txt')
+    tasks = parse_tasks('tasks.txt')
 
     sort_combinations = [
         ('area', None), ('due', None), ('priority', None),
