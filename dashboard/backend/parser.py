@@ -629,18 +629,41 @@ def toggle_task_in_lines(lines, task_info):
                             new_line = re.sub(r'\s+', ' ', new_line)
                         else:
                             # Add new metadata at the end before any tags
-                            content_part = new_line.split('] ', 1)[1] if '] ' in new_line else new_line
-                            # Insert before the first tag or at the end
-                            tag_match = re.search(r'([+@]\w+)', content_part)
-                            if tag_match:
-                                insert_pos = tag_match.start()
-                                content_before = content_part[:insert_pos].rstrip()
-                                content_after = content_part[insert_pos:]
-                                new_content = f"{content_before} (done:{done_date}) {content_after}"
+                            # Find the position right after ']' to preserve exact spacing
+                            bracket_pos = new_line.find(']')
+                            if bracket_pos != -1:
+                                # Find the start of content (after the space(s) following ']')
+                                content_start = bracket_pos + 1
+                                while content_start < len(new_line) and new_line[content_start] == ' ':
+                                    content_start += 1
+                                
+                                prefix = new_line[:content_start]  # Includes indentation, checkbox, and original spacing
+                                content_part = new_line[content_start:].rstrip('\n')
+                                
+                                # Insert before the first tag or at the end
+                                tag_match = re.search(r'([+@]\w+)', content_part)
+                                if tag_match:
+                                    insert_pos = tag_match.start()
+                                    content_before = content_part[:insert_pos].rstrip()
+                                    content_after = content_part[insert_pos:]
+                                    new_content = f"{content_before} (done:{done_date}) {content_after}"
+                                else:
+                                    new_content = f"{content_part.rstrip()} (done:{done_date})"
+                                
+                                new_line = prefix + new_content
                             else:
-                                new_content = f"{content_part.rstrip()} (done:{done_date})"
-                            
-                            new_line = new_line.split('] ', 1)[0] + '] ' + new_content
+                                # Fallback to original logic if ']' not found
+                                content_part = new_line.split('] ', 1)[1] if '] ' in new_line else new_line
+                                tag_match = re.search(r'([+@]\w+)', content_part)
+                                if tag_match:
+                                    insert_pos = tag_match.start()
+                                    content_before = content_part[:insert_pos].rstrip()
+                                    content_after = content_part[insert_pos:]
+                                    new_content = f"{content_before} (done:{done_date}) {content_after}"
+                                else:
+                                    new_content = f"{content_part.rstrip()} (done:{done_date})"
+                                
+                                new_line = new_line.split('] ', 1)[0] + '] ' + new_content
                     
                     if not new_line.endswith('\n'):
                         new_line += '\n'

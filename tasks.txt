@@ -1,58 +1,58 @@
 Work:
-- [ ] Complete quarterly project report (priority:A due:2025-07-15) +Reports @Office
-    - [ ] Gather data from all departments
-        This requires coordination with marketing, sales, and engineering teams
-    - [ ] Create executive summary
-        Focus on key metrics and actionable insights
-    - [ ] Schedule presentation with stakeholders
-- [ ] Review team performance evaluations (priority:B due:2025-07-31) +Management @Office
-    - [ ] Conduct one-on-one meetings with direct reports
-    - [ ] Prepare development plans for underperformers
-- [ ] Update project documentation (priority:C) +Documentation @Computer
-    - [ ] Review existing API documentation
-    - [ ] Add missing endpoint descriptions
-        Include examples and error codes
+    - [ ] Complete quarterly project report (priority:A due:2025-07-15) +Reports @Office
+        - [x] Gather data from all departments (done:2025-07-06)
+            This requires coordination with marketing, sales, and engineering teams
+        - [ ] Create executive summary
+            Focus on key metrics and actionable insights
+        - [ ] Schedule presentation with stakeholders
+    - [ ] Review team performance evaluations (priority:B due:2025-07-31) +Management @Office
+        - [ ] Conduct one-on-one meetings with direct reports
+        - [ ] Prepare development plans for underperformers
+    - [ ] Update project documentation (priority:C) +Documentation @Computer
+        - [ ] Review existing API documentation
+        - [ ] Add missing endpoint descriptions
+            Include examples and error codes
 
 Personal:
-- [x] Schedule annual medical checkup (priority:A due:2025-07-10) +Healthcare @Phone
-    Called Dr. Smith's office and scheduled for July 15th
-- [ ] Plan summer vacation (priority:B due:2025-07-20) +Travel @Home
-    - [ ] Research destination options
-        Consider budget, weather, and activities
-    - [ ] Book flights and accommodation
-    - [ ] Create packing checklist
-- [ ] Learn new programming language (priority:B) +Learning @Computer
-    - [ ] Choose between Rust, Go, or TypeScript
-    - [ ] Complete online course or tutorial
-    - [ ] Build practice project
+    - [x] Schedule annual medical checkup (priority:A due:2025-07-10) +Healthcare @Phone
+        Called Dr. Smith's office and scheduled for July 15th
+    - [ ] Plan summer vacation (priority:B due:2025-07-20) +Travel @Home
+        - [x] Research destination options (done:2025-07-06)
+            Consider budget, weather, and activities
+        - [ ] Book flights and accommodation
+        - [ ] Create packing checklist
+    - [ ] Learn new programming language (priority:B) +Learning @Computer
+        - [ ] Choose between Rust, Go, or TypeScript
+        - [ ] Complete online course or tutorial
+        - [ ] Build practice project
 
 Home:
-- [ ] Fix kitchen faucet leak (priority:A due:2025-07-05) +Maintenance @Home
-    Dripping has gotten worse, may need plumber
-- [ ] Organize garage storage (priority:C) +Organization @Home
-    - [ ] Sort items into keep, donate, discard piles
-    - [ ] Install shelving system
-    - [ ] Label storage containers
+    - [x] Fix kitchen faucet leak (priority:A due:2025-07-05 done:2025-07-06) +Maintenance @Home 
+        Dripping has gotten worse, may need plumber
+    - [ ] Organize garage storage (priority:C) +Organization @Home
+        - [x] Sort items into keep, donate, discard piles (done:2025-07-06)
+        - [ ] Install shelving system
+        - [ ] Label storage containers
 - [ ] Plan garden for next season (priority:B) +Gardening @Home
     - [ ] Research plants suitable for local climate
     - [ ] Prepare soil and remove weeds
     - [ ] Purchase seeds and supplies
 
 Shopping:
-- [ ] Buy birthday gift for spouse (priority:A due:2025-07-12) +Gifts @Mall
-    Anniversary is July 18th - consider jewelry or experience
-- [ ] Replace worn-out running shoes (priority:B) +Sports @Store
-- [ ] Stock up on household essentials (priority:C) +Household @Store
-    - [ ] Cleaning supplies
-    - [ ] Paper products
-    - [ ] Light bulbs
+    - [ ] Buy birthday gift for spouse (priority:A due:2025-07-12) +Gifts @Mall
+        Anniversary is July 18th - consider jewelry or experience
+    - [ ] Replace worn-out running shoes (priority:B) +Sports @Store
+    - [ ] Stock up on household essentials (priority:C) +Household @Store
+        - [ ] Cleaning supplies
+        - [ ] Paper products
+        - [ ] Light bulbs
 
 Finance:
-- [ ] Review monthly budget (priority:A due:2025-07-31) +Budget @Computer
-    - [ ] Categorize all expenses from June
-    - [ ] Identify areas for cost reduction
-    - [ ] Adjust savings goals if needed
-- [ ] Research investment options (priority:B) +Investment @Computer
-    - [ ] Compare mutual fund performance
-    - [ ] Read articles on market trends
-    - [ ] Schedule meeting with financial advisor
+    - [ ] Review monthly budget (priority:A due:2025-07-31) +Budget @Computer
+        - [ ] Categorize all expenses from June
+        - [ ] Identify areas for cost reduction
+        - [ ] Adjust savings goals if needed
+    - [ ] Research investment options (priority:B) +Investment @Computer
+        - [ ] Compare mutual fund performance
+        - [ ] Read articles on market trends
+        - [ ] Schedule meeting with financial advisor
