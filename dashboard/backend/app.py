@@ -589,11 +589,6 @@ def get_statistics():
     """Get task statistics"""
     return compute_task_statistics()
 
-@app.get("/statistics/time-series")
-def get_statistics_time_series_endpoint():
-    """Get historical statistics time series"""
-    return get_statistics_time_series()
-
 @app.get("/recurring/compliance")
 def get_recurring_compliance():
     """Get recurring task compliance data over time"""

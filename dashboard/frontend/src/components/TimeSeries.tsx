@@ -37,6 +37,14 @@ type TimeSeriesData = {
   overdue: number;
   due_today: number;
   due_this_week: number;
+  compliance?: {
+    date: string;
+    completed: number;
+    missed: number;
+    deferred: number;
+    total: number;
+    compliance_pct: number;
+  } | null;
 };
 
 type ComplianceData = {
@@ -168,6 +176,7 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger, isExpanded: externalIsExp
     }
   };
   const [statisticsData, setStatisticsData] = useState<TimeSeriesData[]>([]);
+  const [basicTimeSeriesData, setBasicTimeSeriesData] = useState<TimeSeriesData[]>([]);
   const [complianceData, setComplianceData] = useState<ComplianceData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -195,49 +204,71 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger, isExpanded: externalIsExp
   const [movingAverageWindow, setMovingAverageWindow] = useState(7);
   const [selectedTasksForComparison, setSelectedTasksForComparison] = useState<string[]>([]);
 
+  const fetchBasicTimeSeriesData = async () => {
+    try {
+      const response = await fetch(`${API_URL}/statistics/time-series`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch time series data: ${response.status}`);
+      }
+      const data = await response.json();
+      setBasicTimeSeriesData(data);
+    } catch (error) {
+      console.error('Error fetching basic time series data:', error);
+      throw error;
+    }
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Build URLs with timeframe filter
-      const timeframeParam = timeframe ? `?days=${timeframe}` : '';
-      const enhancedParam = timeframe ? `?days=${timeframe}&moving_average=${movingAverageWindow}&include_trend=${showTrend}` : `?moving_average=${movingAverageWindow}&include_trend=${showTrend}`;
+      // First fetch the basic time series data
+      await fetchBasicTimeSeriesData();
       
-      const urls = [
-        `${API_URL}/api/statistics/time-series/enhanced${enhancedParam}`,
-        `${API_URL}/api/recurring/compliance`,
-        `${API_URL}/api/recurring/compliance/individual${timeframeParam}`,
-        `${API_URL}/api/recurring/task-list`,
-        `${API_URL}/api/analytics/heatmap${timeframeParam}`,
-        `${API_URL}/api/analytics/day-of-week${timeframeParam}`,
-        `${API_URL}/api/analytics/correlation${timeframeParam}`,
-        `${API_URL}/api/analytics/streaks`,
-        `${API_URL}/api/gamification/badges`,
-        `${API_URL}/api/analytics/behavioral${timeframeParam}`,
-        `${API_URL}/api/gamification/challenges`
-      ];
-      
-      const responses = await Promise.all(urls.map(url => fetch(url)));
-      
-      const allResponses = await Promise.all(responses.map(response => response.json()));
-      
-      // Set all data
-      setStatisticsData(allResponses[0].data || []);
-      setComplianceData(allResponses[1].data || []);
-      setAvailableTasks(allResponses[2].data || []);
-      setRecurringTasks(allResponses[3].data || []);
-      setHeatmapData(allResponses[4].data || []);
-      setDayOfWeekData(allResponses[5].data || []);
-      setCorrelationData(allResponses[6].data || []);
-      setStreakData(allResponses[7].data || []);
-      setBadgeData(allResponses[8].data || []);
-      setBehavioralData(allResponses[9].data || null);
-      setChallengeData(allResponses[10].data || []);
-      
-      // If a specific task is selected, fetch its individual data
-      if (selectedTaskId && allResponses[2].data?.some((t: IndividualTaskData) => t.task_id === selectedTaskId)) {
-        await fetchIndividualTaskData(selectedTaskId);
+      // Try to fetch enhanced analytics, but don't fail if they don't exist
+      try {
+        // Build URLs with timeframe filter
+        const timeframeParam = timeframe ? `?days=${timeframe}` : '';
+        const enhancedParam = timeframe ? `?days=${timeframe}&moving_average=${movingAverageWindow}&include_trend=${showTrend}` : `?moving_average=${movingAverageWindow}&include_trend=${showTrend}`;
+        
+        const urls = [
+          `${API_URL}/api/statistics/time-series/enhanced${enhancedParam}`,
+          `${API_URL}/api/recurring/compliance`,
+          `${API_URL}/api/recurring/compliance/individual${timeframeParam}`,
+          `${API_URL}/api/recurring/task-list`,
+          `${API_URL}/api/analytics/heatmap${timeframeParam}`,
+          `${API_URL}/api/analytics/day-of-week${timeframeParam}`,
+          `${API_URL}/api/analytics/correlation${timeframeParam}`,
+          `${API_URL}/api/analytics/streaks`,
+          `${API_URL}/api/gamification/badges`,
+          `${API_URL}/api/analytics/behavioral${timeframeParam}`,
+          `${API_URL}/api/gamification/challenges`
+        ];
+        
+        const responses = await Promise.all(urls.map(url => fetch(url)));
+        
+        const allResponses = await Promise.all(responses.map(response => response.json()));
+        
+        // Set all data if available
+        setStatisticsData(allResponses[0].data || []);
+        setComplianceData(allResponses[1].data || []);
+        setAvailableTasks(allResponses[2].data || []);
+        setRecurringTasks(allResponses[3].data || []);
+        setHeatmapData(allResponses[4].data || []);
+        setDayOfWeekData(allResponses[5].data || []);
+        setCorrelationData(allResponses[6].data || []);
+        setStreakData(allResponses[7].data || []);
+        setBadgeData(allResponses[8].data || []);
+        setBehavioralData(allResponses[9].data || null);
+        setChallengeData(allResponses[10].data || []);
+        
+        // If a specific task is selected, fetch its individual data
+        if (selectedTaskId && allResponses[2].data?.some((t: IndividualTaskData) => t.task_id === selectedTaskId)) {
+          await fetchIndividualTaskData(selectedTaskId);
+        }
+      } catch (enhancedError) {
+        console.log('Enhanced analytics not available, using basic time series only');
       }
       
     } catch (error) {
@@ -304,30 +335,30 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger, isExpanded: externalIsExp
   }, [isExpanded, refreshTrigger, timeframe]);
 
   const createStatsChartData = () => {
-    if (!statisticsData.length) return null;
+    if (!basicTimeSeriesData.length) return null;
 
-    const labels = statisticsData.map(d => d.date);
+    const labels = basicTimeSeriesData.map(d => d.date);
     
     return {
       labels,
       datasets: [
         {
           label: 'Total Tasks',
-          data: statisticsData.map(d => d.total),
+          data: basicTimeSeriesData.map(d => d.total),
           borderColor: 'rgb(99, 179, 237)',
           backgroundColor: 'rgba(99, 179, 237, 0.2)',
           tension: 0.1,
         },
         {
           label: 'Completed Tasks',
-          data: statisticsData.map(d => d.completed),
+          data: basicTimeSeriesData.map(d => d.completed),
           borderColor: 'rgb(104, 211, 145)',
           backgroundColor: 'rgba(104, 211, 145, 0.2)',
           tension: 0.1,
         },
         {
           label: 'Completion %',
-          data: statisticsData.map(d => d.completion_pct),
+          data: basicTimeSeriesData.map(d => d.completion_pct),
           borderColor: 'rgb(246, 173, 85)',
           backgroundColor: 'rgba(246, 173, 85, 0.2)',
           tension: 0.1,
@@ -335,7 +366,7 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger, isExpanded: externalIsExp
         },
         {
           label: 'Overdue Tasks',
-          data: statisticsData.map(d => d.overdue),
+          data: basicTimeSeriesData.map(d => d.overdue),
           borderColor: 'rgb(252, 129, 129)',
           backgroundColor: 'rgba(252, 129, 129, 0.2)',
           tension: 0.1,
@@ -345,16 +376,18 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger, isExpanded: externalIsExp
   };
 
   const createComplianceChartData = () => {
-    if (!complianceData.length) return null;
+    // Filter basicTimeSeriesData to get entries with compliance data
+    const complianceEntries = basicTimeSeriesData.filter(d => d.compliance);
+    if (!complianceEntries.length) return null;
 
-    const labels = complianceData.map(d => d.date);
+    const labels = complianceEntries.map(d => d.date);
     
     return {
       labels,
       datasets: [
         {
           label: 'Compliance %',
-          data: complianceData.map(d => d.compliance_pct),
+          data: complianceEntries.map(d => d.compliance?.compliance_pct || 0),
           borderColor: 'rgb(104, 211, 145)',
           backgroundColor: 'rgba(104, 211, 145, 0.2)',
           tension: 0.1,
@@ -362,7 +395,7 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger, isExpanded: externalIsExp
         },
         {
           label: 'Completed',
-          data: complianceData.map(d => d.completed),
+          data: complianceEntries.map(d => d.compliance?.completed || 0),
           borderColor: 'rgb(99, 179, 237)',
           backgroundColor: 'rgba(99, 179, 237, 0.2)',
           tension: 0.1,
@@ -370,7 +403,7 @@ const TimeSeries: React.FC<Props> = ({ refreshTrigger, isExpanded: externalIsExp
         },
         {
           label: 'Missed',
-          data: complianceData.map(d => d.missed),
+          data: complianceEntries.map(d => d.compliance?.missed || 0),
           borderColor: 'rgb(252, 129, 129)',
           backgroundColor: 'rgba(252, 129, 129, 0.2)',
           tension: 0.1,
