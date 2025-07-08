@@ -6,8 +6,7 @@ import EditTaskForm from './EditTaskForm';
 const AddSubtaskForm: React.FC<{
   onSubmit: (description: string, notes: string[], additionalData: any) => void;
   onCancel: () => void;
-  areas: string[];
-}> = ({ onSubmit, onCancel, areas }) => {
+}> = ({ onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     description: '',
     area: '',
@@ -83,32 +82,6 @@ const AddSubtaskForm: React.FC<{
           gap: '12px'
         }}>
           
-          {/* Area */}
-          <div>
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
-              Area
-            </label>
-            <select
-              value={formData.area}
-              onChange={(e) => handleInputChange('area', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '6px 8px',
-                borderRadius: '4px',
-                border: '1px solid #4a5568',
-                backgroundColor: '#1a202c',
-                color: '#f7fafc',
-                fontSize: '12px',
-                boxSizing: 'border-box'
-              }}
-            >
-              <option value="">Select Area</option>
-              {areas && areas.map(area => (
-                <option key={area} value={area}>{area}</option>
-              ))}
-            </select>
-          </div>
-
           {/* Priority */}
           <div>
             <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
@@ -151,11 +124,8 @@ const AddSubtaskForm: React.FC<{
                 boxSizing: 'border-box'
               }}
             >
-              <option value="">Select Status</option>
-              <option value="active">Active</option>
+              <option value="">Incomplete</option>
               <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="cancelled">Cancelled</option>
             </select>
           </div>
 
@@ -681,7 +651,6 @@ const TaskItem: React.FC<{
               onAddingSubtaskToIdChange(null);
             }}
             onCancel={() => onAddingSubtaskToIdChange(null)}
-            areas={areas}
           />
         </div>
       )}
