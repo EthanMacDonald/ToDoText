@@ -693,14 +693,26 @@ def toggle_task_in_lines(lines, task_info):
             # Compare with the task description
             if clean_content == description:
                 # Found the task! Handle toggle based on current status and follow-up metadata
-                new_line = line  # Initialize new_line with current line
+                # FIX: Ensure proper indentation regardless of current state
+                proper_indent = '    ' * indent_level  # 4 spaces per level
+                
+                # Extract the task content (everything after the checkbox and space)
+                task_content_match = re.match(r'^(\s*)- \[( |x|%)\] (.+)', line)
+                if task_content_match:
+                    current_indent, checkbox_state, task_content = task_content_match.groups()
+                    # Reconstruct line with proper indentation
+                    new_line = f"{proper_indent}- [{checkbox_state}] {task_content}"
+                    if not new_line.endswith('\n'):
+                        new_line += '\n'
+                else:
+                    new_line = line  # Fallback to original line
                 
                 # Check if task has follow-up metadata
-                has_followup = 'followup:' in line or 'followup_date:' in line
+                has_followup = 'followup:' in new_line or 'followup_date:' in new_line
                 
                 if completed == ' ':  # Unchecked task
                     # Mark as completed and add done date (regardless of follow-up status)
-                    new_line = line.replace('[ ]', '[x]', 1)
+                    new_line = new_line.replace('[ ]', '[x]', 1)
                     
                     # If this task has follow-up metadata, remove it when completing
                     if has_followup:
@@ -718,8 +730,18 @@ def toggle_task_in_lines(lines, task_info):
                                 return ''  # Remove empty parentheses
                         
                         new_line = re.sub(r'\(([^)]*)\)', clean_followup_metadata, new_line)
-                        # Clean up any extra spaces that might be left
-                        new_line = re.sub(r'\s+', ' ', new_line)
+                        # Clean up any extra spaces that might be left, but preserve leading indentation
+                        if '] ' in new_line:
+                            prefix, content = new_line.split('] ', 1)
+                            content = re.sub(r'\s+', ' ', content)
+                            new_line = prefix + '] ' + content
+                        else:
+                            # Fallback - clean up spaces but preserve leading whitespace
+                            match = re.match(r'^(\s*- \[[x ]\] )(.*)', new_line)
+                            if match:
+                                leading_part, content_part = match.groups()
+                                content_part = re.sub(r'\s+', ' ', content_part)
+                                new_line = leading_part + content_part
                     
                     # Add done date if not present (use adjusted date for 3 AM boundary)
                     done_date = get_adjusted_today().strftime('%Y-%m-%d')
@@ -730,7 +752,19 @@ def toggle_task_in_lines(lines, task_info):
                             # Clean up double spaces
                             new_line = re.sub(r'\(\s+', '(', new_line)
                             new_line = re.sub(r'\s+\)', ')', new_line)
-                            new_line = re.sub(r'\s+', ' ', new_line)
+                            # Only clean up multiple spaces within the content, not at the beginning
+                            # Split on '] ' to preserve indentation before the checkbox
+                            if '] ' in new_line:
+                                prefix, content = new_line.split('] ', 1)
+                                content = re.sub(r'\s+', ' ', content)
+                                new_line = prefix + '] ' + content
+                            else:
+                                # Fallback - clean up spaces but preserve leading whitespace
+                                match = re.match(r'^(\s*- \[[x ]\] )(.*)', new_line)
+                                if match:
+                                    leading_part, content_part = match.groups()
+                                    content_part = re.sub(r'\s+', ' ', content_part)
+                                    new_line = leading_part + content_part
                         else:
                             # Add new metadata at the end before any tags
                             # Find the position right after ']' to preserve exact spacing
@@ -774,7 +808,7 @@ def toggle_task_in_lines(lines, task_info):
                             
                 elif completed == 'x':  # Completed task
                     # Uncheck completed task and remove done date
-                    new_line = line.replace('[x]', '[ ]', 1)
+                    new_line = new_line.replace('[x]', '[ ]', 1)
                     
                     # Remove done date metadata
                     def clean_metadata(match):
@@ -789,14 +823,24 @@ def toggle_task_in_lines(lines, task_info):
                             return ''  # Remove empty parentheses
                     
                     new_line = re.sub(r'\(([^)]*)\)', clean_metadata, new_line)
-                    # Clean up any extra spaces that might be left
-                    new_line = re.sub(r'\s+', ' ', new_line)
+                    # Clean up any extra spaces that might be left, but preserve leading indentation
+                    if '] ' in new_line:
+                        prefix, content = new_line.split('] ', 1)
+                        content = re.sub(r'\s+', ' ', content)
+                        new_line = prefix + '] ' + content
+                    else:
+                        # Fallback - clean up spaces but preserve leading whitespace
+                        match = re.match(r'^(\s*- \[[x ]\] )(.*)', new_line)
+                        if match:
+                            leading_part, content_part = match.groups()
+                            content_part = re.sub(r'\s+', ' ', content_part)
+                            new_line = leading_part + content_part
                     if not new_line.endswith('\n'):
                         new_line += '\n'
                         
                 elif completed == '%':  # Follow-up task (legacy)
                     # Convert legacy follow-up format to unchecked with follow-up metadata
-                    new_line = line.replace('[%]', '[ ]', 1)
+                    new_line = new_line.replace('[%]', '[ ]', 1)
                     if not new_line.endswith('\n'):
                         new_line += '\n'
                 
@@ -1436,8 +1480,18 @@ def verify_followup_in_lines(lines, task_info):
                         return ''  # Remove empty parentheses
                 
                 new_line = re.sub(r'\(([^)]*followup:[^)]*)\)', clean_metadata, new_line)
-                # Clean up any extra spaces that might be left
-                new_line = re.sub(r'\s+', ' ', new_line)
+                # Clean up any extra spaces that might be left, but preserve leading indentation
+                if '] ' in new_line:
+                    prefix, content = new_line.split('] ', 1)
+                    content = re.sub(r'\s+', ' ', content)
+                    new_line = prefix + '] ' + content
+                else:
+                    # Fallback - clean up spaces but preserve leading whitespace
+                    match = re.match(r'^(\s*- \[[x ]\] )(.*)', new_line)
+                    if match:
+                        leading_part, content_part = match.groups()
+                        content_part = re.sub(r'\s+', ' ', content_part)
+                        new_line = leading_part + content_part
                 if not new_line.endswith('\n'):
                     new_line += '\n'
                 
