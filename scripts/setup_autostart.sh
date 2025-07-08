@@ -34,7 +34,7 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-echo "🚀 Setting up Task Dashboard Auto-Start..."
+echo "🚀 Setting up Task Dashboard Auto-Start with Remote Access..."
 
 # Check if virtual environment exists
 if [ ! -d "$PROJECT_ROOT/.todo_env" ]; then
@@ -77,6 +77,7 @@ cat > "$PLIST_PATH" << EOF
     <key>ProgramArguments</key>
     <array>
         <string>$PROJECT_ROOT/scripts/initialize_dashboard.sh</string>
+        <string>--remote</string>
     </array>
     
     <key>RunAtLoad</key>
@@ -130,8 +131,8 @@ else
     print_warning "LaunchAgent may not have loaded correctly"
 fi
 
-print_success "✅ Task Dashboard auto-start is now configured!"
-print_status "The dashboard will automatically start when you log in."
+print_success "✅ Task Dashboard auto-start with remote access is now configured!"
+print_status "The dashboard will automatically start with remote access when you log in."
 echo ""
 echo "📋 Management Commands:"
 echo "  • Check status: launchctl list | grep com.taskmanager.dashboard"
@@ -142,3 +143,9 @@ echo "  • Restart service: launchctl unload $PLIST_PATH && launchctl load $PLI
 echo ""
 echo "🗂️  Configuration file: $PLIST_PATH"
 echo "📝 Logs will be saved to: $PROJECT_ROOT/log_files/autostart.log"
+echo ""
+print_status "🌐 Remote Access Information:"
+print_status "  • Dashboard will be accessible via Tailscale on all network interfaces"
+print_status "  • Backend API: http://[TAILSCALE_IP]:8000"
+print_status "  • Frontend: http://[TAILSCALE_IP]:5173"
+print_status "  • Check your Tailscale IP with: tailscale ip -4"
