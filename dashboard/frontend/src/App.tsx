@@ -118,15 +118,29 @@ function App() {
     }
   };
 
-  const handleAddSubtask = async (parentId: string, description: string, notes: string[]) => {
+  const handleAddSubtask = async (parentId: string, description: string, notes: string[], additionalData?: any) => {
     try {
+      const payload: any = { 
+        description,
+        notes 
+      };
+      
+      // Add additional fields if provided
+      if (additionalData) {
+        if (additionalData.area) payload.area = additionalData.area;
+        if (additionalData.priority) payload.priority = additionalData.priority;
+        if (additionalData.due_date) payload.due_date = additionalData.due_date;
+        if (additionalData.done_date) payload.done_date = additionalData.done_date;
+        if (additionalData.followup_date) payload.followup_date = additionalData.followup_date;
+        if (additionalData.context) payload.context = additionalData.context;
+        if (additionalData.project) payload.project = additionalData.project;
+        if (additionalData.onhold) payload.onhold = additionalData.onhold;
+      }
+      
       const response = await fetch(`${API_URL}/tasks/${parentId}/subtasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          description,
-          notes 
-        })
+        body: JSON.stringify(payload)
       });
       
       if (response.ok) {

@@ -61,6 +61,7 @@ class EditTaskRequest(BaseModel):
     context: Optional[str] = None
     project: Optional[str] = None
     recurring: Optional[str] = None
+    onhold: Optional[str] = None  # e.g., "2025-07-15" or "waiting for approval"
     completed: Optional[bool] = None
     notes: Optional[List[str]] = None  # List of note strings
 
@@ -72,6 +73,7 @@ class CreateTaskRequest(BaseModel):
     context: Optional[str] = None
     project: Optional[str] = None
     recurring: Optional[str] = None  # e.g., "daily", "weekly:Mon"
+    onhold: Optional[str] = None  # e.g., "2025-07-15" or "waiting for approval"
     notes: Optional[List[str]] = None  # List of note strings
 
 class ListToggleRequest(BaseModel):
@@ -705,6 +707,7 @@ def put_edit_task(task_id: str, request: EditTaskRequest):
             self.context = request.context
             self.project = request.project
             self.recurring = request.recurring
+            self.onhold = request.onhold
             self.completed = request.completed
             self.notes = request.notes
     

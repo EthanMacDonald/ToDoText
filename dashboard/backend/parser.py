@@ -1068,6 +1068,8 @@ def create_task(task_request) -> bool:
             metadata_parts.append(f"priority:{task_request.priority}")
         if task_request.due_date:
             metadata_parts.append(f"due:{task_request.due_date}")
+        if hasattr(task_request, 'onhold') and task_request.onhold:
+            metadata_parts.append(f"onhold:{task_request.onhold}")
         if task_request.recurring:
             metadata_parts.append(f"every:{task_request.recurring}")
         
@@ -1189,6 +1191,8 @@ def edit_task(task_request) -> bool:
                         metadata_parts.append(f"done:{task_request.done_date}")
                     if task_request.followup_date:
                         metadata_parts.append(f"followup:{task_request.followup_date}")
+                    if hasattr(task_request, 'onhold') and task_request.onhold:
+                        metadata_parts.append(f"onhold:{task_request.onhold}")
                     if task_request.recurring:
                         metadata_parts.append(f"every:{task_request.recurring}")
                     
@@ -1645,6 +1649,8 @@ def create_subtask_for_task(parent_task_id: str, subtask_request) -> bool:
                         metadata_parts.append(f"priority:{subtask_request.priority}")
                     if subtask_request.due_date:
                         metadata_parts.append(f"due:{subtask_request.due_date}")
+                    if hasattr(subtask_request, 'onhold') and subtask_request.onhold:
+                        metadata_parts.append(f"onhold:{subtask_request.onhold}")
                     if subtask_request.recurring:
                         metadata_parts.append(f"every:{subtask_request.recurring}")
                     

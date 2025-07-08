@@ -23,6 +23,7 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel, on
     context: task.context || '',
     project: task.project || '',
     recurring: task.recurring || '',
+    onhold: task.onhold_date || '',
     completed: task.completed || false,
     notes: task.notes ? task.notes.map(note => note.content).join('\n') : ''
   });
@@ -52,6 +53,7 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel, on
         ...(formData.context && { context: formData.context }),
         ...(formData.project && { project: formData.project }),
         ...(formData.recurring && { recurring: formData.recurring }),
+        ...(formData.onhold && { onhold: formData.onhold }),
         ...(formData.notes && { notes: formData.notes.split('\n').filter(note => note.trim()) })
       };
 
@@ -318,6 +320,28 @@ const EditTaskForm: React.FC<Props> = ({ task, areas, onTaskEdited, onCancel, on
               value={formData.recurring}
               onChange={(e) => handleInputChange('recurring', e.target.value)}
               placeholder="e.g., daily, weekly:Mon, monthly:15"
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                borderRadius: '4px', 
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: 'white',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* On Hold */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: 'white' }}>
+              On Hold
+            </label>
+            <input
+              type="text"
+              value={formData.onhold}
+              onChange={(e) => handleInputChange('onhold', e.target.value)}
+              placeholder="e.g., 2025-07-15 or waiting for approval"
               style={{ 
                 width: '100%', 
                 padding: '8px', 

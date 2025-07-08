@@ -10,6 +10,8 @@ export type Task = {
   done_date?: string;  // For form editing
   priority?: string;
   recurring?: string;
+  onhold?: string;  // For on-hold status with date or reason
+  onhold_date?: string;  // Alternative field name used by parser
   indent_level?: number;
   subtasks?: Task[];
   notes?: Note[];

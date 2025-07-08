@@ -18,6 +18,7 @@ const AddSubtaskForm: React.FC<{
     context: '',
     project: '',
     status: '',
+    onhold: '',
     notes: ''
   });
 
@@ -33,7 +34,8 @@ const AddSubtaskForm: React.FC<{
         followup_date: formData.followup_date,
         context: formData.context,
         project: formData.project,
-        status: formData.status
+        status: formData.status,
+        onhold: formData.onhold
       };
       onSubmit(formData.description.trim(), notes, additionalData);
       setFormData({
@@ -46,6 +48,7 @@ const AddSubtaskForm: React.FC<{
         context: '',
         project: '',
         status: '',
+        onhold: '',
         notes: ''
       });
     }
@@ -255,6 +258,29 @@ const AddSubtaskForm: React.FC<{
               value={formData.project}
               onChange={(e) => handleInputChange('project', e.target.value)}
               placeholder="e.g., SecondBrain, Dashboard"
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                borderRadius: '4px',
+                border: '1px solid #4a5568',
+                backgroundColor: '#1a202c',
+                color: '#f7fafc',
+                fontSize: '12px',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* On Hold */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold', color: '#f7fafc' }}>
+              On Hold
+            </label>
+            <input
+              type="text"
+              value={formData.onhold}
+              onChange={(e) => handleInputChange('onhold', e.target.value)}
+              placeholder="e.g., 2025-07-15 or waiting for approval"
               style={{
                 width: '100%',
                 padding: '6px 8px',
