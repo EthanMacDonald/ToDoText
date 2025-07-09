@@ -3,4 +3,5 @@ uvicorn
 pytest
 pytest-cov
 pytest-asyncio
+pytest-timeout
 httpx

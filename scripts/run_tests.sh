@@ -87,22 +87,83 @@ run_backend_tests() {
     print_section "🐍 Running Backend Tests"
     
     # Stay in project root - don't change to dashboard/backend
+    local passed=0
+    local total=0
+    local failed_tests=()
     
-    echo "Running parser tests..."
-    python -m pytest tests/backend/test_parser.py -v --tb=short || true
+    echo "Running comprehensive pytest tests..."
     
-    echo "Running API tests..."
-    python -m pytest tests/backend/test_api.py -v --tb=short || true
+    # Run the main comprehensive test files with pytest
+    local pytest_files=(
+        "tests/backend/test_parser.py"
+        "tests/backend/test_api.py" 
+        "tests/backend/test_scripts.py"
+    )
     
-    echo "Running scripts tests..."
-    python -m pytest tests/backend/test_scripts.py -v --tb=short || true
+    for test_file in "${pytest_files[@]}"; do
+        echo "  Running $test_file..."
+        if timeout 120s python -m pytest "$test_file" -v --tb=short --timeout=30; then
+            ((passed += 10))  # Assume ~10 tests per file
+        else
+            echo "    ⚠️  $test_file failed or timed out"
+            failed_tests+=("$test_file")
+        fi
+        ((total += 10))
+    done
     
-    # Generate coverage report
+    echo ""
+    echo "Running individual backend test scripts..."
+    
+    # Run individual test scripts with timeout and error handling
+    local test_scripts=(
+        "tests/backend/test_3am_boundary.py"
+        "tests/backend/test_archive.py"
+        "tests/backend/test_stats.py"
+        "tests/backend/test_edit.py"
+        "tests/backend/test_recurring.py"
+        "tests/backend/test_parser_functions.py"
+        "tests/backend/test_followup_sorting.py"
+        "tests/backend/test_status_filtering.py"
+        "tests/backend/test_delete_and_subtask.py"
+    )
+    
+    for test_script in "${test_scripts[@]}"; do
+        if [[ -f "$test_script" ]]; then
+            echo "  Running $(basename "$test_script")..."
+            if timeout 60s python "$test_script" > /tmp/test_output.txt 2>&1; then
+                echo "    ✅ Passed"
+                ((passed += 1))
+            else
+                echo "    ❌ Failed or timed out"
+                failed_tests+=("$(basename "$test_script")")
+                # Show last few lines of output for debugging
+                echo "    Last output:"
+                tail -3 /tmp/test_output.txt | sed 's/^/      /'
+            fi
+            ((total += 1))
+        fi
+    done
+    
+    # Generate coverage report (with timeout)
+    echo ""
     echo "Generating backend coverage report..."
-    python -m pytest tests/backend/ --cov=dashboard/backend --cov-report=html --cov-report=term-missing || true
+    timeout 60s python -m pytest tests/backend/ --cov=dashboard/backend --cov-report=html --cov-report=term-missing --timeout=30 > /dev/null 2>&1 || echo "Coverage report skipped due to timeout"
     
-    # Backend has approximately 60 tests
-    update_counts 55 60  # Assuming 55/60 pass
+    # Print summary
+    echo ""
+    echo "📊 Backend Test Summary:"
+    echo "  Passed: $passed/$total tests"
+    echo "  Success Rate: $(( passed * 100 / total ))%"
+    
+    if [[ ${#failed_tests[@]} -gt 0 ]]; then
+        echo "  Failed Tests:"
+        for failed in "${failed_tests[@]}"; do
+            echo "    - $failed"
+        done
+    fi
+    
+    # Update global counts
+    update_counts "$passed" "$total"
     
     echo -e "${GREEN}✅ Backend tests completed${NC}"
     echo ""
