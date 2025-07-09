@@ -26,6 +26,8 @@ from pathlib import Path
 backend_path = Path(__file__).parent.parent.parent / "dashboard" / "backend"
 sys.path.insert(0, str(backend_path))
 
+# Patch before importing
+import dashboard.backend.app
 from dashboard.backend.app import app, get_adjusted_date, get_adjusted_today, get_adjusted_datetime_for_date
 
 @pytest.fixture
@@ -97,7 +99,7 @@ class TestHealthEndpoints:
 class TestTaskEndpoints:
     """Test task-related endpoints"""
     
-    @patch('app.parse_tasks')
+    @patch('dashboard.backend.app.parse_tasks')
     def test_get_tasks(self, mock_parse, client, mock_parse_tasks):
         """Test GET /tasks endpoint"""
         mock_parse.return_value = mock_parse_tasks
@@ -111,7 +113,7 @@ class TestTaskEndpoints:
         assert len(data["data"]) == 2
         assert data["data"][0]["area"] == "Work"
     
-    @patch('app.parse_tasks_by_priority')
+    @patch('dashboard.backend.app.parse_tasks_by_priority')
     def test_get_tasks_by_priority(self, mock_parse, client, mock_parse_tasks):
         """Test GET /tasks/priority endpoint"""
         mock_parse.return_value = mock_parse_tasks
@@ -123,7 +125,7 @@ class TestTaskEndpoints:
         assert data["status"] == "success"
         assert "data" in data
     
-    @patch('app.parse_tasks_no_sort')
+    @patch('dashboard.backend.app.parse_tasks_no_sort')
     def test_get_tasks_no_sort(self, mock_parse, client, mock_parse_tasks):
         """Test GET /tasks/no-sort endpoint"""
         mock_parse.return_value = mock_parse_tasks
@@ -134,7 +136,7 @@ class TestTaskEndpoints:
         data = response.json()
         assert data["status"] == "success"
     
-    @patch('app.create_task')
+    @patch('dashboard.backend.app.create_task')
     def test_create_task(self, mock_create, client):
         """Test POST /tasks endpoint"""
         mock_create.return_value = {"status": "success", "task_id": "new_task_123"}
@@ -158,7 +160,7 @@ class TestTaskEndpoints:
         # Verify mock was called with correct data
         mock_create.assert_called_once()
     
-    @patch('app.edit_task')
+    @patch('dashboard.backend.app.edit_task')
     def test_edit_task(self, mock_edit, client):
         """Test PUT /tasks/{task_id} endpoint"""
         mock_edit.return_value = {"status": "success"}
@@ -176,7 +178,7 @@ class TestTaskEndpoints:
         
         mock_edit.assert_called_once_with("task123", edit_data)
     
-    @patch('app.delete_task')
+    @patch('dashboard.backend.app.delete_task')
     def test_delete_task(self, mock_delete, client):
         """Test DELETE /tasks/{task_id} endpoint"""
         mock_delete.return_value = {"status": "success"}
@@ -189,7 +191,7 @@ class TestTaskEndpoints:
         
         mock_delete.assert_called_once_with("task123")
     
-    @patch('app.check_off_task')
+    @patch('dashboard.backend.app.check_off_task')
     def test_check_off_task(self, mock_check, client):
         """Test POST /tasks/check endpoint"""
         mock_check.return_value = {"status": "success"}
@@ -206,7 +208,7 @@ class TestTaskEndpoints:
 class TestSubtaskEndpoints:
     """Test subtask-related endpoints"""
     
-    @patch('app.create_subtask_for_task')
+    @patch('dashboard.backend.app.create_subtask_for_task')
     def test_create_subtask(self, mock_create, client):
         """Test POST /tasks/{task_id}/subtasks endpoint"""
         mock_create.return_value = {"status": "success", "subtask_id": "subtask123"}
@@ -226,7 +228,7 @@ class TestSubtaskEndpoints:
 class TestRecurringTaskEndpoints:
     """Test recurring task endpoints"""
     
-    @patch('app.parse_recurring_tasks')
+    @patch('dashboard.backend.app.parse_recurring_tasks')
     def test_get_recurring_tasks(self, mock_parse, client):
         """Test GET /recurring-tasks endpoint"""
         mock_data = [
@@ -251,7 +253,7 @@ class TestRecurringTaskEndpoints:
         assert len(data["data"]) == 2
         assert data["data"][0]["task_id"] == "daily_exercise"
     
-    @patch('app.check_off_recurring_task')
+    @patch('dashboard.backend.app.check_off_recurring_task')
     def test_check_off_recurring_task(self, mock_check, client):
         """Test POST /recurring-tasks/check endpoint"""
         mock_check.return_value = {"status": "success"}
@@ -270,7 +272,7 @@ class TestRecurringTaskEndpoints:
 class TestStatisticsEndpoints:
     """Test statistics and analytics endpoints"""
     
-    @patch('app.parse_tasks')
+    @patch('dashboard.backend.app.parse_tasks')
     def test_get_statistics(self, mock_parse, client, mock_parse_tasks):
         """Test GET /statistics endpoint"""
         mock_parse.return_value = mock_parse_tasks
@@ -290,7 +292,7 @@ class TestStatisticsEndpoints:
         assert "due_today" in stats
         assert "due_this_week" in stats
     
-    @patch('app.parse_tasks')
+    @patch('dashboard.backend.app.parse_tasks')
     def test_get_statistics_by_area(self, mock_parse, client, mock_parse_tasks):
         """Test GET /statistics/area endpoint"""
         mock_parse.return_value = mock_parse_tasks
@@ -309,7 +311,7 @@ class TestStatisticsEndpoints:
             assert "total_tasks" in area_stats[0]
             assert "completed_tasks" in area_stats[0]
     
-    @patch('app.parse_tasks')  
+    @patch('dashboard.backend.app.parse_tasks')  
     def test_get_statistics_by_priority(self, mock_parse, client, mock_parse_tasks):
         """Test GET /statistics/priority endpoint"""
         mock_parse.return_value = mock_parse_tasks
@@ -324,7 +326,7 @@ class TestStatisticsEndpoints:
 class TestTimeSeriesEndpoints:
     """Test time series analysis endpoints"""
     
-    @patch('app.get_time_series_data')
+    @patch('dashboard.backend.app.get_time_series_data')
     def test_get_time_series(self, mock_get_data, client):
         """Test GET /statistics/time-series endpoint"""
         mock_data = [
@@ -425,7 +427,7 @@ class TestErrorHandling:
         response = client.post("/tasks", json=incomplete_data)
         assert response.status_code in [422, 400]
     
-    @patch('app.parse_tasks')
+    @patch('dashboard.backend.app.parse_tasks')
     def test_parser_exception(self, mock_parse, client):
         """Test handling parser exceptions"""
         mock_parse.side_effect = Exception("Parser error")
@@ -530,7 +532,7 @@ class TestRequestValidation:
 class TestPerformance:
     """Test API performance"""
     
-    @patch('app.parse_tasks')
+    @patch('dashboard.backend.app.parse_tasks')
     def test_task_endpoint_performance(self, mock_parse, client):
         """Test that task endpoints respond in reasonable time"""
         # Mock large dataset
@@ -616,7 +618,7 @@ class TestConcurrency:
 class TestDataConsistency:
     """Test data consistency"""
     
-    @patch('app.parse_tasks')
+    @patch('dashboard.backend.app.parse_tasks')
     def test_data_structure_consistency(self, mock_parse, client):
         """Test that API returns consistent data structures"""
         mock_parse.return_value = [
