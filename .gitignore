@@ -57,6 +57,7 @@ node_modules/**
 test-results/
 tests/coverage/
 tests/reports/
+tests/logs/
 coverage/
 .nyc_output/
 playwright-report/
