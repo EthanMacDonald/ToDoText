@@ -1,0 +1,64 @@
+{
+  "name": "todo-auto-test-suite",
+  "version": "1.0.0",
+  "description": "Comprehensive test suite for Todo Auto project",
+  "scripts": {
+    "test": "npm run test:backend && npm run test:frontend && npm run test:integration",
+    "test:all": "./scripts/run_tests.sh",
+    "test:backend": "cd dashboard/backend && python -m pytest tests/ -v --cov=.",
+    "test:backend:only": "./scripts/run_tests.sh backend",
+    "test:frontend": "cd dashboard/frontend && npm test",
+    "test:frontend:only": "./scripts/run_tests.sh frontend",
+    "test:integration": "vitest run tests/integration/",
+    "test:integration:only": "./scripts/run_tests.sh integration",
+    "test:e2e": "playwright test",
+    "test:e2e:only": "./scripts/run_tests.sh e2e",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:quick": "./scripts/run_tests.sh quick",
+    "test:coverage": "npm run test:frontend:coverage && npm run test:backend:coverage",
+    "test:frontend:coverage": "cd dashboard/frontend && npm run test:coverage",
+    "test:backend:coverage": "cd dashboard/backend && python -m pytest tests/ --cov=. --cov-report=html",
+    "test:watch": "vitest",
+    "test:clean": "rm -rf tests/coverage tests/reports",
+    "install:deps": "npm install && cd dashboard/frontend && npm install",
+    "setup:e2e": "npx playwright install",
+    "dev:backend": "cd dashboard/backend && python -m uvicorn app:app --reload --port 8000",
+    "dev:frontend": "cd dashboard/frontend && npm run dev",
+    "build": "cd dashboard/frontend && npm run build",
+    "lint": "cd dashboard/frontend && npm run lint",
+    "type-check": "cd dashboard/frontend && tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "@types/node": "^22.5.5",
+    "@vitest/coverage-v8": "^2.0.5",
+    "@vitest/ui": "^2.0.5",
+    "jsdom": "^25.0.0",
+    "node-fetch": "^3.3.2",
+    "typescript": "^5.8.3",
+    "vitest": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/todo-auto.git"
+  },
+  "keywords": [
+    "todo",
+    "task-management",
+    "productivity",
+    "testing",
+    "typescript",
+    "python",
+    "react"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "workspaces": [
+    "dashboard/frontend"
+  ]
+}

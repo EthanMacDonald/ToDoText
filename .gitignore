@@ -52,3 +52,5 @@ dashboard/frontend/src/assets/*.svg
 
 # Dashboard state
 dashboard/frontend/dashboard-state.json
+
+node_modules/**
