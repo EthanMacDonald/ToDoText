@@ -2,9 +2,13 @@
 
 # Test the edit function with debug output
 import sys
-sys.path.append('/Users/ethan/working_files/NOTES/todo_auto/dashboard/backend')
+import os
 
-from parser import parse_tasks_raw, edit_task
+# Add the project root to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+sys.path.insert(0, project_root)
+
+from dashboard.backend.parser import parse_tasks_raw, edit_task
 
 # Create a mock request to test editing
 class MockRequest:

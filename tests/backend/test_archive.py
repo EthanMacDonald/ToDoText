@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 
+import sys
+import os
+
+# Add the project root to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+sys.path.insert(0, project_root)
+
 # Test the archive function
-from app import archive_completed_tasks
+from dashboard.backend.app import archive_completed_tasks
 
 try:
     result = archive_completed_tasks()

@@ -3,9 +3,13 @@
 import requests
 import json
 import sys
-sys.path.append('/Users/ethan/working_files/NOTES/todo_auto/dashboard/backend')
+import os
 
-from parser import parse_tasks_raw
+# Add the project root to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+sys.path.insert(0, project_root)
+
+from dashboard.backend.parser import parse_tasks_raw
 
 try:
     # Get a task to edit

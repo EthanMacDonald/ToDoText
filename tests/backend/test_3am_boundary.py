@@ -4,8 +4,15 @@ Test script for the 3 AM boundary logic for recurring tasks.
 This tests that tasks completed between midnight and 3 AM count for the previous day.
 """
 
+import sys
+import os
+
+# Add the project root to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+sys.path.insert(0, project_root)
+
 from datetime import datetime, date, timedelta
-from app import get_adjusted_date, get_adjusted_today, parse_recurring_status_log, get_recurring_task_compliance_data
+from dashboard.backend.app import get_adjusted_date, get_adjusted_today, parse_recurring_status_log, get_recurring_task_compliance_data
 
 def test_3am_boundary():
     """Test the 3 AM boundary logic"""

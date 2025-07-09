@@ -6,9 +6,12 @@ Direct test of parser functions for delete task and add subtask functionality
 
 import sys
 import os
-sys.path.append('/Users/ethan/working_files/NOTES/todo_auto/dashboard/backend')
 
-from parser import delete_task, create_subtask_for_task, parse_tasks
+# Add the project root to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+sys.path.insert(0, project_root)
+
+from dashboard.backend.parser import delete_task, create_subtask_for_task, parse_tasks
 
 # Simple mock request class for testing
 class MockSubtaskRequest:

@@ -86,7 +86,7 @@ setup_environment() {
 run_backend_tests() {
     print_section "🐍 Running Backend Tests"
     
-    cd dashboard/backend
+    # Stay in project root - don't change to dashboard/backend
     
     echo "Running parser tests..."
     python -m pytest tests/backend/test_parser.py -v --tb=short || true
@@ -99,9 +99,7 @@ run_backend_tests() {
     
     # Generate coverage report
     echo "Generating backend coverage report..."
-    python -m pytest tests/backend/ --cov=. --cov-report=html --cov-report=term-missing || true
-    
-    cd ../..
+    python -m pytest tests/backend/ --cov=dashboard/backend --cov-report=html --cov-report=term-missing || true
     
     # Backend has approximately 60 tests
     update_counts 55 60  # Assuming 55/60 pass

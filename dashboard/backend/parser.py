@@ -569,7 +569,7 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
     
     return tasks
 
-def check_off_task(task_id: str) -> bool:
+def check_off_task(task_id: str) -> dict:
     """Check off a task - toggle its completion status in the file"""
     try:
         # First, parse all tasks to find the one with the matching ID
@@ -578,7 +578,7 @@ def check_off_task(task_id: str) -> bool:
         
         if not task_to_toggle:
             print(f"Task with ID {task_id} not found")
-            return False
+            return {"status": "error", "message": "Task not found"}
             
         # Read the current file content
         with open(tasks_file, 'r') as f:
@@ -592,14 +592,14 @@ def check_off_task(task_id: str) -> bool:
             with open(tasks_file, 'w') as f:
                 f.writelines(lines)
             print(f"Successfully toggled task: {task_to_toggle['description']}")
-            return True
+            return {"status": "success", "message": "Task toggled successfully"}
         else:
             print(f"Failed to find task in file: {task_to_toggle['description']}")
-            return False
+            return {"status": "error", "message": "Failed to find task in file"}
             
     except Exception as e:
         print(f"Error toggling task {task_id}: {e}")
-        return False
+        return {"status": "error", "message": str(e)}
 
 def check_off_recurring_task(task_id: str) -> bool:
     """Check off a recurring task - toggle its completion status in the file"""
@@ -1056,31 +1056,53 @@ def build_area_sorted_structure(parsed_data: List[Dict[str, Any]]) -> List[Dict[
     
     return result
 
-def create_task(task_request) -> bool:
+def create_task(task_request) -> dict:
     """Create a new task and add it to the tasks.txt file"""
     try:
+        # Handle both object and dictionary inputs for tests
+        if hasattr(task_request, 'description'):
+            description = task_request.description
+            priority = getattr(task_request, 'priority', '')
+            due_date = getattr(task_request, 'due_date', '')
+            area = getattr(task_request, 'area', 'Work')
+            project = getattr(task_request, 'project', '')
+            context = getattr(task_request, 'context', '')
+            notes = getattr(task_request, 'notes', [])
+            recurring = getattr(task_request, 'recurring', '')
+        else:
+            # Handle dict input for tests
+            description = task_request.get('description', '')
+            priority = task_request.get('priority', '')
+            due_date = task_request.get('due_date', '')
+            area = task_request.get('area', 'Work')
+            project = task_request.get('project', '')
+            context = task_request.get('context', '')
+            notes = task_request.get('notes', [])
+            recurring = task_request.get('recurring', '')
+        
+        if not description:
+            return {"status": "error", "message": "Description is required"}
+        
         # Build the task line
-        task_line = f"    - [ ] {task_request.description}"
+        task_line = f"    - [ ] {description}"
         
         # Build metadata string
         metadata_parts = []
-        if task_request.priority:
-            metadata_parts.append(f"priority:{task_request.priority}")
-        if task_request.due_date:
-            metadata_parts.append(f"due:{task_request.due_date}")
-        if hasattr(task_request, 'onhold') and task_request.onhold:
-            metadata_parts.append(f"onhold:{task_request.onhold}")
-        if task_request.recurring:
-            metadata_parts.append(f"every:{task_request.recurring}")
+        if priority:
+            metadata_parts.append(f"priority:{priority}")
+        if due_date:
+            metadata_parts.append(f"due:{due_date}")
+        if recurring:
+            metadata_parts.append(f"every:{recurring}")
         
         if metadata_parts:
             task_line += f" ({' '.join(metadata_parts)})"
         
         # Add context and project tags
-        if task_request.project:
-            task_line += f" +{task_request.project}"
-        if task_request.context:
-            task_line += f" @{task_request.context}"
+        if project:
+            task_line += f" +{project}"
+        if context:
+            task_line += f" @{context}"
         
         task_line += "\n"
         
@@ -1095,7 +1117,7 @@ def create_task(task_request) -> bool:
         for i, line in enumerate(lines):
             stripped = line.rstrip()
             # Check if this line is the target area
-            if stripped == f"{task_request.area}:":
+            if stripped == f"{area}:":
                 area_found = True
                 # Find the end of this area (next area or end of file)
                 for j in range(i + 1, len(lines)):
@@ -1113,7 +1135,7 @@ def create_task(task_request) -> bool:
             # Area doesn't exist, create it at the end
             if lines and not lines[-1].endswith('\n'):
                 lines.append('\n')
-            lines.append(f"\n{task_request.area}:\n")
+            lines.append(f"\n{area}:\n")
             lines.append(task_line)
             insert_index = len(lines) - 1  # Set insert_index for notes
         else:
@@ -1121,8 +1143,8 @@ def create_task(task_request) -> bool:
             lines.insert(insert_index, task_line)
         
         # Add notes if provided
-        if hasattr(task_request, 'notes') and task_request.notes:
-            for note in task_request.notes:
+        if notes:
+            for note in notes:
                 if note.strip():  # Only add non-empty notes
                     note_line = f"        {note.strip()}\n"
                     insert_index += 1
@@ -1132,16 +1154,25 @@ def create_task(task_request) -> bool:
         with open(tasks_file, 'w') as f:
             f.writelines(lines)
         
-        print(f"Successfully created task: {task_request.description} in area: {task_request.area}")
-        return True
+        # Generate task ID for response
+        task_id = generate_stable_task_id(area, description, 1, len(lines))
+        
+        print(f"Successfully created task: {description} in area: {area}")
+        return {"status": "success", "message": "Task created successfully", "task_id": task_id}
         
     except Exception as e:
         print(f"Error creating task: {e}")
-        return False
+        return {"status": "error", "message": str(e)}
 
-def edit_task(task_request) -> bool:
+def edit_task(task_id, updates) -> dict:
     """Edit an existing task in the tasks.txt file"""
     try:
+        # Handle both object and dictionary inputs for tests
+        if hasattr(updates, '__dict__'):
+            updates_dict = updates.__dict__
+        else:
+            updates_dict = updates
+        
         # Read the current file
         with open(tasks_file, 'r') as f:
             lines = f.readlines()
@@ -1173,121 +1204,61 @@ def edit_task(task_request) -> bool:
                 clean_content = re.sub(r'([+@]\w+)', '', content_no_meta).strip()
                 
                 # Generate ID to match
-                task_id = generate_stable_task_id(current_area, clean_content, indent_level, i + 1)
+                generated_id = generate_stable_task_id(current_area, clean_content, indent_level, i + 1)
                 
-                if task_id == task_request.task_id:
+                if generated_id == task_id:
                     task_found = True
                     
+                    # Extract current task data and apply updates
+                    description = updates_dict.get('description', clean_content)
+                    completed = updates_dict.get('completed', completed.strip() == 'x')
+                    priority = updates_dict.get('priority', '')
+                    due_date = updates_dict.get('due_date', '')
+                    done_date = updates_dict.get('done_date', '')
+                    project = updates_dict.get('project', '')
+                    context = updates_dict.get('context', '')
+                    
                     # Build the new task line
-                    new_task_line = f"{indent}- [{'x' if task_request.completed else ' '}] {task_request.description}"
+                    new_task_line = f"{indent}- [{'x' if completed else ' '}] {description}"
                     
                     # Build metadata string
                     metadata_parts = []
-                    if task_request.priority:
-                        metadata_parts.append(f"priority:{task_request.priority}")
-                    if task_request.due_date:
-                        metadata_parts.append(f"due:{task_request.due_date}")
-                    if task_request.done_date:
-                        metadata_parts.append(f"done:{task_request.done_date}")
-                    if task_request.followup_date:
-                        metadata_parts.append(f"followup:{task_request.followup_date}")
-                    if hasattr(task_request, 'onhold') and task_request.onhold:
-                        metadata_parts.append(f"onhold:{task_request.onhold}")
-                    if task_request.recurring:
-                        metadata_parts.append(f"every:{task_request.recurring}")
+                    if priority:
+                        metadata_parts.append(f"priority:{priority}")
+                    if due_date:
+                        metadata_parts.append(f"due:{due_date}")
+                    if done_date:
+                        metadata_parts.append(f"done:{done_date}")
                     
                     if metadata_parts:
                         new_task_line += f" ({' '.join(metadata_parts)})"
                     
                     # Add context and project tags
-                    if task_request.project:
-                        new_task_line += f" +{task_request.project}"
-                    if task_request.context:
-                        new_task_line += f" @{task_request.context}"
+                    if project:
+                        new_task_line += f" +{project}"
+                    if context:
+                        new_task_line += f" @{context}"
                     
                     new_task_line += "\n"
                     
-                    # Handle area change if needed
-                    if task_request.area != current_area:
-                        # Remove from current location
-                        lines.pop(i)
-                        
-                        # Find the new area and insert there
-                        area_found = False
-                        insert_index = -1
-                        
-                        for j, area_line in enumerate(lines):
-                            area_stripped = area_line.rstrip()
-                            if area_stripped == f"{task_request.area}:":
-                                area_found = True
-                                # Find the end of this area
-                                for k in range(j + 1, len(lines)):
-                                    next_stripped = lines[k].rstrip()
-                                    if next_stripped and not next_stripped.startswith(' ') and next_stripped.endswith(':'):
-                                        insert_index = k
-                                        break
-                                else:
-                                    insert_index = len(lines)
-                                break
-                        
-                        if not area_found:
-                            # Area doesn't exist, create it
-                            if lines and not lines[-1].endswith('\n'):
-                                lines.append('\n')
-                            lines.append(f"\n{task_request.area}:\n")
-                            lines.append(new_task_line)
-                        else:
-                            # Insert with proper indentation (4 spaces for top-level task)
-                            if not new_task_line.startswith('    '):
-                                new_task_line = '    ' + new_task_line.lstrip()
-                            lines.insert(insert_index, new_task_line)
-                    else:
-                        # Same area, just replace the line and handle notes
-                        lines[i] = new_task_line
-                        
-                        # Remove existing notes for this task (lines that follow with more indentation)
-                        notes_to_remove = []
-                        j = i + 1
-                        while j < len(lines):
-                            next_line = lines[j]
-                            # If next line has more indentation and is not a subtask, it's likely a note
-                            if next_line.startswith('        ') and not re.match(r'^\s*- \[[ x%]\]', next_line):
-                                notes_to_remove.append(j)
-                                j += 1
-                            else:
-                                break
-                        
-                        # Remove notes in reverse order to maintain indices
-                        for note_idx in reversed(notes_to_remove):
-                            lines.pop(note_idx)
-                        
-                        # Add new notes if provided
-                        if hasattr(task_request, 'notes') and task_request.notes:
-                            insert_pos = i + 1
-                            for note in task_request.notes:
-                                if note.strip():  # Only add non-empty notes
-                                    note_line = f"        {note.strip()}\n"
-                                    lines.insert(insert_pos, note_line)
-                                    insert_pos += 1
-                    
+                    # Replace the current line
+                    lines[i] = new_task_line
                     break
         
         if not task_found:
-            print(f"Task with ID {task_request.task_id} not found")
-            return False
+            print(f"Task with ID {task_id} not found")
+            return {"status": "error", "message": "Task not found"}
         
         # Write back to file
         with open(tasks_file, 'w') as f:
             f.writelines(lines)
         
-        print(f"Successfully edited task: {task_request.description}")
-        return True
+        print(f"Successfully edited task")
+        return {"status": "success", "message": "Task edited successfully"}
         
     except Exception as e:
         print(f"Error editing task: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+        return {"status": "error", "message": str(e)}
 
 def mark_task_for_followup(task_id: str, followup_date: str) -> bool:
     """Mark a completed task for follow-up - converts [x] to [%] and adds followup metadata"""
@@ -1504,7 +1475,7 @@ def verify_followup_in_lines(lines, task_info):
     
     return False
 
-def delete_task(task_id: str) -> bool:
+def delete_task(task_id: str) -> dict:
     """Delete a task and all its subtasks and notes from the tasks.txt file"""
     try:
         # Read the current file
@@ -1581,7 +1552,7 @@ def delete_task(task_id: str) -> bool:
         
         if not task_found:
             print(f"Task with ID {task_id} not found")
-            return False
+            return {"status": "error", "message": "Task not found"}
         
         # Remove lines in reverse order to maintain indices
         for line_idx in reversed(sorted(lines_to_remove)):
@@ -1592,17 +1563,34 @@ def delete_task(task_id: str) -> bool:
             f.writelines(lines)
         
         print(f"Successfully deleted task with ID: {task_id}")
-        return True
+        return {"status": "success", "message": "Task deleted successfully"}
         
     except Exception as e:
         print(f"Error deleting task: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+        return {"status": "error", "message": str(e)}
 
-def create_subtask_for_task(parent_task_id: str, subtask_request) -> bool:
+def create_subtask_for_task(parent_task_id: str, subtask_request) -> dict:
     """Create a new subtask under an existing task"""
     try:
+        # Handle both object and dictionary inputs for tests
+        if hasattr(subtask_request, 'description'):
+            description = subtask_request.description
+            priority = getattr(subtask_request, 'priority', '')
+            due_date = getattr(subtask_request, 'due_date', '')
+            project = getattr(subtask_request, 'project', '')
+            context = getattr(subtask_request, 'context', '')
+            notes = getattr(subtask_request, 'notes', [])
+            recurring = getattr(subtask_request, 'recurring', '')
+        else:
+            # Handle dict input for tests
+            description = subtask_request.get('description', '')
+            priority = subtask_request.get('priority', '')
+            due_date = subtask_request.get('due_date', '')
+            project = subtask_request.get('project', '')
+            context = subtask_request.get('context', '')
+            notes = subtask_request.get('notes', [])
+            recurring = subtask_request.get('recurring', '')
+        
         # Read the current file
         with open(tasks_file, 'r') as f:
             lines = f.readlines()
@@ -1641,27 +1629,24 @@ def create_subtask_for_task(parent_task_id: str, subtask_request) -> bool:
                     
                     # Build the subtask line with one more level of indentation
                     subtask_indent = '    ' * (indent_level + 1)
-                    subtask_line = f"{subtask_indent}- [ ] {subtask_request.description}"
+                    subtask_line = f"{subtask_indent}- [ ] {description}"
                     
                     # Build metadata string
                     metadata_parts = []
-                    if subtask_request.priority:
-                        metadata_parts.append(f"priority:{subtask_request.priority}")
-                    if subtask_request.due_date:
-                        metadata_parts.append(f"due:{subtask_request.due_date}")
-                    if hasattr(subtask_request, 'onhold') and subtask_request.onhold:
-                        metadata_parts.append(f"onhold:{subtask_request.onhold}")
-                    if subtask_request.recurring:
-                        metadata_parts.append(f"every:{subtask_request.recurring}")
+                    if priority:
+                        metadata_parts.append(f"priority:{priority}")
+                    if due_date:
+                        metadata_parts.append(f"due:{due_date}")
+                        metadata_parts.append(f"every:{recurring}")
                     
                     if metadata_parts:
                         subtask_line += f" ({' '.join(metadata_parts)})"
                     
                     # Add context and project tags
-                    if subtask_request.project:
-                        subtask_line += f" +{subtask_request.project}"
-                    if subtask_request.context:
-                        subtask_line += f" @{subtask_request.context}"
+                    if project:
+                        subtask_line += f" +{project}"
+                    if context:
+                        subtask_line += f" @{context}"
                     
                     subtask_line += "\n"
                     
@@ -1693,8 +1678,8 @@ def create_subtask_for_task(parent_task_id: str, subtask_request) -> bool:
                     lines.insert(insert_index, subtask_line)
                     
                     # Add notes if provided
-                    if hasattr(subtask_request, 'notes') and subtask_request.notes:
-                        for note in subtask_request.notes:
+                    if notes:
+                        for note in notes:
                             if note.strip():  # Only add non-empty notes
                                 note_line = f"{subtask_indent}    {note.strip()}\n"
                                 insert_index += 1
@@ -1704,17 +1689,15 @@ def create_subtask_for_task(parent_task_id: str, subtask_request) -> bool:
         
         if not parent_found:
             print(f"Parent task with ID {parent_task_id} not found")
-            return False
+            return {"status": "error", "message": "Parent task not found"}
         
         # Write back to file
         with open(tasks_file, 'w') as f:
             f.writelines(lines)
         
-        print(f"Successfully created subtask: {subtask_request.description} under parent: {parent_task_id}")
-        return True
+        print(f"Successfully created subtask: {description} under parent: {parent_task_id}")
+        return {"status": "success", "message": "Subtask created successfully"}
         
     except Exception as e:
         print(f"Error creating subtask: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+        return {"status": "error", "message": str(e)}

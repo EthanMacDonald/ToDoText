@@ -2,9 +2,13 @@
 
 # Test the edit function
 import sys
-sys.path.append('/Users/ethan/working_files/NOTES/todo_auto/dashboard/backend')
+import os
 
-from app import EditTaskRequest, edit_task
+# Add the project root to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+sys.path.insert(0, project_root)
+
+from dashboard.backend.app import EditTaskRequest, edit_task
 
 # Create a mock request to test editing
 class MockRequest:
@@ -15,7 +19,7 @@ class MockRequest:
 # Test editing a task (you'll need to get a real task ID from your tasks)
 try:
     # First, let's see what tasks exist by parsing them
-    from parser import parse_tasks_raw
+    from dashboard.backend.parser import parse_tasks_raw
     
     raw_tasks = parse_tasks_raw()
     print("Available tasks for testing:")

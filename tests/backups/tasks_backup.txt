@@ -1,7 +1,5 @@
 Work:
-    - [ ] Complete quarterly project report (priority:A due:2025-07-15) +Reports @Office
-        - [x] Gather data from all departments (done:2025-07-06)
-            This requires coordination with marketing, sales, and engineering teams
+    - [ ] Complete quarterly project report (priority:A due:2025-07-15) +Reports @HTTPTestContext
         - [ ] Create executive summary
             Focus on key metrics and actionable insights
         - [ ] Schedule presentation with stakeholders
@@ -22,10 +20,8 @@ Work:
         On hold until lease renewal is finalized
 
 Personal:
-    - [x] Schedule annual medical checkup (priority:A due:2025-07-10) +Healthcare @Phone
         Called Dr. Smith's office and scheduled for July 15th
     - [ ] Plan summer vacation (priority:B due:2025-07-20) +Travel @Home
-        - [x] Research destination options (done:2025-07-06)
             Consider budget, weather, and activities
         - [ ] Book flights and accommodation
         - [ ] Create packing checklist
@@ -39,10 +35,8 @@ Personal:
         Waiting until vacation stress reduces
 
 Home:
-    - [x] Fix kitchen faucet leak (priority:A due:2025-07-05 done:2025-07-06) +Maintenance @Home 
         Dripping has gotten worse, may need plumber
     - [ ] Organize garage storage (priority:C) +Organization @Home
-        - [x] Sort items into keep, donate, discard piles (done:2025-07-06)
         - [ ] Install shelving system
         - [ ] Label storage containers
     - [ ] Plan garden for next season (priority:B) +Gardening @Home

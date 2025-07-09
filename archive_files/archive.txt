@@ -1,3 +1,13 @@
+Archived on 2025-07-08 21:50:21
+    - [ ] Complete quarterly project report (priority:A due:2025-07-15) +Reports @Office &Work
+        - [x] Gather data from all departments (done:2025-07-06)
+    - [x] Schedule annual medical checkup (priority:A due:2025-07-10) +Healthcare @Phone &Personal
+    - [ ] Plan summer vacation (priority:B due:2025-07-20) +Travel @Home &Personal
+        - [x] Research destination options (done:2025-07-06)
+    - [x] Fix kitchen faucet leak (priority:A due:2025-07-05 done:2025-07-06) +Maintenance @Home  &Home
+    - [ ] Organize garage storage (priority:C) +Organization @Home &Home
+        - [x] Sort items into keep, donate, discard piles (done:2025-07-06)
+
 # Completed Tasks Archive
 
 ## July 2025 Completed Tasks

@@ -26,7 +26,7 @@ from pathlib import Path
 backend_path = Path(__file__).parent.parent.parent / "dashboard" / "backend"
 sys.path.insert(0, str(backend_path))
 
-from app import app, get_adjusted_date, get_adjusted_today, get_adjusted_datetime_for_date
+from dashboard.backend.app import app, get_adjusted_date, get_adjusted_today, get_adjusted_datetime_for_date
 
 @pytest.fixture
 def client():

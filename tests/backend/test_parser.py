@@ -23,7 +23,7 @@ from pathlib import Path
 backend_path = Path(__file__).parent.parent.parent / "dashboard" / "backend"
 sys.path.insert(0, str(backend_path))
 
-from parser import (
+from dashboard.backend.parser import (
     parse_tasks, parse_tasks_raw, parse_recurring_tasks,
     create_task, edit_task, delete_task, create_subtask_for_task,
     check_off_task, check_off_recurring_task,

@@ -4,7 +4,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from parser import parse_tasks
+from dashboard.backend.parser import parse_tasks
 
 def test_followup_sorting():
     """Test that follow-up tasks are sorted by date"""
