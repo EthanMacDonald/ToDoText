@@ -54,3 +54,10 @@ dashboard/frontend/src/assets/*.svg
 dashboard/frontend/dashboard-state.json
 
 node_modules/**
+test-results/
+tests/coverage/
+tests/reports/
+coverage/
+.nyc_output/
+playwright-report/
+test-results-*/

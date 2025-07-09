@@ -1,0 +1,40 @@
+# Daily Recurring Tasks
+- [ ] Review and respond to emails (priority:A) +Communication @Computer [daily]
+- [ ] Take vitamins and supplements (priority:B) +Health @Home [daily]
+- [ ] Write in gratitude journal (priority:C) +Mindfulness @Home [daily]
+- [ ] Check weather forecast for tomorrow (priority:C) +Planning @Phone [daily]
+- [ ] Review tomorrow's calendar and priorities (priority:A) +Planning @Computer [daily]
+
+# Weekly Recurring Tasks  
+- [ ] Grocery shopping and meal prep (priority:A) +Food @Store [weekly:Sun]
+- [ ] Clean and vacuum house (priority:B) +Cleaning @Home [weekly:Sat]
+- [ ] Review and update budget (priority:A) +Finance @Computer [weekly:Sun]
+- [ ] Call parents and family check-in (priority:B) +Family @Phone [weekly:Sun]
+- [ ] Backup computer files and photos (priority:B) +Technology @Computer [weekly:Fri]
+- [ ] Plan upcoming week's schedule (priority:A) +Planning @Computer [weekly:Sun]
+- [ ] Exercise: cardio workout (priority:A) +Fitness @Gym [weekly:Mon,Wed,Fri]
+- [ ] Exercise: strength training (priority:A) +Fitness @Gym [weekly:Tue,Thu]
+
+# Monthly Recurring Tasks
+- [ ] Pay monthly bills and review statements (priority:A) +Finance @Computer [monthly:1]
+- [ ] Review investment portfolio performance (priority:B) +Investment @Computer [monthly:15]
+- [ ] Deep clean one room thoroughly (priority:C) +Cleaning @Home [monthly:1]
+- [ ] Update personal development goals (priority:B) +Growth @Computer [monthly:1]
+- [ ] Schedule medical/dental appointments (priority:B) +Healthcare @Phone [monthly:15]
+- [ ] Review and update passwords (priority:B) +Security @Computer [monthly:1]
+- [ ] Organize digital files and photos (priority:C) +Organization @Computer [monthly:15]
+
+# Quarterly Recurring Tasks
+- [ ] Complete comprehensive financial review (priority:A) +Finance @Computer [quarterly:1]
+- [ ] Conduct car maintenance check (priority:B) +Vehicle @Garage [quarterly:1]
+- [ ] Review and update insurance policies (priority:B) +Insurance @Computer [quarterly:1]
+- [ ] Plan seasonal wardrobe rotation (priority:C) +Organization @Home [quarterly:1]
+- [ ] Schedule professional development training (priority:B) +Career @Computer [quarterly:1]
+
+# Annual Recurring Tasks
+- [ ] Complete tax preparation and filing (priority:A due:2025-04-15) +Finance @Computer [yearly:Mar]
+- [ ] Schedule comprehensive health checkup (priority:A) +Healthcare @Phone [yearly:birthday_month]
+- [ ] Review and update will and estate planning (priority:A) +Legal @Computer [yearly:Jan]
+- [ ] Plan and book annual vacation (priority:B) +Travel @Computer [yearly:Jan]
+- [ ] Conduct home maintenance inspection (priority:B) +Home @Home [yearly:Spring]
+- [ ] Review job performance and salary (priority:A) +Career @Office [yearly:Dec]
