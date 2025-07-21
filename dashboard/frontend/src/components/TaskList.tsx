@@ -6,10 +6,11 @@ import EditTaskForm from './EditTaskForm';
 const AddSubtaskForm: React.FC<{
   onSubmit: (description: string, notes: string[], additionalData: any) => void;
   onCancel: () => void;
-}> = ({ onSubmit, onCancel }) => {
+  parentArea: string; // Add parent area prop
+}> = ({ onSubmit, onCancel, parentArea }) => {
   const [formData, setFormData] = useState({
     description: '',
-    area: '',
+    area: parentArea, // Use parent's area as default
     priority: '',
     due_date: '',
     done_date: '',
@@ -26,7 +27,7 @@ const AddSubtaskForm: React.FC<{
     if (formData.description.trim()) {
       const notes = formData.notes.split('\n').filter(note => note.trim() !== '');
       const additionalData = {
-        area: formData.area,
+        area: formData.area || parentArea, // Ensure area is always provided
         priority: formData.priority,
         due_date: formData.due_date,
         done_date: formData.done_date,
@@ -39,7 +40,7 @@ const AddSubtaskForm: React.FC<{
       onSubmit(formData.description.trim(), notes, additionalData);
       setFormData({
         description: '',
-        area: '',
+        area: parentArea,
         priority: '',
         due_date: '',
         done_date: '',
@@ -646,6 +647,7 @@ const TaskItem: React.FC<{
       {addingSubtaskToId === task.id && onAddSubtask && !isRecurring && (
         <div style={{ marginLeft: `${depth * 20 + 20}px`, marginTop: '8px', marginBottom: '8px' }}>
           <AddSubtaskForm
+            parentArea={task.area || ''}
             onSubmit={(description: string, notes: string[], additionalData: any) => {
               onAddSubtask(task.id, description, notes, additionalData);
               onAddingSubtaskToIdChange(null);

@@ -738,9 +738,9 @@ def create_subtask(task_id: str, request: CreateTaskRequest):
     Returns:
         A success message
     """
-    success = create_subtask_for_task(task_id, request)
-    if not success:
-        raise HTTPException(status_code=404, detail="Parent task not found or failed to create subtask")
+    result = create_subtask_for_task(task_id, request)
+    if result["status"] == "error":
+        raise HTTPException(status_code=404, detail=result["message"])
     return {"success": True}
 @app.post("/recurring/status")
 def post_recurring_status(request: RecurringTaskStatusRequest):

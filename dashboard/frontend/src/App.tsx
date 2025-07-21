@@ -150,7 +150,8 @@ function App() {
       
       // Add additional fields if provided
       if (additionalData) {
-        if (additionalData.area) payload.area = additionalData.area;
+        // Area is required, so ensure it's always present
+        payload.area = additionalData.area || 'Work'; // fallback to 'Work' if no area provided
         if (additionalData.priority) payload.priority = additionalData.priority;
         if (additionalData.due_date) payload.due_date = additionalData.due_date;
         if (additionalData.done_date) payload.done_date = additionalData.done_date;
@@ -158,7 +159,12 @@ function App() {
         if (additionalData.context) payload.context = additionalData.context;
         if (additionalData.project) payload.project = additionalData.project;
         if (additionalData.onhold) payload.onhold = additionalData.onhold;
+      } else {
+        // If no additional data is provided, use a default area
+        payload.area = 'Work';
       }
+      
+      console.log('Creating subtask with payload:', payload); // Debug log
       
       const response = await fetch(`${API_URL}/tasks/${parentId}/subtasks`, {
         method: 'POST',
@@ -167,14 +173,18 @@ function App() {
       });
       
       if (response.ok) {
+        console.log('Subtask created successfully');
         // Refresh tasks after adding subtask and trigger statistics refresh
         refreshTasks();
         setRefreshTrigger(prev => prev + 1);
       } else {
-        console.error('Error adding subtask:', await response.text());
+        const errorText = await response.text();
+        console.error('Error adding subtask:', errorText);
+        alert(`Failed to create subtask: ${errorText}`);
       }
     } catch (error) {
       console.error('Error adding subtask:', error);
+      alert(`Failed to create subtask: ${error}`);
     }
   };
 
