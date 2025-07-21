@@ -159,7 +159,7 @@ function App() {
 
     const handleRecurringStatus = async (taskId: string, status: string) => {
     try {
-      const response = await fetch('/api/recurring/status', {
+      const response = await fetch(`${API_URL}/recurring/status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,7 +169,7 @@ function App() {
 
       if (response.ok) {
         // Refresh tasks to show updated status
-        fetchTasks();
+        refreshTasks();
       } else {
         console.error('Failed to update recurring task status');
       }
