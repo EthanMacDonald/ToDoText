@@ -530,7 +530,7 @@ const TaskItem: React.FC<{
                   fontSize: '10px',
                   cursor: 'pointer'
                 }}
-                title="Mark as missed"
+                title="Mark as missed (remove from today)"
               >
                 ✗
               </button>

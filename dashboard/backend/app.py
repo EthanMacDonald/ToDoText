@@ -181,7 +181,7 @@ def should_show_recurring_task(task, current_date: date, status_data: dict):
       - All tasks: Hide for current day (will show again tomorrow or next occurrence)
     """
     task_id = task.get('id')
-    recurring = task.get('recurring', '')
+    recurring = task.get('metadata', {}).get('every', '') or task.get('recurring', '')
     
     if not task_id:
         return True  # Show if no ID
@@ -233,7 +233,7 @@ def get_recurring_tasks_by_filter(filter_type: str = "today"):
             if not should_show_recurring_task(task, today, status_data):
                 return False
             
-            recurring = task.get('recurring', '')
+            recurring = task.get('metadata', {}).get('every', '')
             if not recurring:
                 return False
             
@@ -747,7 +747,10 @@ def post_recurring_status(request: RecurringTaskStatusRequest):
     """Set status for a recurring task and log it"""
     try:
         # First get the task details to log the description
-        recurring_tasks = parse_recurring_tasks()
+        # Try both all tasks and filtered tasks to ensure we find the task
+        all_recurring_tasks = parse_recurring_tasks()
+        filtered_recurring_tasks = get_recurring_tasks_by_filter("all")  # Get all, not just today
+        
         task_description = None
         
         # Find the task description
@@ -764,7 +767,11 @@ def post_recurring_status(request: RecurringTaskStatusRequest):
                                     return subtask.get('description', 'Unknown subtask')
             return None
         
-        task_description = find_task_in_groups(recurring_tasks, request.task_id)
+        # Try finding in filtered tasks first, then all tasks
+        task_description = find_task_in_groups(filtered_recurring_tasks, request.task_id)
+        if not task_description:
+            task_description = find_task_in_groups(all_recurring_tasks, request.task_id)
+        
         if not task_description:
             raise HTTPException(status_code=404, detail="Recurring task not found")
         

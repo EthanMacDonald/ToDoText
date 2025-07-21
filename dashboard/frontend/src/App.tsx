@@ -157,16 +157,22 @@ function App() {
     }
   };
 
-  const handleRecurringStatus = async (id: string, status: 'completed' | 'missed' | 'deferred') => {
+    const handleRecurringStatus = async (taskId: string, status: string) => {
     try {
-      await fetch(`${API_URL}/recurring/status`, {
+      const response = await fetch('/api/recurring/status', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task_id: id, status })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ task_id: taskId, status: status }),
       });
-      // Refresh recurring tasks after status update
-      refreshTasks();
-      setRefreshTrigger(prev => prev + 1);
+
+      if (response.ok) {
+        // Refresh tasks to show updated status
+        fetchTasks();
+      } else {
+        console.error('Failed to update recurring task status');
+      }
     } catch (error) {
       console.error('Error updating recurring task status:', error);
     }
