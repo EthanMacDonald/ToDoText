@@ -644,21 +644,6 @@ function App() {
             {projects.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: 'white' }}>
-            Sort by:
-          </label>
-          <select 
-            value={sortBy} 
-            onChange={e => updateState({ sortBy: e.target.value })}
-            style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd' }}
-          >
-            <option value='due'>Due Date</option>
-            <option value='priority'>Priority</option>
-            <option value='none'>No Sorting</option>
-          </select>
-        </div>
       </div>
 
       {(taskTypeFilter === 'all' || taskTypeFilter === 'recurring') && recurring.length > 0 && (
@@ -703,11 +688,25 @@ function App() {
 
       {(taskTypeFilter === 'all' || taskTypeFilter === 'regular') && (
         <div>
-          <h2 style={{ color: '#059669', borderBottom: '2px solid #059669', paddingBottom: 8 }}>
-            Tasks {sortBy === 'due' ? '(Sorted by Due Date)' : 
-                   sortBy === 'priority' ? '(Sorted by Priority)' : 
-                   '(No Sorting)'}
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ color: '#059669', borderBottom: '2px solid #059669', paddingBottom: 8, margin: 0 }}>
+              Tasks
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <label style={{ marginBottom: 4, fontWeight: 'bold', fontSize: '14px', color: '#666' }}>
+                Sort by:
+              </label>
+              <select 
+                value={sortBy} 
+                onChange={e => updateState({ sortBy: e.target.value })}
+                style={{ padding: 8, borderRadius: 4, border: '1px solid #ddd', minWidth: 120 }}
+              >
+                <option value='due'>Due Date</option>
+                <option value='priority'>Priority</option>
+                <option value='none'>No Sorting</option>
+              </select>
+            </div>
+          </div>
           <TaskList 
             data={tasks} 
             onCheck={(id) => handleCheck(id, false)} 
