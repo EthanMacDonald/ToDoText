@@ -67,9 +67,24 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                     all_meta = re.findall(r'\(([^)]*)\)', content)
                     metadata = {}
                     for meta_str in all_meta:
-                        for pair in re.findall(r'(\w+:[^\s)]+)', meta_str):
-                            key, value = pair.split(':', 1)
-                            metadata[key] = value
+                        # Parse key:value pairs, handling spaces in values
+                        parts = meta_str.split()
+                        i = 0
+                        while i < len(parts):
+                            if ':' in parts[i]:
+                                key, first_val = parts[i].split(':', 1)
+                                value_parts = [first_val] if first_val else []
+                                
+                                # Look ahead to collect continuation of this value
+                                j = i + 1
+                                while j < len(parts) and ':' not in parts[j]:
+                                    value_parts.append(parts[j])
+                                    j += 1
+                                
+                                metadata[key] = ' '.join(value_parts)
+                                i = j
+                            else:
+                                i += 1
                     
                     # Remove all metadata parentheses from content for display
                     content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
@@ -104,6 +119,7 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                     # Determine task status
                     onhold_value = metadata.get('onhold', '')
                     is_onhold_active = False
+                    effective_onhold_value = None
                     
                     if onhold_value:
                         # Check if onhold is a date that has passed
@@ -111,9 +127,12 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                             onhold_date = datetime.strptime(onhold_value, '%Y-%m-%d').date()
                             today = get_adjusted_today()
                             is_onhold_active = onhold_date > today
+                            # Only keep onhold value if still active
+                            effective_onhold_value = onhold_value if is_onhold_active else None
                         except ValueError:
                             # Not a date, treat as text condition - always active
                             is_onhold_active = True
+                            effective_onhold_value = onhold_value
                     
                     if completed == '%':
                         task_status = 'followup'
@@ -151,7 +170,7 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                         'priority': metadata.get('priority', ''),
                         'recurring': metadata.get('every', ''),
                         'followup_date': metadata.get('followup_date', metadata.get('followup', '')),
-                        'onhold_date': metadata.get('onhold', ''),
+                        'onhold_date': effective_onhold_value or '',
                         'indent_level': indent_level,
                         'subtasks': [],
                         'notes': [],
@@ -159,7 +178,7 @@ def parse_tasks_raw() -> List[Dict[str, Any]]:
                         'done_date_obj': done_date,
                         'extra_projects': project_tags[1:] if len(project_tags) > 1 else [],
                         'extra_contexts': context_tags[1:] if len(context_tags) > 1 else [],
-                        'metadata': metadata
+                        'metadata': {**metadata, 'onhold': effective_onhold_value} if effective_onhold_value else {k: v for k, v in metadata.items() if k != 'onhold'}
                     }
                     
                     # Maintain task stack for proper nesting

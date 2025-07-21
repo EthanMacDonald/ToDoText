@@ -31,9 +31,24 @@ def parse_tasks(file_path):
                 all_meta = re.findall(r'\(([^)]*)\)', content)
                 metadata = {}
                 for meta_str in all_meta:
-                    for pair in re.findall(r'(\w+:[^\s)]+)', meta_str):
-                        key, value = pair.split(':', 1)
-                        metadata[key] = value
+                    # Parse key:value pairs, handling spaces in values
+                    parts = meta_str.split()
+                    i = 0
+                    while i < len(parts):
+                        if ':' in parts[i]:
+                            key, first_val = parts[i].split(':', 1)
+                            value_parts = [first_val] if first_val else []
+                            
+                            # Look ahead to collect continuation of this value
+                            j = i + 1
+                            while j < len(parts) and ':' not in parts[j]:
+                                value_parts.append(parts[j])
+                                j += 1
+                            
+                            metadata[key] = ' '.join(value_parts)
+                            i = j
+                        else:
+                            i += 1
                 # Remove all metadata parentheses from content for display
                 content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
                 # Parse recognized metadata

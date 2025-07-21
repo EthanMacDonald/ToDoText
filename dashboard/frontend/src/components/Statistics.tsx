@@ -13,14 +13,27 @@ type StatisticsData = {
   [key: string]: number; // For dynamic priority_, project_, and context_ stats
 };
 
-type Props = {
-  refreshTrigger?: number; // Optional prop to trigger refresh
-  onTasksChanged?: () => void; // Callback when tasks are modified (e.g., archived)
-  isExpanded?: boolean; // Control expand/collapse state externally
-  onToggleExpanded?: (expanded: boolean) => void; // Callback when expand state changes
-};
+interface StatisticsProps {
+  refreshTrigger: number;
+  onTasksChanged?: () => void;
+  isExpanded?: boolean;
+  onToggleExpanded?: (expanded: boolean) => void;
+  onCommitTasks?: () => void;
+  onSaveStatistics?: () => void;
+  commitStatus?: string;
+  statisticsStatus?: string;
+}
 
-const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpanded: externalIsExpanded, onToggleExpanded }) => {
+const Statistics: React.FC<StatisticsProps> = ({ 
+  refreshTrigger, 
+  onTasksChanged, 
+  isExpanded: externalIsExpanded, 
+  onToggleExpanded,
+  onCommitTasks,
+  onSaveStatistics,
+  commitStatus,
+  statisticsStatus
+}) => {
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
 
@@ -412,6 +425,44 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
               >
                 🔄 Refresh Statistics
               </button>
+
+              {onSaveStatistics && (
+                <button
+                  onClick={onSaveStatistics}
+                  disabled={statisticsStatus === 'Saving statistics...'}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: statisticsStatus === 'Saving statistics...' ? '#6c757d' : '#9333ea',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: statisticsStatus === 'Saving statistics...' ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    opacity: statisticsStatus === 'Saving statistics...' ? 0.6 : 1
+                  }}
+                >
+                  {statisticsStatus === 'Saving statistics...' ? '📊 Saving...' : '📊 Log Statistics'}
+                </button>
+              )}
+
+              {onCommitTasks && (
+                <button
+                  onClick={onCommitTasks}
+                  disabled={commitStatus === 'Committing...'}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: commitStatus === 'Committing...' ? '#6c757d' : '#059669',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: commitStatus === 'Committing...' ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    opacity: commitStatus === 'Committing...' ? 0.6 : 1
+                  }}
+                >
+                  {commitStatus === 'Committing...' ? '📝 Committing...' : '📝 Commit Task Files'}
+                </button>
+              )}
               
               <button
                 onClick={archiveCompletedTasks}

@@ -411,6 +411,10 @@ function App() {
         onTasksChanged={refreshTasks}
         isExpanded={isStatisticsExpanded}
         onToggleExpanded={(expanded: boolean) => updatePanelStates({ isStatisticsExpanded: expanded })}
+        onCommitTasks={handleCommitTasks}
+        onSaveStatistics={handleSaveStatistics}
+        commitStatus={commitStatus}
+        statisticsStatus={statisticsStatus}
       />
       
       {/* Time Series Analysis */}
@@ -510,7 +514,7 @@ function App() {
               </div>
             )}
             
-            {/* Git Commit Section */}
+            {/* Statistics Section - MOVED FIRST */}
             <div style={{ marginBottom: '24px' }}>
               <h4 style={{ 
                 margin: '0 0 12px 0', 
@@ -518,7 +522,46 @@ function App() {
                 color: '#f7fafc',
                 fontWeight: 'bold'
               }}>
-                📝 Git Commit
+                � Save Statistics to Log
+              </h4>
+              
+              <p style={{ 
+                margin: '0 0 16px 0', 
+                fontSize: '14px', 
+                color: '#e2e8f0',
+                lineHeight: '1.4'
+              }}>
+                Save current task statistics to historical log for time-series analysis.
+              </p>
+              
+              <button
+                onClick={handleSaveStatistics}
+                disabled={statisticsStatus === 'Saving statistics...'}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: statisticsStatus === 'Saving statistics...' ? '#6c757d' : '#9333ea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: statisticsStatus === 'Saving statistics...' ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  opacity: statisticsStatus === 'Saving statistics...' ? 0.6 : 1
+                }}
+              >
+                {statisticsStatus === 'Saving statistics...' ? '� Saving...' : '� Save Statistics to Log'}
+              </button>
+            </div>
+            
+            {/* Git Commit Section - MOVED SECOND */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ 
+                margin: '0 0 12px 0', 
+                fontSize: '16px', 
+                color: '#f7fafc',
+                fontWeight: 'bold'
+              }}>
+                � Commit Task Files
               </h4>
               
               <p style={{ 
@@ -557,11 +600,11 @@ function App() {
                   opacity: commitStatus === 'Committing...' ? 0.6 : 1
                 }}
               >
-                {commitStatus === 'Committing...' ? '📝 Committing...' : '📝 Commit Task Files'}
+                {commitStatus === 'Committing...' ? '� Committing...' : '� Commit Task Files'}
               </button>
             </div>
             
-            {/* Calendar Push Section */}
+            {/* Calendar Push Section - MOVED THIRD */}
             <div>
               <h4 style={{ 
                 margin: '0 0 12px 0', 
@@ -569,7 +612,7 @@ function App() {
                 color: '#f7fafc',
                 fontWeight: 'bold'
               }}>
-                📅 Google Calendar
+                � Push Due Dates to Calendar
               </h4>
               
               <p style={{ 
@@ -596,46 +639,7 @@ function App() {
                   opacity: calendarStatus === 'Pushing to calendar...' ? 0.6 : 1
                 }}
               >
-                {calendarStatus === 'Pushing to calendar...' ? '📅 Pushing...' : '📅 Push Due Dates to Calendar'}
-              </button>
-            </div>
-            
-            {/* Statistics Section */}
-            <div>
-              <h4 style={{ 
-                margin: '0 0 12px 0', 
-                fontSize: '16px', 
-                color: '#f7fafc',
-                fontWeight: 'bold'
-              }}>
-                📊 Statistics Log
-              </h4>
-              
-              <p style={{ 
-                margin: '0 0 16px 0', 
-                fontSize: '14px', 
-                color: '#e2e8f0',
-                lineHeight: '1.4'
-              }}>
-                Save current task statistics to historical log for time-series analysis.
-              </p>
-              
-              <button
-                onClick={handleSaveStatistics}
-                disabled={statisticsStatus === 'Saving statistics...'}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: statisticsStatus === 'Saving statistics...' ? '#6c757d' : '#9333ea',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: statisticsStatus === 'Saving statistics...' ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  opacity: statisticsStatus === 'Saving statistics...' ? 0.6 : 1
-                }}
-              >
-                {statisticsStatus === 'Saving statistics...' ? '📊 Saving...' : '📊 Save Statistics to Log'}
+                {calendarStatus === 'Pushing to calendar...' ? '� Pushing...' : '� Push Due Dates to Calendar'}
               </button>
             </div>
           </div>
