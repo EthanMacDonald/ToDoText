@@ -32,6 +32,7 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
       setInternalIsExpanded(newExpanded);
     }
   };
+
   const [statistics, setStatistics] = useState<StatisticsData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +50,7 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
         throw new Error(`Failed to fetch statistics: ${response.status}`);
       }
       
-      const result = await response.json();
-      // Extract the data from the nested structure
-      const data = result.data || result;
+      const data = await response.json();
       setStatistics(data);
       
     } catch (error) {
@@ -79,7 +78,7 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
       }
       
       const result = await response.json();
-      setArchiveMessage(result.message);
+      setArchiveMessage(`Successfully archived ${result.archived_count} completed tasks.`);
       
       // Refresh statistics after archiving
       await fetchStatistics();
@@ -171,13 +170,6 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
         value: value as number 
       }));
 
-    const areaStats = Object.entries(statistics)
-      .filter(([key]) => key.startsWith('area_'))
-      .map(([key, value]) => ({ 
-        label: `Area ${key.replace('area_', '')}`, 
-        value: value as number 
-      }));
-
     return (
       <div style={{ 
         display: 'grid', 
@@ -227,88 +219,73 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
         </div>
 
         {/* Priority Statistics */}
-        <div style={{
-          backgroundColor: '#1a202c',
-          border: '1px solid #4a5568',
-          borderRadius: '6px',
-          padding: '12px'
-        }}>
-          <h4 style={{ 
-            color: '#f6ad55', 
-            margin: '0 0 12px 0', 
-            fontSize: '16px',
-            borderBottom: '1px solid #4a5568',
-            paddingBottom: '8px'
+        {priorityStats.length > 0 && (
+          <div style={{
+            backgroundColor: '#1a202c',
+            border: '1px solid #4a5568',
+            borderRadius: '6px',
+            padding: '12px'
           }}>
-            By Priority ({priorityStats.length} items)
-          </h4>
-          {priorityStats.length > 0 ? priorityStats.map(stat => 
-            renderStatisticItem(stat.label, stat.value)
-          ) : <div style={{ color: '#a0aec0', fontSize: '14px', padding: '8px 0' }}>No priority statistics available</div>}
-        </div>
+            <h4 style={{ 
+              color: '#f6ad55', 
+              margin: '0 0 12px 0', 
+              fontSize: '16px',
+              borderBottom: '1px solid #4a5568',
+              paddingBottom: '8px'
+            }}>
+              By Priority
+            </h4>
+            {priorityStats.map(stat => 
+              renderStatisticItem(stat.label, stat.value)
+            )}
+          </div>
+        )}
 
         {/* Project Statistics */}
-        <div style={{
-          backgroundColor: '#1a202c',
-          border: '1px solid #4a5568',
-          borderRadius: '6px',
-          padding: '12px'
-        }}>
-          <h4 style={{ 
-            color: '#fc8181', 
-            margin: '0 0 12px 0', 
-            fontSize: '16px',
-            borderBottom: '1px solid #4a5568',
-            paddingBottom: '8px'
+        {projectStats.length > 0 && (
+          <div style={{
+            backgroundColor: '#1a202c',
+            border: '1px solid #4a5568',
+            borderRadius: '6px',
+            padding: '12px'
           }}>
-            By Project ({projectStats.length} items)
-          </h4>
-          {projectStats.length > 0 ? projectStats.map(stat => 
-            renderStatisticItem(stat.label, stat.value)
-          ) : <div style={{ color: '#a0aec0', fontSize: '14px', padding: '8px 0' }}>No project statistics available</div>}
-        </div>
+            <h4 style={{ 
+              color: '#fc8181', 
+              margin: '0 0 12px 0', 
+              fontSize: '16px',
+              borderBottom: '1px solid #4a5568',
+              paddingBottom: '8px'
+            }}>
+              By Project
+            </h4>
+            {projectStats.map(stat => 
+              renderStatisticItem(stat.label, stat.value)
+            )}
+          </div>
+        )}
 
         {/* Context Statistics */}
-        <div style={{
-          backgroundColor: '#1a202c',
-          border: '1px solid #4a5568',
-          borderRadius: '6px',
-          padding: '12px'
-        }}>
-          <h4 style={{ 
-            color: '#b794f6', 
-            margin: '0 0 12px 0', 
-            fontSize: '16px',
-            borderBottom: '1px solid #4a5568',
-            paddingBottom: '8px'
+        {contextStats.length > 0 && (
+          <div style={{
+            backgroundColor: '#1a202c',
+            border: '1px solid #4a5568',
+            borderRadius: '6px',
+            padding: '12px'
           }}>
-            By Context ({contextStats.length} items)
-          </h4>
-          {contextStats.length > 0 ? contextStats.map(stat => 
-            renderStatisticItem(stat.label, stat.value)
-          ) : <div style={{ color: '#a0aec0', fontSize: '14px', padding: '8px 0' }}>No context statistics available</div>}
-        </div>
-
-        {/* Area Statistics */}
-        <div style={{
-          backgroundColor: '#1a202c',
-          border: '1px solid #4a5568',
-          borderRadius: '6px',
-          padding: '12px'
-        }}>
-          <h4 style={{ 
-            color: '#9f7aea', 
-            margin: '0 0 12px 0', 
-            fontSize: '16px',
-            borderBottom: '1px solid #4a5568',
-            paddingBottom: '8px'
-          }}>
-            By Area ({areaStats.length} items)
-          </h4>
-          {areaStats.length > 0 ? areaStats.map(stat => 
-            renderStatisticItem(stat.label, stat.value)
-          ) : <div style={{ color: '#a0aec0', fontSize: '14px', padding: '8px 0' }}>No area statistics available</div>}
-        </div>
+            <h4 style={{ 
+              color: '#b794f6', 
+              margin: '0 0 12px 0', 
+              fontSize: '16px',
+              borderBottom: '1px solid #4a5568',
+              paddingBottom: '8px'
+            }}>
+              By Context
+            </h4>
+            {contextStats.map(stat => 
+              renderStatisticItem(stat.label, stat.value)
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -338,7 +315,7 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
           alignItems: 'center'
         }}
       >
-        <span>📊 Task Statistics</span>
+        <span>📊 Statistics</span>
         <span style={{ fontSize: '12px' }}>
           {isExpanded ? '▲ Collapse' : '▼ Expand'}
         </span>
@@ -346,35 +323,11 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
       
       {isExpanded && (
         <div style={{ padding: '16px' }}>
-          {error && (
-            <div style={{
-              backgroundColor: '#2d1b1b',
-              border: '1px solid #e53e3e',
-              color: '#feb2b2',
-              padding: '12px 16px',
-              borderRadius: '6px',
-              marginBottom: '16px',
-              fontSize: '14px'
-            }}>
-              Error: {error}
-            </div>
-          )}
-          
-          {archiveMessage && (
-            <div style={{
-              backgroundColor: '#c6f6d5',
-              color: '#22543d',
-              padding: '8px 12px',
-              borderRadius: '4px',
-              marginBottom: '16px',
-              fontSize: '14px'
-            }}>
-              {archiveMessage}
-            </div>
-          )}
-          
           {isLoading && (
             <div style={{
+              backgroundColor: '#1a202c',
+              border: '1px solid #4a5568',
+              borderRadius: '6px',
               color: 'white',
               textAlign: 'center',
               padding: '20px',
@@ -383,7 +336,35 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
               Loading statistics...
             </div>
           )}
-          
+
+          {error && (
+            <div style={{
+              backgroundColor: '#2d1b1b',
+              border: '1px solid #e53e3e',
+              borderRadius: '6px',
+              color: '#feb2b2',
+              padding: '16px',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
+              Error: {error}
+            </div>
+          )}
+
+          {archiveMessage && (
+            <div style={{
+              backgroundColor: '#1b2d1b',
+              border: '1px solid #38a169',
+              borderRadius: '6px',
+              color: '#9ae6b4',
+              padding: '16px',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
+              {archiveMessage}
+            </div>
+          )}
+
           {!isLoading && !error && statistics && renderStatistics()}
           
           {!isLoading && !error && statistics && (
@@ -439,4 +420,3 @@ const Statistics: React.FC<Props> = ({ refreshTrigger, onTasksChanged, isExpande
 };
 
 export default Statistics;
-

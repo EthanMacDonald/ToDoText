@@ -28,19 +28,32 @@ function App() {
     if (!isLoaded) return;
 
     const fetchTasks = async () => {
-      const tasksUrl = sortBy === 'none' ? '/tasks?sort=none' : 
-                      sortBy === 'priority' ? '/tasks?sort=priority' : '/tasks';
-      
-      const [tasksRes, recurringRes] = await Promise.all([
-        fetch(`${API_URL}${tasksUrl}`),
-        fetch(`${API_URL}/recurring?filter=${recurringFilter}`)
-      ]);
-      
-      const tasksData = await tasksRes.json();
-      const recurringData = await recurringRes.json();
-      
-      setTasks(tasksData);
-      setRecurring(recurringData);
+      try {
+        const tasksUrl = sortBy === 'none' ? '/tasks?sort=none' : 
+                        sortBy === 'priority' ? '/tasks?sort=priority' : '/tasks';
+        
+        const [tasksRes, recurringRes] = await Promise.all([
+          fetch(`${API_URL}${tasksUrl}`),
+          fetch(`${API_URL}/recurring?filter=${recurringFilter}`)
+        ]);
+        
+        if (!tasksRes.ok || !recurringRes.ok) {
+          console.error('API request failed:', tasksRes.status, recurringRes.status);
+          return;
+        }
+        
+        const tasksData = await tasksRes.json();
+        const recurringData = await recurringRes.json();
+        
+        // Handle both array format and object with data property
+        setTasks(Array.isArray(tasksData) ? tasksData : (tasksData.data || []));
+        setRecurring(Array.isArray(recurringData) ? recurringData : (recurringData.data || []));
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+        // Set empty arrays to prevent app crash
+        setTasks([]);
+        setRecurring([]);
+      }
     };
     
     fetchTasks();
@@ -58,19 +71,29 @@ function App() {
   };
 
   const refreshTasks = async () => {
-    const tasksUrl = sortBy === 'none' ? '/tasks?sort=none' : 
-                    sortBy === 'priority' ? '/tasks?sort=priority' : '/tasks';
-    
-    const [tasksRes, recurringRes] = await Promise.all([
-      fetch(`${API_URL}${tasksUrl}`),
-      fetch(`${API_URL}/recurring?filter=${recurringFilter}`)
-    ]);
-    
-    const tasksData = await tasksRes.json();
-    const recurringData = await recurringRes.json();
-    
-    setTasks(tasksData);
-    setRecurring(recurringData);
+    try {
+      const tasksUrl = sortBy === 'none' ? '/tasks?sort=none' : 
+                      sortBy === 'priority' ? '/tasks?sort=priority' : '/tasks';
+      
+      const [tasksRes, recurringRes] = await Promise.all([
+        fetch(`${API_URL}${tasksUrl}`),
+        fetch(`${API_URL}/recurring?filter=${recurringFilter}`)
+      ]);
+      
+      if (!tasksRes.ok || !recurringRes.ok) {
+        console.error('API request failed during refresh:', tasksRes.status, recurringRes.status);
+        return;
+      }
+      
+      const tasksData = await tasksRes.json();
+      const recurringData = await recurringRes.json();
+      
+      // Handle both array format and object with data property
+      setTasks(Array.isArray(tasksData) ? tasksData : (tasksData.data || []));
+      setRecurring(Array.isArray(recurringData) ? recurringData : (recurringData.data || []));
+    } catch (error) {
+      console.error('Error refreshing tasks:', error);
+    }
   };
 
   const handleRecurringStatus = async (id: string, status: 'completed' | 'missed' | 'deferred') => {
@@ -238,8 +261,14 @@ function App() {
     
     // Extract tasks from grouped structure
     const extractFromGroups = (groups: TaskGroup[]) => {
+      if (!groups || !Array.isArray(groups)) {
+        return;
+      }
       groups.forEach(group => {
         const extractTasksRecursively = (taskList: Task[]) => {
+          if (!taskList || !Array.isArray(taskList)) {
+            return;
+          }
           taskList.forEach(task => {
             allTasks.push(task);
             if (task.subtasks) {
@@ -247,7 +276,9 @@ function App() {
             }
           });
         };
-        extractTasksRecursively(group.tasks);
+        if (group && group.tasks) {
+          extractTasksRecursively(group.tasks);
+        }
       });
     };
     
@@ -685,7 +716,7 @@ function App() {
       )}
 
       {/* State Management Panel - Development/Debug */}
-      {import.meta.env.DEV && (
+      {false && (
         <div style={{ 
           backgroundColor: '#1a1a2e', 
           border: '1px solid #4a5568', 

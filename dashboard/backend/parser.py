@@ -489,11 +489,23 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
                 continue
                 
             area_match = re.match(r'^(\S.+):$', stripped)
+            markdown_area_match = re.match(r'^#+\s+(.+)$', stripped)
             task_match = re.match(r'^(\s*)- \[( |x)\] (.+)', line)
             
             if area_match:
                 area = area_match.group(1)
                 # Add area header to structure
+                tasks.append({
+                    'type': 'area',
+                    'area': area,
+                    'content': stripped,
+                    'tasks': []
+                })
+                task_stack = []  # Reset task stack for new area
+                
+            elif markdown_area_match:
+                area = markdown_area_match.group(1)
+                # Add markdown area header to structure
                 tasks.append({
                     'type': 'area',
                     'area': area,
@@ -522,10 +534,17 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
                     
                     content_no_meta = re.sub(r'\([^)]*\)', '', content).strip()
                     
+                    # Extract recurring pattern from square brackets
+                    recurring_match = re.search(r'\[([^\]]+)\]', content_no_meta)
+                    recurring_pattern = recurring_match.group(1) if recurring_match else ''
+                    
+                    # Remove recurring pattern from content
+                    content_no_recurring = re.sub(r'\[[^\]]+\]', '', content_no_meta).strip()
+                    
                     # Extract tags
-                    project_tags = list(dict.fromkeys(re.findall(r'\+(\w+)', content_no_meta)))
-                    context_tags = list(dict.fromkeys(re.findall(r'@(\w+)', content_no_meta)))
-                    clean_content = re.sub(r'([+@&]\w+)', '', content_no_meta).strip()
+                    project_tags = list(dict.fromkeys(re.findall(r'\+(\w+)', content_no_recurring)))
+                    context_tags = list(dict.fromkeys(re.findall(r'@(\w+)', content_no_recurring)))
+                    clean_content = re.sub(r'([+@&]\w+)', '', content_no_recurring).strip()
                     
                     task = {
                         'id': generate_stable_task_id(area, clean_content, indent_level, line_number),
@@ -537,7 +556,7 @@ def parse_recurring_tasks() -> List[Dict[str, Any]]:
                         'project': project_tags[0] if project_tags else '',
                         'due_date': '',  # Recurring tasks typically don't have due dates
                         'priority': metadata.get('priority', ''),
-                        'recurring': metadata.get('every', ''),
+                        'recurring': recurring_pattern,
                         'indent_level': indent_level,
                         'subtasks': [],
                         'notes': [],

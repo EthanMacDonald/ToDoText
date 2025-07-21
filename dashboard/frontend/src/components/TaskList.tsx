@@ -696,6 +696,11 @@ const TaskItem: React.FC<{
 };
 
 const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onDelete, onAddSubtask, onRecurringStatus, filters, isRecurring = false, areas, onTaskEdited, editingTaskId, onEditingTaskIdChange, addingSubtaskToId, onAddingSubtaskToIdChange }) => {
+  // Handle null or undefined data
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return <div>No tasks to display</div>;
+  }
+
   // Handle both grouped and flat data structures
   const isGroupedData = (data: TaskGroup[] | Task[]): data is TaskGroup[] => {
     return data.length > 0 && 'type' in data[0] && (data[0].type === 'group' || data[0].type === 'area');
@@ -723,7 +728,7 @@ const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onDelete, onAddSubta
                 {groupTitle}:
               </h3>
               <ul style={{ listStyle: 'none', padding: 0 }}>
-                {group.tasks
+                {(group.tasks || [])
                   .filter(task => filterTask(task, filters))
                   .map(task => (
                     <TaskItem
@@ -754,7 +759,7 @@ const TaskList: React.FC<Props> = ({ data, onCheck, onEdit, onDelete, onAddSubta
     // Render flat data (legacy support)
     return (
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {(data as Task[])
+        {((data as Task[]) || [])
           .filter(task => filterTask(task, filters))
           .map(task => (
             <TaskItem

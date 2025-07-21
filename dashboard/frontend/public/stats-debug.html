@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 50px auto; padding: 20px; background: #1a1a1a; color: white; }
+        .status { padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .success { background-color: #2d4a2d; border: 1px solid #4a7c59; color: #90ee90; }
+        .error { background-color: #4a2d2d; border: 1px solid #7c4a4a; color: #ff9999; }
+        .info { background-color: #2d3a4a; border: 1px solid #4a5a7c; color: #87ceeb; }
+        pre { background: #2a2a2a; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Statistics API Debug</h1>
+    
+    <div id="status" class="status info">Testing statistics endpoint...</div>
+    
+    <h2>Raw Statistics Data</h2>
+    <div id="raw-data"></div>
+    
+    <h2>Processed Statistics</h2>
+    <div id="processed-data"></div>
+    
+    <script>
+        fetch('http://localhost:8000/statistics')
+            .then(response => {
+                const status = document.getElementById('status');
+                if (response.ok) {
+                    status.textContent = '✅ Statistics endpoint responding';
+                    status.className = 'status success';
+                    return response.json();
+                } else {
+                    status.textContent = `❌ Statistics error: ${response.status}`;
+                    status.className = 'status error';
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            })
+            .then(result => {
+                // Show raw data
+                document.getElementById('raw-data').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                
+                // Extract data from nested structure
+                const data = result.data || result;
+                
+                // Process data like the frontend does
+                const priorityStats = Object.entries(data)
+                    .filter(([key]) => key.startsWith('priority_'))
+                    .map(([key, value]) => ({ 
+                        label: `Priority ${key.replace('priority_', '')}`, 
+                        value: value 
+                    }));
+                
+                const projectStats = Object.entries(data)
+                    .filter(([key]) => key.startsWith('project_'))
+                    .map(([key, value]) => ({ 
+                        label: `Project ${key.replace('project_', '')}`, 
+                        value: value 
+                    }));
+                
+                const contextStats = Object.entries(data)
+                    .filter(([key]) => key.startsWith('context_'))
+                    .map(([key, value]) => ({ 
+                        label: `Context ${key.replace('context_', '')}`, 
+                        value: value 
+                    }));
+                
+                const areaStats = Object.entries(data)
+                    .filter(([key]) => key.startsWith('area_'))
+                    .map(([key, value]) => ({ 
+                        label: `Area ${key.replace('area_', '')}`, 
+                        value: value 
+                    }));
+                
+                document.getElementById('processed-data').innerHTML = `
+                    <h3>Priority Stats (${priorityStats.length} items)</h3>
+                    <pre>${JSON.stringify(priorityStats, null, 2)}</pre>
+                    
+                    <h3>Project Stats (${projectStats.length} items)</h3>
+                    <pre>${JSON.stringify(projectStats, null, 2)}</pre>
+                    
+                    <h3>Context Stats (${contextStats.length} items)</h3>
+                    <pre>${JSON.stringify(contextStats, null, 2)}</pre>
+                    
+                    <h3>Area Stats (${areaStats.length} items)</h3>
+                    <pre>${JSON.stringify(areaStats, null, 2)}</pre>
+                    
+                    <h3>All Keys Starting with Prefixes:</h3>
+                    <pre>${JSON.stringify(
+                        Object.keys(data).filter(key => 
+                            key.startsWith('priority_') || 
+                            key.startsWith('project_') || 
+                            key.startsWith('context_') || 
+                            key.startsWith('area_')
+                        ), null, 2
+                    )}</pre>
+                `;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('status').textContent = `❌ Failed: ${error.message}`;
+                document.getElementById('status').className = 'status error';
+            });
+    </script>
+</body>
+</html>

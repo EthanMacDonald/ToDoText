@@ -6,13 +6,13 @@ export function useDashboardState() {
     filters: { area: '', context: '', project: '' },
     sortBy: 'due',
     taskTypeFilter: 'all',
-    recurringFilter: 'today',
+    recurringFilter: 'all',
     panelStates: {
       isCommitExpanded: false,
-      isStatisticsExpanded: false,
+      isStatisticsExpanded: true,
       isTimeSeriesExpanded: false,
-      isListsExpanded: false,
-      isGoalsExpanded: false,
+      isListsExpanded: true,
+      isGoalsExpanded: true,
     },
     formStates: {
       isCreateTaskExpanded: false,
