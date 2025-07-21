@@ -13,6 +13,7 @@ export function useDashboardState() {
       isTimeSeriesExpanded: false,
       isListsExpanded: true,
       isGoalsExpanded: true,
+      isFileEditorExpanded: false,
     },
     formStates: {
       isCreateTaskExpanded: false,

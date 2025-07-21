@@ -15,6 +15,7 @@ export interface DashboardState {
     isTimeSeriesExpanded: boolean;
     isListsExpanded: boolean;
     isGoalsExpanded: boolean;
+    isFileEditorExpanded: boolean;
   };
   formStates: {
     isCreateTaskExpanded: boolean;
@@ -40,6 +41,7 @@ const DEFAULT_STATE: DashboardState = {
     isTimeSeriesExpanded: false,
     isListsExpanded: false,
     isGoalsExpanded: false,
+    isFileEditorExpanded: false,
   },
   formStates: {
     isCreateTaskExpanded: false,

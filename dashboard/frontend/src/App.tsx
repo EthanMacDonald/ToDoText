@@ -5,6 +5,8 @@ import Statistics from './components/Statistics';
 import TimeSeries from './components/TimeSeries';
 import Lists from './components/Lists';
 import Goals from './components/Goals';
+import FileEditor from './components/FileEditor';
+import './components/FileEditor.css';
 import type { Task, TaskGroup } from './types/task';
 import { API_URL } from './config/api';
 import { useDashboardState } from './hooks/useDashboardState';
@@ -17,6 +19,13 @@ function App() {
   const [commitStatus, setCommitStatus] = useState<string>(''); // For git commit status
   const [calendarStatus, setCalendarStatus] = useState<string>(''); // For calendar push status
   const [statisticsStatus, setStatisticsStatus] = useState<string>(''); // For statistics save status
+  const [fileEditor, setFileEditor] = useState<{ 
+    type: 'tasks' | 'recurring' | 'list' | 'goal'; 
+    displayName: string; 
+    fileName?: string; 
+  } | null>(null);
+  const [availableLists, setAvailableLists] = useState<{name: string, filename: string, display_name: string}[]>([]);
+  const [availableGoals, setAvailableGoals] = useState<{name: string, filename: string, display_name: string}[]>([]);
 
   // Use persistent dashboard state
   const { state: dashboardState, updateState, updateFilters, updatePanelStates, updateFormStates, updateListsState, updateGoalsState, isLoaded } = useDashboardState();
@@ -58,6 +67,58 @@ function App() {
     
     fetchTasks();
   }, [sortBy, recurringFilter, isLoaded]);
+
+  // Fetch available files for editing
+  useEffect(() => {
+    const fetchAvailableFiles = async () => {
+      try {
+        const [listsRes, goalsRes] = await Promise.all([
+          fetch(`${API_URL}/files/lists`),
+          fetch(`${API_URL}/files/goals`)
+        ]);
+
+        if (listsRes.ok) {
+          const listsData = await listsRes.json();
+          setAvailableLists(listsData.files || []);
+        }
+
+        if (goalsRes.ok) {
+          const goalsData = await goalsRes.json();
+          setAvailableGoals(goalsData.files || []);
+        }
+      } catch (error) {
+        console.error('Error fetching available files:', error);
+      }
+    };
+
+    fetchAvailableFiles();
+  }, []);
+
+  // Helper function to get emoji for file types
+  const getFileEmoji = (fileName: string, type: 'list' | 'goal') => {
+    if (type === 'list') {
+      if (fileName.includes('grocery') || fileName.includes('shopping')) return '🛒';
+      if (fileName.includes('packing') || fileName.includes('travel')) return '🧳';
+      if (fileName.includes('home') || fileName.includes('maintenance')) return '🏠';
+      if (fileName.includes('book') || fileName.includes('reading')) return '📚';
+      if (fileName.includes('todo') || fileName.includes('task')) return '✅';
+      return '📝'; // Default list emoji
+    } else { // goals
+      if (fileName.includes('life')) return '🌟';
+      if (fileName.includes('5y') || fileName.includes('5_year')) return '🎯';
+      if (fileName.includes('1y') || fileName.includes('1_year') || fileName.includes('year')) return '📅';
+      if (fileName.includes('semester') || fileName.includes('school')) return '🎓';
+      if (fileName.includes('career') || fileName.includes('work')) return '💼';
+      if (fileName.includes('health') || fileName.includes('fitness')) return '💪';
+      if (fileName.includes('finance') || fileName.includes('money')) return '💰';
+      return '🎯'; // Default goal emoji
+    }
+  };
+
+  // Helper function to get button color for file types
+  const getFileColor = (type: 'list' | 'goal') => {
+    return type === 'list' ? '#f59e0b' : '#8b5cf6';
+  };
 
   const handleCheck = async (id: string, recurringTask: boolean = false) => {
     await fetch(`${API_URL}/${recurringTask ? 'recurring' : 'tasks'}/check`, {
@@ -581,6 +642,192 @@ function App() {
         )}
       </div>
       
+      {/* File Editor Panel */}
+      <div style={{ 
+        backgroundColor: '#2d3748', 
+        border: '1px solid #4a5568', 
+        borderRadius: '8px', 
+        marginBottom: '24px',
+        overflow: 'hidden'
+      }}>
+        <button
+          onClick={() => updatePanelStates({ isFileEditorExpanded: !panelStates.isFileEditorExpanded })}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            backgroundColor: '#1a202c',
+            border: 'none',
+            borderBottom: panelStates.isFileEditorExpanded ? '1px solid #4a5568' : 'none',
+            cursor: 'pointer',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            color: 'white',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
+        >
+          <span>📄 Edit Files</span>
+          <span style={{ fontSize: '12px' }}>
+            {panelStates.isFileEditorExpanded ? '▲ Collapse' : '▼ Expand'}
+          </span>
+        </button>
+        
+        {panelStates.isFileEditorExpanded && (
+          <div style={{ padding: '16px' }}>
+            <h4 style={{ 
+              margin: '0 0 12px 0', 
+              fontSize: '16px', 
+              color: '#f7fafc',
+              fontWeight: 'bold'
+            }}>
+              📄 Direct File Editing
+            </h4>
+            
+            <p style={{ 
+              margin: '0 0 16px 0', 
+              fontSize: '14px', 
+              color: '#e2e8f0',
+              lineHeight: '1.4'
+            }}>
+              View and edit the underlying text files directly. Changes are automatically backed up.
+            </p>
+            
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px',
+              flexWrap: 'wrap',
+              flexDirection: 'column'
+            }}>
+              {/* Main Files */}
+              <div>
+                <h5 style={{ 
+                  margin: '0 0 8px 0', 
+                  fontSize: '14px', 
+                  color: '#b0b0b0',
+                  fontWeight: 'bold'
+                }}>
+                  Main Files
+                </h5>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => setFileEditor({ type: 'tasks', displayName: 'tasks.txt' })}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: '#059669',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    📝 tasks.txt
+                  </button>
+                  
+                  <button
+                    onClick={() => setFileEditor({ type: 'recurring', displayName: 'recurring_tasks.txt' })}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    🔄 recurring_tasks.txt
+                  </button>
+                </div>
+              </div>
+
+              {/* List Files */}
+              <div>
+                <h5 style={{ 
+                  margin: '8px 0 8px 0', 
+                  fontSize: '14px', 
+                  color: '#b0b0b0',
+                  fontWeight: 'bold'
+                }}>
+                  Lists
+                </h5>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {availableLists.length > 0 ? (
+                    availableLists.map((listFile) => (
+                      <button
+                        key={listFile.name}
+                        onClick={() => setFileEditor({ 
+                          type: 'list', 
+                          displayName: listFile.filename, 
+                          fileName: listFile.name 
+                        })}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: getFileColor('list'),
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {getFileEmoji(listFile.name, 'list')} {listFile.filename}
+                      </button>
+                    ))
+                  ) : (
+                    <span style={{ color: '#888', fontSize: '12px' }}>No list files found</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Goal Files */}
+              <div>
+                <h5 style={{ 
+                  margin: '8px 0 8px 0', 
+                  fontSize: '14px', 
+                  color: '#b0b0b0',
+                  fontWeight: 'bold'
+                }}>
+                  Goals
+                </h5>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {availableGoals.length > 0 ? (
+                    availableGoals.map((goalFile) => (
+                      <button
+                        key={goalFile.name}
+                        onClick={() => setFileEditor({ 
+                          type: 'goal', 
+                          displayName: goalFile.filename, 
+                          fileName: goalFile.name 
+                        })}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: getFileColor('goal'),
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {getFileEmoji(goalFile.name, 'goal')} {goalFile.display_name}
+                      </button>
+                    ))
+                  ) : (
+                    <span style={{ color: '#888', fontSize: '12px' }}>No goal files found</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
 
       
       <div style={{ 
@@ -771,6 +1018,21 @@ function App() {
             🗑️ Reset Dashboard State
           </button>
         </div>
+      )}
+      
+      {/* File Editor Modal */}
+      {fileEditor && (
+        <FileEditor
+          filename={fileEditor.type === 'tasks' || fileEditor.type === 'recurring' ? fileEditor.type : ''}
+          displayName={fileEditor.displayName}
+          fileType={fileEditor.type}
+          fileName={fileEditor.fileName}
+          onClose={() => setFileEditor(null)}
+          onFileChanged={() => {
+            refreshTasks();
+            setRefreshTrigger(prev => prev + 1);
+          }}
+        />
       )}
     </div>
   );

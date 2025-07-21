@@ -1945,3 +1945,254 @@ def add_list_subitem(list_name: str, request: dict):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding sub-item: {str(e)}")
+
+class FileEditRequest(BaseModel):
+    content: str
+
+@app.get("/files/tasks")
+def get_tasks_file():
+    """Get the raw content of tasks.txt file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        tasks_file = os.path.join(current_dir, '../../tasks.txt')
+        
+        if not os.path.exists(tasks_file):
+            raise HTTPException(status_code=404, detail="tasks.txt file not found")
+        
+        with open(tasks_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        return {
+            "filename": "tasks.txt",
+            "content": content,
+            "path": tasks_file
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading tasks.txt: {str(e)}")
+
+@app.put("/files/tasks")
+def update_tasks_file(request: FileEditRequest):
+    """Update the content of tasks.txt file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        tasks_file = os.path.join(current_dir, '../../tasks.txt')
+        
+        # Create backup before editing
+        backup_file = os.path.join(current_dir, '../../archive_files/tasks_backup.txt')
+        if os.path.exists(tasks_file):
+            with open(tasks_file, 'r', encoding='utf-8') as source:
+                with open(backup_file, 'w', encoding='utf-8') as backup:
+                    backup.write(source.read())
+        
+        # Write the new content
+        with open(tasks_file, 'w', encoding='utf-8') as f:
+            f.write(request.content)
+        
+        return {"success": True, "message": "tasks.txt updated successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating tasks.txt: {str(e)}")
+
+@app.get("/files/recurring")
+def get_recurring_file():
+    """Get the raw content of recurring_tasks.txt file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        recurring_file = os.path.join(current_dir, '../../recurring_tasks.txt')
+        
+        if not os.path.exists(recurring_file):
+            raise HTTPException(status_code=404, detail="recurring_tasks.txt file not found")
+        
+        with open(recurring_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        return {
+            "filename": "recurring_tasks.txt",
+            "content": content,
+            "path": recurring_file
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading recurring_tasks.txt: {str(e)}")
+
+@app.put("/files/recurring")
+def update_recurring_file(request: FileEditRequest):
+    """Update the content of recurring_tasks.txt file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        recurring_file = os.path.join(current_dir, '../../recurring_tasks.txt')
+        
+        # Create backup before editing
+        backup_file = os.path.join(current_dir, '../../archive_files/recurring_backup.txt')
+        if os.path.exists(recurring_file):
+            with open(recurring_file, 'r', encoding='utf-8') as source:
+                with open(backup_file, 'w', encoding='utf-8') as backup:
+                    backup.write(source.read())
+        
+        # Write the new content
+        with open(recurring_file, 'w', encoding='utf-8') as f:
+            f.write(request.content)
+        
+        return {"success": True, "message": "recurring_tasks.txt updated successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating recurring_tasks.txt: {str(e)}")
+
+@app.get("/files/lists/{list_name}")
+def get_list_file(list_name: str):
+    """Get the raw content of a specific list file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        list_file = os.path.join(current_dir, f'../../lists/{list_name}.txt')
+        
+        if not os.path.exists(list_file):
+            raise HTTPException(status_code=404, detail=f"{list_name}.txt file not found")
+        
+        with open(list_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        return {
+            "filename": f"{list_name}.txt",
+            "content": content,
+            "path": list_file
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading {list_name}.txt: {str(e)}")
+
+@app.put("/files/lists/{list_name}")
+def update_list_file(list_name: str, request: FileEditRequest):
+    """Update the content of a specific list file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        list_file = os.path.join(current_dir, f'../../lists/{list_name}.txt')
+        
+        # Create backup before editing
+        backup_file = os.path.join(current_dir, f'../../archive_files/{list_name}_backup.txt')
+        if os.path.exists(list_file):
+            with open(list_file, 'r', encoding='utf-8') as source:
+                with open(backup_file, 'w', encoding='utf-8') as backup:
+                    backup.write(source.read())
+        
+        # Write the new content
+        with open(list_file, 'w', encoding='utf-8') as f:
+            f.write(request.content)
+        
+        return {"success": True, "message": f"{list_name}.txt updated successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating {list_name}.txt: {str(e)}")
+
+@app.get("/files/goals/{goals_name}")
+def get_goals_file(goals_name: str):
+    """Get the raw content of a specific goals file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        goals_file = os.path.join(current_dir, f'../../goals/{goals_name}.txt')
+        
+        if not os.path.exists(goals_file):
+            raise HTTPException(status_code=404, detail=f"{goals_name}.txt file not found")
+        
+        with open(goals_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        return {
+            "filename": f"{goals_name}.txt",
+            "content": content,
+            "path": goals_file
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading {goals_name}.txt: {str(e)}")
+
+@app.put("/files/goals/{goals_name}")
+def update_goals_file(goals_name: str, request: FileEditRequest):
+    """Update the content of a specific goals file"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        goals_file = os.path.join(current_dir, f'../../goals/{goals_name}.txt')
+        
+        # Create backup before editing
+        backup_file = os.path.join(current_dir, f'../../archive_files/{goals_name}_backup.txt')
+        if os.path.exists(goals_file):
+            with open(goals_file, 'r', encoding='utf-8') as source:
+                with open(backup_file, 'w', encoding='utf-8') as backup:
+                    backup.write(source.read())
+        
+        # Write the new content
+        with open(goals_file, 'w', encoding='utf-8') as f:
+            f.write(request.content)
+        
+        return {"success": True, "message": f"{goals_name}.txt updated successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating {goals_name}.txt: {str(e)}")
+
+@app.get("/files/lists")
+def get_available_lists():
+    """Get list of available list files"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        lists_dir = os.path.join(current_dir, '../../lists')
+        
+        if not os.path.exists(lists_dir):
+            return {"files": []}
+        
+        files = []
+        for filename in os.listdir(lists_dir):
+            if filename.endswith('.txt'):
+                file_path = os.path.join(lists_dir, filename)
+                if os.path.isfile(file_path):
+                    name_without_ext = filename[:-4]  # Remove .txt extension
+                    files.append({
+                        "name": name_without_ext,
+                        "filename": filename,
+                        "display_name": filename
+                    })
+        
+        # Sort alphabetically
+        files.sort(key=lambda x: x['name'])
+        return {"files": files}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing files: {str(e)}")
+
+@app.get("/files/goals")
+def get_available_goals():
+    """Get list of available goals files"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        goals_dir = os.path.join(current_dir, '../../goals')
+        
+        if not os.path.exists(goals_dir):
+            return {"files": []}
+        
+        files = []
+        for filename in os.listdir(goals_dir):
+            if filename.endswith('.txt'):
+                file_path = os.path.join(goals_dir, filename)
+                if os.path.isfile(file_path):
+                    name_without_ext = filename[:-4]  # Remove .txt extension
+                    # Create a more readable display name
+                    display_name = name_without_ext.replace('_', ' ').title()
+                    files.append({
+                        "name": name_without_ext,
+                        "filename": filename,
+                        "display_name": display_name
+                    })
+        
+        # Sort alphabetically
+        files.sort(key=lambda x: x['name'])
+        return {"files": files}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing files: {str(e)}")

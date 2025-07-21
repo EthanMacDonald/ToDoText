@@ -1,0 +1,223 @@
+/* File Editor Styles */
+.file-editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.file-editor {
+  background: #1a1a1a;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  width: 90vw;
+  height: 90vh;
+  max-width: 1200px;
+  max-height: 800px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #404040;
+}
+
+.file-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #404040;
+  background-color: #2d2d2d;
+}
+
+.file-editor-header h2 {
+  margin: 0;
+  color: #e5e5e5;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.file-editor-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.file-editor-actions button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #555555;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #404040;
+  color: #e5e5e5;
+}
+
+.file-editor-actions .btn-primary {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.file-editor-actions .btn-primary:hover:not(:disabled) {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.file-editor-actions .btn-primary:disabled {
+  background-color: #9ca3af;
+  border-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.file-editor-actions .btn-secondary {
+  background-color: #555555;
+  color: #e5e5e5;
+  border-color: #666666;
+}
+
+.file-editor-actions .btn-secondary:hover:not(:disabled) {
+  background-color: #666666;
+  border-color: #777777;
+}
+
+.file-editor-actions .btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #999999;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  line-height: 1;
+}
+
+.file-editor-actions .btn-close:hover:not(:disabled) {
+  color: #e5e5e5;
+  background-color: #555555;
+}
+
+.file-editor-content {
+  flex: 1;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-editor-textarea {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 1.5rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  resize: none;
+  background-color: #1e1e1e;
+  color: #e5e5e5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.file-editor-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.file-editor-footer {
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid #404040;
+  background-color: #2d2d2d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #b0b0b0;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.file-path {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background-color: #404040;
+  color: #e5e5e5;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.changes-indicator {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #b0b0b0;
+  font-size: 1rem;
+}
+
+.alert {
+  margin: 0 1.5rem;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  margin-bottom: 0;
+}
+
+.alert-error {
+  background-color: #2d1b1b;
+  color: #ff6b6b;
+  border: 1px solid #4d2626;
+}
+
+.alert-success {
+  background-color: #1b2d1b;
+  color: #4ade80;
+  border: 1px solid #264d26;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .file-editor {
+    width: 95vw;
+    height: 95vh;
+    margin: 2.5vh auto;
+  }
+  
+  .file-editor-header {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .file-editor-actions {
+    justify-content: center;
+  }
+  
+  .file-editor-textarea {
+    padding: 1rem;
+    font-size: 0.8125rem;
+  }
+  
+  .file-editor-footer {
+    padding: 0.75rem 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+}
