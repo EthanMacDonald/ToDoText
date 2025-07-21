@@ -286,19 +286,40 @@ function App() {
         headers: { 'Content-Type': 'application/json' }
       });
       
-      const result = await response.json();
-      
-      if (result.success) {
-        setCalendarStatus('✓ Due dates pushed to calendar successfully!');
-      } else {
-        setCalendarStatus(`✗ Calendar push failed: ${result.message}`);
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        console.error('Failed to parse response as JSON:', jsonError);
+        setCalendarStatus('✗ Server returned invalid response');
+        setTimeout(() => setCalendarStatus(''), 5000);
+        return;
       }
       
-      // Clear status after 3 seconds
-      setTimeout(() => setCalendarStatus(''), 3000);
+      if (result && typeof result === 'object') {
+        if (result.success) {
+          setCalendarStatus(`✓ ${result.message || 'Calendar sync completed successfully'}`);
+        } else {
+          const errorMessage = result.message || result.error || 'Unknown error occurred';
+          setCalendarStatus(`✗ ${errorMessage}`);
+        }
+      } else {
+        console.error('Unexpected response format:', result);
+        setCalendarStatus('✗ Server returned unexpected response format');
+      }
+      
+      // Clear status after 5 seconds for longer messages
+      setTimeout(() => setCalendarStatus(''), 5000);
     } catch (error) {
-      setCalendarStatus('✗ Error pushing to calendar');
-      setTimeout(() => setCalendarStatus(''), 3000);
+      console.error('Calendar push error:', error);
+      if (error instanceof TypeError && (error as Error).message.includes('fetch')) {
+        setCalendarStatus('✗ Cannot connect to server. Is the backend running?');
+      } else if (error instanceof Error) {
+        setCalendarStatus(`✗ Network error: ${error.message}`);
+      } else {
+        setCalendarStatus('✗ Network error: Unknown error occurred');
+      }
+      setTimeout(() => setCalendarStatus(''), 5000);
     }
   };
 

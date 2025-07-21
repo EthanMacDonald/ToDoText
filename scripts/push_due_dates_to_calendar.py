@@ -20,23 +20,40 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 def authenticate_google_calendar():
     """Authenticates with Google Calendar API and returns the service object."""
     creds = None
+    
+    # Define file paths relative to the script location
+    script_dir = os.path.dirname(__file__)
+    token_file = os.path.join(script_dir, "..", "log_files", "token.json")
+    credentials_file = os.path.join(script_dir, "..", "log_files", "credentials.json")
+    
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists("log_files/token.json"):
-        creds = Credentials.from_authorized_user_file("log_files/token.json", SCOPES)
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file, SCOPES)
+    
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            # The client_secrets.json file should be in the same directory.
+            try:
+                creds.refresh(Request())
+            except Exception as e:
+                print(f"Token refresh failed: {e}")
+                # Delete the invalid token and re-authenticate
+                if os.path.exists(token_file):
+                    os.remove(token_file)
+                creds = None
+        
+        if not creds:
+            # The credentials.json file should be in the log_files directory.
             flow = InstalledAppFlow.from_client_secrets_file(
-                "og_files/credentials.json", SCOPES
+                credentials_file, SCOPES
             )
             creds = flow.run_local_server(port=0)
+        
         # Save the credentials for the next run
-        with open("log_files/token.json", "w") as token:
+        os.makedirs(os.path.dirname(token_file), exist_ok=True)
+        with open(token_file, "w") as token:
             token.write(creds.to_json())
     try:
         service = build("calendar", "v3", credentials=creds)
@@ -145,7 +162,9 @@ if __name__ == "__main__":
         delete_all_future_events(calendar_service)
 
         # STEP 2: Read tasks from your tasks.txt file
-        tasks_from_file = get_tasks_from_file("tasks.txt")
+        script_dir = os.path.dirname(__file__)
+        tasks_file_path = os.path.join(script_dir, "..", "tasks.txt")
+        tasks_from_file = get_tasks_from_file(tasks_file_path)
         if not tasks_from_file:
             print("No tasks found in tasks.txt.  Exiting.")
         else:
@@ -153,12 +172,12 @@ if __name__ == "__main__":
             for i, task_full_string in enumerate(tasks_from_file):
                 print(f"{i+1}. {task_full_string}")
 
-                # Extract due date using regex pattern (e.g., "(due:YYYY-MM-DD)")
-                due_date_match = re.search(r'\(due:(\d{4}-\d{2}-\d{2})\)', task_full_string)
+                # Extract due date using regex pattern (e.g., "(priority:A due:YYYY-MM-DD)" or "(due:YYYY-MM-DD)")
+                due_date_match = re.search(r'due:(\d{4}-\d{2}-\d{2})', task_full_string)
 
                 # Extract clean task summary by removing known metadata patterns
                 task_summary_clean = re.sub(
-                    r'\s*(\(priority:[A-Z]\)|\(due:\d{4}-\d{2}-\d{2}\)|\(progress:\d{1,3}%\)|\(rec:[\w\s]+\)|\(done:\d{4}-\d{2}-\d{2}\)|\+\w+|@\w+|&\w+)',
+                    r'\s*(\([^)]*priority:[A-Z][^)]*\)|\([^)]*due:\d{4}-\d{2}-\d{2}[^)]*\)|\(progress:\d{1,3}%\)|\(rec:[\w\s]+\)|\(done:\d{4}-\d{2}-\d{2}\)|\(onhold:[^)]*\)|\+\w+|@\w+|&\w+)',
                     '',
                     task_full_string
                 ).strip()

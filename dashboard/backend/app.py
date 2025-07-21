@@ -842,6 +842,97 @@ async def commit_task_files():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error running git commit: {str(e)}")
 
+@app.post("/calendar/push-due-dates")
+async def push_due_dates_to_calendar():
+    """Push tasks with due dates to Google Calendar"""
+    try:
+        # Get the absolute path to the calendar script
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        script_path = os.path.join(current_dir, '../../scripts/push_due_dates_to_calendar.py')
+        
+        # Change to the project root directory before running the script
+        project_root = os.path.join(current_dir, '../..')
+        
+        # Check if the script exists
+        if not os.path.exists(script_path):
+            return {
+                "success": False,
+                "message": "Calendar sync script not found"
+            }
+        
+        # Check if virtual environment exists and get the Python path
+        venv_python = os.path.join(project_root, '.todo_env/bin/python')
+        if not os.path.exists(venv_python):
+            return {
+                "success": False,
+                "message": "Virtual environment not found. Please ensure .todo_env is set up with required packages."
+            }
+        
+        # Check if required credentials exist
+        credentials_file = os.path.join(project_root, 'log_files/credentials.json')
+        if not os.path.exists(credentials_file):
+            return {
+                "success": False,
+                "message": "Google Calendar credentials not found. Please set up credentials.json in log_files directory."
+            }
+        
+        # Run the calendar sync script
+        result = subprocess.run(
+            [venv_python, script_path],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=60  # 60 second timeout for calendar operations
+        )
+        
+        if result.returncode == 0:
+            # Parse output to count successful calendar events
+            output_lines = result.stdout.split('\n')
+            success_count = len([line for line in output_lines if 'Event created:' in line])
+            
+            return {
+                "success": True,
+                "message": f"Calendar sync completed successfully. {success_count} events created/updated.",
+                "output": result.stdout
+            }
+        else:
+            # Check for common error patterns
+            error_output = result.stderr + result.stdout
+            
+            if 'ModuleNotFoundError' in error_output and 'google' in error_output:
+                return {
+                    "success": False,
+                    "message": "Google Calendar API libraries not installed. Please run: pip install google-auth google-auth-oauthlib google-api-python-client"
+                }
+            elif 'invalid_grant' in error_output:
+                return {
+                    "success": False,
+                    "message": "Google Calendar authentication expired. Please delete log_files/token.json and re-authenticate."
+                }
+            elif 'credentials.json' in error_output:
+                return {
+                    "success": False,
+                    "message": "Google Calendar credentials file missing or invalid. Please check log_files/credentials.json."
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": "Calendar sync failed",
+                    "error": result.stderr,
+                    "output": result.stdout
+                }
+                
+    except subprocess.TimeoutExpired:
+        return {
+            "success": False,
+            "message": "Calendar sync timed out. This may happen during initial authentication."
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error running calendar sync: {str(e)}"
+        }
+
 def read_statistics_csv():
     """Read historical statistics from CSV file"""
     try:
